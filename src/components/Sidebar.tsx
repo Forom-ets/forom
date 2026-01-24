@@ -12,7 +12,8 @@ interface SidebarProps {
   onSelect: (id: string) => void
 }
 
-const categoryColors: Record<string, string> = {
+// Color mapping for each category for visual distinction
+const CATEGORY_COLORS: Record<string, string> = {
   Partenaires: 'text-green-500',
   Culture: 'text-purple-500',
   Clubs: 'text-red-600',
@@ -33,6 +34,8 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
       {items.map((item, index) => {
         const isActive = activeId === item.id
         const distance = Math.abs(index - activeIndex)
+
+        // Calculate animation values based on proximity to active item
         let translateX = 0
         let scale = 0.8
         let opacity = 0.4
@@ -45,10 +48,6 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
           translateX = 10
           scale = 1.0
           opacity = 0.7
-        } else {
-          translateX = 0
-          scale = 0.8
-          opacity = 0.4
         }
 
         return (
@@ -69,7 +68,7 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
             }}
             className={`text-left transition-all ${
               isActive
-                ? `text-xl font-black ${categoryColors[item.id] || 'text-gray-900'}`
+                ? `text-xl font-black ${CATEGORY_COLORS[item.id] || 'text-gray-900'}`
                 : item.disabled
                 ? 'text-gray-300 cursor-not-allowed text-sm'
                 : 'text-gray-600 hover:text-gray-900 text-sm'

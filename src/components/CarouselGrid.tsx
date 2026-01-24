@@ -18,13 +18,16 @@ interface CarouselGridProps {
   onCategoryChange: (category: string) => void
 }
 
-const categoryColors: Record<string, string> = {
+// Color mapping for category-specific styling
+const CATEGORY_COLORS: Record<string, string> = {
   Partenaires: 'border-green-500 shadow-lg shadow-green-500/50',
   Culture: 'border-purple-500 shadow-lg shadow-purple-500/50',
   Clubs: 'border-red-500 shadow-lg shadow-red-500/50',
   Trésorerie: 'border-yellow-500 shadow-lg shadow-yellow-500/50',
   Atelier: 'border-blue-500 shadow-lg shadow-blue-500/50',
 }
+
+const VISIBLE_VIDEOS = 5
 
 export function CarouselGrid({
   videos,
@@ -35,12 +38,13 @@ export function CarouselGrid({
   const [horizontalIndex, setHorizontalIndex] = React.useState(0)
   const activeIndex = categories.indexOf(activeCategory)
 
-  const visibleCount = 5
+  // Calculate video slices for different rows
   const startIdx = horizontalIndex
-  const activeRowVideos = videos.slice(startIdx, startIdx + visibleCount)
+  const activeRowVideos = videos.slice(startIdx, startIdx + VISIBLE_VIDEOS)
   const topRowVideos = videos.slice(0, 3)
   const bottomRowVideos = videos.slice(3, 6)
 
+  // Handlers for category navigation
   const handlePrevCategory = () => {
     const newIndex = (activeIndex - 1 + categories.length) % categories.length
     onCategoryChange(categories[newIndex])
@@ -53,6 +57,7 @@ export function CarouselGrid({
     setHorizontalIndex(0)
   }
 
+  // Handlers for video carousel navigation
   const handlePrevVideo = () => {
     if (horizontalIndex > 0) {
       setHorizontalIndex(horizontalIndex - 1)
@@ -60,12 +65,24 @@ export function CarouselGrid({
   }
 
   const handleNextVideo = () => {
-    if (startIdx + visibleCount < videos.length) {
+    if (startIdx + VISIBLE_VIDEOS < videos.length) {
       setHorizontalIndex(horizontalIndex + 1)
     }
   }
 
-  const renderVideoCard = (video: Video, scale: number, zIndex: number, width: string) => (
+  /**
+   * Renders a video card with scaling animation
+   * @param video - Video object to render
+   * @param scale - Scale factor (0.6, 0.8, or 1)
+   * @param zIndex - Z-index for layering
+   * @param width - Tailwind width class
+   */
+  const renderVideoCard = (
+    video: Video,
+    scale: number,
+    zIndex: number,
+    width: string
+  ) => (
     <motion.div
       key={video.id}
       initial={{ opacity: 0, scale: 0.8 }}
@@ -87,8 +104,13 @@ export function CarouselGrid({
     </motion.div>
   )
 
+  /**
+   * Renders a row of videos with perspective scaling
+   * @param rowVideos - Array of videos to display
+   * @param isActive - Whether this is the active middle row
+   */
   const renderRow = (rowVideos: Video[], isActive: boolean) => {
-    const centerIdx = Math.floor(visibleCount / 2)
+    const centerIdx = Math.floor(VISIBLE_VIDEOS / 2)
 
     return (
       <motion.div
@@ -104,6 +126,7 @@ export function CarouselGrid({
             return renderVideoCard(video, 0.6, 1, 'w-40')
           }
 
+          // For active row, apply perspective scaling based on position
           const relativeIdx = idx
           if (relativeIdx === centerIdx - 2) return renderVideoCard(video, 0.6, 1, 'w-40')
           if (relativeIdx === centerIdx - 1) return renderVideoCard(video, 0.8, 5, 'w-60')
@@ -118,18 +141,21 @@ export function CarouselGrid({
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8 ml-32">
-      {/* Vertical Navigation */}
+      {/* Vertical Navigation + Grid Container */}
       <div className="flex items-center gap-12">
+        {/* Category Navigation (Vertical) */}
         <div className="flex flex-col items-center justify-center gap-2">
           <motion.button
             whileHover={{ scale: 1.2 }}
             whileTap={{ scale: 0.9 }}
             onClick={handlePrevCategory}
             className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+            aria-label="Previous category"
           >
             <ChevronUp size={24} className="text-gray-900" />
           </motion.button>
 
+          {/* Navigation indicator */}
           <div className="flex flex-col items-center justify-center gap-3 py-2">
             <div className="w-0.5 h-20 bg-gray-600 rounded-full" />
             <div className="w-3 h-3 rounded-full bg-gray-900" />
@@ -141,19 +167,20 @@ export function CarouselGrid({
             whileTap={{ scale: 0.9 }}
             onClick={handleNextCategory}
             className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+            aria-label="Next category"
           >
             <ChevronDown size={24} className="text-gray-900" />
           </motion.button>
         </div>
 
-        {/* Grid Container */}
+        {/* Grid Container with 3 Rows */}
         <div className="flex flex-col items-center justify-center gap-6 flex-1">
-          {/* Top Row */}
+          {/* Top Row - Inactive */}
           {renderRow(topRowVideos, false)}
 
-          {/* Active Row with colored border */}
+          {/* Active Row - Highlighted with category color */}
           <motion.div
-            className={`border-4 ${categoryColors[activeCategory] || 'border-gray-900'} rounded-lg p-4`}
+            className={`border-4 ${CATEGORY_COLORS[activeCategory] || 'border-gray-900'} rounded-lg p-4`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', damping: 12, stiffness: 100 }}
@@ -161,12 +188,12 @@ export function CarouselGrid({
             {renderRow(activeRowVideos, true)}
           </motion.div>
 
-          {/* Bottom Row */}
+          {/* Bottom Row - Inactive */}
           {renderRow(bottomRowVideos, false)}
         </div>
       </div>
 
-      {/* Horizontal Navigation */}
+      {/* Horizontal Navigation - Video Carousel Controls */}
       <div className="flex items-center justify-center gap-6 mt-4">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -174,16 +201,21 @@ export function CarouselGrid({
           onClick={handlePrevVideo}
           disabled={horizontalIndex === 0}
           className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous videos"
         >
           <ChevronLeft size={24} className="text-gray-900" />
         </motion.button>
 
+        {/* Progress indicator */}
         <div className="flex items-center gap-2">
           <div className="w-32 h-1 bg-gray-400 rounded-full relative">
             <motion.div
               className="absolute h-1 bg-gray-900 rounded-full"
               animate={{
-                width: `${Math.max(10, (horizontalIndex / Math.max(1, videos.length - visibleCount)) * 100)}%`,
+                width: `${Math.max(
+                  10,
+                  (horizontalIndex / Math.max(1, videos.length - VISIBLE_VIDEOS)) * 100
+                )}%`,
               }}
             />
           </div>
@@ -194,8 +226,9 @@ export function CarouselGrid({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handleNextVideo}
-          disabled={startIdx + visibleCount >= videos.length}
+          disabled={startIdx + VISIBLE_VIDEOS >= videos.length}
           className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next videos"
         >
           <ChevronRight size={24} className="text-gray-900" />
         </motion.button>

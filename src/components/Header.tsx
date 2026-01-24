@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion'
 
-export function Header() {
-  const letters = [
-    { text: 'F', color: 'text-red-600' },
-    { text: 'O', color: 'text-gray-900' },
-    { text: 'R', color: 'text-yellow-400' },
-    { text: 'O', color: 'text-gray-900' },
-    { text: 'M', color: 'text-blue-600' },
-  ]
+// Color-coded letters for "FOROM" branding
+const LOGO_LETTERS = [
+  { text: 'F', color: 'text-red-600' },
+  { text: 'O', color: 'text-gray-900' },
+  { text: 'R', color: 'text-yellow-400' },
+  { text: 'O', color: 'text-gray-900' },
+  { text: 'M', color: 'text-blue-600' },
+]
 
+export function Header() {
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -17,7 +18,7 @@ export function Header() {
       className="bg-white border-b border-gray-200 py-6 px-8"
     >
       <div className="flex items-center justify-center gap-2">
-        {letters.map((letter, index) => (
+        {LOGO_LETTERS.map((letter, index) => (
           <motion.span
             key={index}
             initial={{ opacity: 0, scale: 0.5 }}
