@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'Jersey 15';
+  /* Make sure this path matches exactly where you put the file */
+  src: url('./assets/fonts/jersey-15-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; /* Good for performance */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

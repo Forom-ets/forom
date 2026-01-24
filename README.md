@@ -1,4 +1,4 @@
-# VideoHub - Interactive Video Grid Navigation
+# FOROM - Interactive Video Grid Navigation
 
 A modern, interactive video grid navigation application built with React, Vite, Tailwind CSS, Framer Motion, and Lucide React.
 

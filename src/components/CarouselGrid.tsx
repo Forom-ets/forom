@@ -80,18 +80,19 @@ export function CarouselGrid({
   const renderVideoCard = (
     video: Video,
     scale: number,
-    zIndex: number,
-    width: string
+    zIndex: number
   ) => (
     <motion.div
       key={video.id}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale }}
       transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-      className={`relative rounded-lg overflow-hidden cursor-pointer transition-all ${width} ${
-        scale === 1 ? 'h-64' : scale === 0.8 ? 'h-48' : 'h-32'
-      } flex-shrink-0`}
-      style={{ zIndex }}
+      className="relative rounded-lg overflow-hidden cursor-pointer transition-all flex-shrink-0"
+      style={{
+        zIndex,
+        width: scale === 1 ? 'clamp(15rem, 35vw, 32rem)' : scale === 0.8 ? 'clamp(12rem, 28vw, 24rem)' : 'clamp(8rem, 18vw, 16rem)',
+        height: scale === 1 ? 'clamp(12rem, 26vw, 28rem)' : scale === 0.8 ? 'clamp(9rem, 20vw, 22rem)' : 'clamp(6rem, 14vw, 14rem)',
+      }}
     >
       <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
       {scale === 1 && (
@@ -123,16 +124,16 @@ export function CarouselGrid({
       >
         {rowVideos.map((video, idx) => {
           if (!isActive) {
-            return renderVideoCard(video, 0.6, 1, 'w-40')
+            return renderVideoCard(video, 0.6, 1)
           }
 
           // For active row, apply perspective scaling based on position
           const relativeIdx = idx
-          if (relativeIdx === centerIdx - 2) return renderVideoCard(video, 0.6, 1, 'w-40')
-          if (relativeIdx === centerIdx - 1) return renderVideoCard(video, 0.8, 5, 'w-60')
-          if (relativeIdx === centerIdx) return renderVideoCard(video, 1, 10, 'w-96')
-          if (relativeIdx === centerIdx + 1) return renderVideoCard(video, 0.8, 5, 'w-60')
-          if (relativeIdx === centerIdx + 2) return renderVideoCard(video, 0.6, 1, 'w-40')
+          if (relativeIdx === centerIdx - 2) return renderVideoCard(video, 0.6, 1)
+          if (relativeIdx === centerIdx - 1) return renderVideoCard(video, 0.8, 5)
+          if (relativeIdx === centerIdx) return renderVideoCard(video, 1, 10)
+          if (relativeIdx === centerIdx + 1) return renderVideoCard(video, 0.8, 5)
+          if (relativeIdx === centerIdx + 2) return renderVideoCard(video, 0.6, 1)
           return null
         })}
       </motion.div>
@@ -140,7 +141,7 @@ export function CarouselGrid({
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8 ml-32">
+    <div className="flex-1 flex flex-col items-center justify-center p-8" style={{ gap: 'clamp(1.5rem, 4vw, 2rem)', marginLeft: 'clamp(4rem, 12vw, 10rem)' }}>
       {/* Vertical Navigation + Grid Container */}
       <div className="flex items-center gap-12">
         {/* Category Navigation (Vertical) */}
@@ -178,9 +179,8 @@ export function CarouselGrid({
           {/* Top Row - Inactive */}
           {renderRow(topRowVideos, false)}
 
-          {/* Active Row - Highlighted with category color */}
+          {/* Active Row */}
           <motion.div
-            className={`border-4 ${CATEGORY_COLORS[activeCategory] || 'border-gray-900'} rounded-lg p-4`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', damping: 12, stiffness: 100 }}
