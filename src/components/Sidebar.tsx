@@ -24,7 +24,6 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
   const wheelRef = useRef<HTMLDivElement>(null)
-  const activeIndex = items.findIndex((item) => item.id === activeId)
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -54,55 +53,54 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
   }, [items, activeId, onSelect])
 
   return (
-    <motion.aside
-      initial={{ opacity: 0, x: -50 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-      className="fixed left-4 top-1/2 -translate-y-1/2 flex items-center gap-6 z-40"
-    >
-      {/* Grey Wheel/Circle */}
-      <div
-        ref={wheelRef}
-        className="relative w-40 h-screen flex items-center justify-center cursor-grab active:cursor-grabbing"
-      >
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full border-gray-400 flex items-center justify-center hover:border-gray-600 transition-colors"
-          style={{
-            width: '25vw',
-            height: '25vw',
-            borderWidth: '2vw',
-            background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.1), transparent)',
-            boxShadow: '0 0 0 calc(2vw * 1) rgba(59, 130, 246, 0.4) inset, 0 10px 30px rgba(0,0,0,0.1)'
-          }}
-        >
-          <div style={{
-            width: '1.5vw',
-            height: '1.5vw',
-            borderRadius: '50%',
-            backgroundColor: '#4b5563'
-          }}></div>
-        </div>
-      </div>
+    <>
+      {/* Dark background panel on the left */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="fixed left-0 top-0 bottom-0 w-20 bg-gray-800 z-30"
+      />
 
-      {/* Sidebar Items */}
-      <div className="flex flex-col gap-12">
+      {/* Wheel Container - Centered vertically on left side */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        ref={wheelRef}
+        className="fixed top-1/2 flex items-center justify-center cursor-grab active:cursor-grabbing pointer-events-auto z-40"
+        style={{
+          width: '40vh',
+          height: '40vh',
+          left: '-15vh',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          aspectRatio: '1',
+        }}
+      >
+        {/* Grey Wheel Circle */}
+        <div
+          className="absolute rounded-full flex items-center justify-center"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: '2px solid #9ca3af',
+            background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.1), transparent)',
+            boxShadow: 'inset 0 0 30px rgba(0,0,0,0.05), 0 10px 30px rgba(0,0,0,0.1)'
+          }}
+        />
+
+        {/* Categories positioned around the visible portion of wheel */}
         {items.map((item, index) => {
           const isActive = activeId === item.id
-          const distance = Math.abs(index - activeIndex)
+          const totalItems = items.length
+          const angle = (index / totalItems) * 360
+          const radius = 50 // percentage from center
 
-          // Calculate animation values based on proximity to active item
-          let translateX = 0
-          let scale = 0.8
-          let opacity = 0.4
-
-          if (isActive) {
-            translateX = 20
-            scale = 1.2
-            opacity = 1
-          } else if (distance === 1) {
-            translateX = 10
-            scale = 1.0
-            opacity = 0.7
-          }
+          // Convert angle to radians for positioning
+          const rad = (angle * Math.PI) / 180
+          const x = radius * Math.cos(rad - Math.PI / 2)
+          const y = radius * Math.sin(rad - Math.PI / 2)
 
           return (
             <motion.button
@@ -111,31 +109,34 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
               disabled={item.disabled}
               initial={{ opacity: 0 }}
               animate={{
-                opacity,
-                x: translateX,
-                scale,
+                opacity: isActive ? 1 : item.disabled ? 0.3 : 0.6,
+                scale: isActive ? 1.15 : 0.85,
               }}
               transition={{
                 type: 'spring',
                 damping: 12,
                 stiffness: 100,
               }}
-              className={`text-left transition-all [font-family:'Jersey_15'] ${
+              className={`absolute whitespace-nowrap font-bold transition-all ${
                 isActive
-                  ? `font-black ${CATEGORY_COLORS[item.id] || 'text-gray-900'}`
+                  ? `px-4 py-2 rounded-lg border-2 ${CATEGORY_COLORS[item.id] || 'text-gray-900'} border-current shadow-lg`
                   : item.disabled
                   ? 'text-gray-300 cursor-not-allowed'
-                  : 'text-gray-400 hover:text-gray-900'
+                  : `${CATEGORY_COLORS[item.id] || 'text-gray-700'} hover:scale-105`
               }`}
               style={{
-                fontSize: isActive ? 'clamp(2rem, 8vw, 6rem)' : 'clamp(1.5rem, 6vw, 5rem)',
+                fontSize: isActive ? 'clamp(1.25rem, 4vw, 2.5rem)' : 'clamp(0.875rem, 2.5vw, 1.5rem)',
+                left: `calc(50% + ${x}%)`,
+                top: `calc(50% + ${y}%)`,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'auto',
               }}
             >
               {item.label}
             </motion.button>
           )
         })}
-      </div>
-    </motion.aside>
+      </motion.div>
+    </>
   )
 }

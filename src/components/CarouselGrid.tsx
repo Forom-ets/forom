@@ -18,15 +18,6 @@ interface CarouselGridProps {
   onCategoryChange: (category: string) => void
 }
 
-// Color mapping for category-specific styling
-const CATEGORY_COLORS: Record<string, string> = {
-  Partenaires: 'border-green-500 shadow-lg shadow-green-500/50',
-  Culture: 'border-purple-500 shadow-lg shadow-purple-500/50',
-  Clubs: 'border-red-500 shadow-lg shadow-red-500/50',
-  Trésorerie: 'border-yellow-500 shadow-lg shadow-yellow-500/50',
-  Atelier: 'border-blue-500 shadow-lg shadow-blue-500/50',
-}
-
 const VISIBLE_VIDEOS = 5
 
 export function CarouselGrid({
@@ -151,16 +142,21 @@ export function CarouselGrid({
             whileTap={{ scale: 0.9 }}
             onClick={handlePrevCategory}
             className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+            style={{ fontFamily: "'Jersey 15'" }}
             aria-label="Previous category"
           >
             <ChevronUp size={24} className="text-gray-900" />
           </motion.button>
 
           {/* Navigation indicator */}
-          <div className="flex flex-col items-center justify-center gap-3 py-2">
-            <div className="w-0.5 h-20 bg-gray-600 rounded-full" />
-            <div className="w-3 h-3 rounded-full bg-gray-900" />
-            <div className="w-0.5 h-20 bg-gray-600 rounded-full" />
+          <div className="flex flex-col items-center justify-center relative" style={{ height: '200px', width: '20px', position: 'relative' }}>
+            <div style={{ position: 'absolute', width: '4px', height: '200px', backgroundColor: 'black', left: '50%', transform: 'translateX(-50%)' }} />
+            <motion.div
+              style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'black', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
+              animate={{
+                top: `${50 + (activeIndex / Math.max(1, categories.length - 1) - 0.5) * 100}%`,
+              }}
+            />
           </div>
 
           <motion.button
@@ -168,6 +164,7 @@ export function CarouselGrid({
             whileTap={{ scale: 0.9 }}
             onClick={handleNextCategory}
             className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+            style={{ fontFamily: "'Jersey 15'" }}
             aria-label="Next category"
           >
             <ChevronDown size={24} className="text-gray-900" />
@@ -201,25 +198,21 @@ export function CarouselGrid({
           onClick={handlePrevVideo}
           disabled={horizontalIndex === 0}
           className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{ fontFamily: "'Jersey 15'" }}
           aria-label="Previous videos"
         >
           <ChevronLeft size={24} className="text-gray-900" />
         </motion.button>
 
         {/* Progress indicator */}
-        <div className="flex items-center gap-2">
-          <div className="w-32 h-1 bg-gray-400 rounded-full relative">
-            <motion.div
-              className="absolute h-1 bg-gray-900 rounded-full"
-              animate={{
-                width: `${Math.max(
-                  10,
-                  (horizontalIndex / Math.max(1, videos.length - VISIBLE_VIDEOS)) * 100
-                )}%`,
-              }}
-            />
-          </div>
-          <div className="w-3 h-3 rounded-full bg-gray-900" />
+        <div className="flex items-center justify-center relative" style={{ width: '200px', height: '20px', position: 'relative' }}>
+          <div style={{ position: 'absolute', width: '200px', height: '4px', backgroundColor: 'black', top: '50%', transform: 'translateY(-50%)' }} />
+          <motion.div
+            style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'black', position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)' }}
+            animate={{
+              left: `${50 + (horizontalIndex / Math.max(1, videos.length - VISIBLE_VIDEOS) - 0.5) * 100}%`,
+            }}
+          />
         </div>
 
         <motion.button
@@ -227,6 +220,7 @@ export function CarouselGrid({
           whileTap={{ scale: 0.9 }}
           onClick={handleNextVideo}
           disabled={startIdx + VISIBLE_VIDEOS >= videos.length}
+          style={{ fontFamily: "'Jersey 15'" }}
           className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Next videos"
         >
