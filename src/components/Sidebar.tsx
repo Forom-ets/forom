@@ -13,15 +13,6 @@ interface SidebarProps {
   onSelect: (id: string) => void
 }
 
-// Color mapping for each category
-const CATEGORY_COLORS: Record<string, string> = {
-  Partenaires: '#9CA3AF', // gray
-  Culture: '#374151', // darker gray
-  Clubs: '#000000', // black (active)
-  Trésorie: '#6B7280', // gray
-  Atelier: '#9CA3AF', // light gray
-}
-
 export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
   const wheelRef = useRef<HTMLDivElement>(null)
 
@@ -55,17 +46,7 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
     }
   }, [items, activeId, onSelect])
 
-  // Calculate position for each category on the wheel
-  const getItemPosition = (index: number) => {
-    const activeIndex = items.findIndex((item) => item.id === activeId)
-    const relativeIndex = index - activeIndex
-    
-    // Vertical spacing between items
-    const spacing = 80
-    const y = relativeIndex * spacing
-    
-    return { y }
-  }
+  const activeIndex = items.findIndex((item) => item.id === activeId)
 
   return (
     <motion.div
@@ -73,11 +54,11 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="fixed left-0 top-1/2 flex items-center justify-end cursor-grab active:cursor-grabbing z-40"
+      className="fixed left-0 top-1/2 flex items-center z-40"
       style={{
-        width: '320px',
-        height: '320px',
-        transform: 'translate(-50%, -50%)',
+        width: '400px',
+        height: '400px',
+        transform: 'translate(-65%, -50%)',
       }}
     >
       {/* Grey Wheel Circle */}
@@ -88,22 +69,34 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
           height: '100%',
           left: 0,
           border: '3px solid #9ca3af',
-          background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.05), 0 4px 20px rgba(0,0,0,0.1)',
+          background: 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
         }}
       />
 
-      {/* Categories positioned vertically */}
+      {/* Categories positioned vertically, flowing around the wheel */}
       <div 
-        className="relative flex flex-col items-start justify-center"
+        className="absolute flex flex-col items-start"
         style={{ 
-          marginLeft: '180px',
-          height: '100%',
+          left: '420px',
+          top: '50%',
+          transform: 'translateY(-50%)',
         }}
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id
-          const { y } = getItemPosition(index)
+          const relativeIndex = index - activeIndex
+          
+          // Calculate vertical position - active item centered
+          const spacing = 75
+          const y = relativeIndex * spacing
+          
+          // Calculate horizontal offset based on distance from active (curve effect)
+          // Negative offset - items curve to the LEFT as they get further from center
+          const distanceFromCenter = Math.abs(relativeIndex)
+          const xOffset = -distanceFromCenter * distanceFromCenter * 12
+          
+          // Opacity based on distance
+          const opacity = distanceFromCenter === 0 ? 1 : distanceFromCenter === 1 ? 0.6 : 0.35
           
           return (
             <motion.button
@@ -111,23 +104,25 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
               onClick={() => onSelect(item.id)}
               animate={{
                 y,
-                opacity: Math.abs(y) > 120 ? 0.3 : 1,
-                scale: isActive ? 1 : 0.85,
+                x: xOffset,
+                opacity,
               }}
               transition={{
                 type: 'spring',
                 damping: 20,
                 stiffness: 150,
               }}
-              className="absolute whitespace-nowrap text-left transition-colors"
+              className="absolute whitespace-nowrap text-left"
               style={{
-                fontFamily: 'Arial, sans-serif',
-                fontSize: isActive ? '2.5rem' : '1.5rem',
+                fontFamily: "'Jersey 15', sans-serif",
+                fontSize: isActive ? '3rem' : '1.75rem',
                 fontWeight: isActive ? 900 : 400,
                 fontStyle: isActive ? 'normal' : 'italic',
-                color: CATEGORY_COLORS[item.id] || '#6B7280',
+                color: isActive ? '#000000' : '#9CA3AF',
                 cursor: 'pointer',
-                left: 0,
+                background: 'none',
+                border: 'none',
+                outline: 'none',
               }}
             >
               {item.label}

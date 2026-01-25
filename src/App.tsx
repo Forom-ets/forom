@@ -18,23 +18,23 @@ function App() {
   }))
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="h-screen bg-white overflow-hidden relative">
       <Header />
 
-      <div className="flex flex-1 overflow-hidden relative">
-        <Sidebar
-          items={sidebarItems}
-          activeId={activeCategory}
-          onSelect={setActiveCategory}
-        />
+      {/* Sidebar - positioned fixed on left */}
+      <Sidebar
+        items={sidebarItems}
+        activeId={activeCategory}
+        onSelect={setActiveCategory}
+      />
 
-        <CarouselGrid
-          videos={mockVideos}
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-      </div>
+      {/* Grid - will center itself absolutely */}
+      <CarouselGrid
+        videos={mockVideos}
+        categories={categories}
+        activeCategory={activeCategory}
+        onCategoryChange={setActiveCategory}
+      />
     </div>
   )
 }
