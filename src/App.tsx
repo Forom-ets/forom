@@ -2,18 +2,25 @@ import { useState } from 'react'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { CarouselGrid } from './components/CarouselGrid'
-import { mockVideos } from './data/mockVideos'
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** Available categories for the application */
+const CATEGORIES = ['Partenaires', 'Culture', 'Clubs', 'Trésorie', 'Atelier']
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 function App() {
   const [activeCategory, setActiveCategory] = useState('Clubs')
 
-  // Available categories for the application
-  const categories = ['Partenaires', 'Culture', 'Clubs', 'Trésorie', 'Atelier']
-
-  // Map categories to sidebar items - all are selectable now
-  const sidebarItems = categories.map((cat) => ({
-    id: cat,
-    label: cat,
+  // Map categories to sidebar items
+  const sidebarItems = CATEGORIES.map((category) => ({
+    id: category,
+    label: category,
     disabled: false,
   }))
 
@@ -21,17 +28,14 @@ function App() {
     <div className="h-screen bg-white overflow-hidden relative">
       <Header />
 
-      {/* Sidebar - positioned fixed on left */}
       <Sidebar
         items={sidebarItems}
         activeId={activeCategory}
         onSelect={setActiveCategory}
       />
 
-      {/* Grid - will center itself absolutely */}
       <CarouselGrid
-        videos={mockVideos}
-        categories={categories}
+        categories={CATEGORIES}
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
       />

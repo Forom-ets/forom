@@ -1,6 +1,10 @@
 import { motion } from 'framer-motion'
 
-// Color-coded letters for "FOROM" branding
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** Color-coded letters for "FOROM" branding */
 const LOGO_LETTERS = [
   { text: 'F', color: '#FF0000' },
   { text: 'O', color: '#000000' },
@@ -8,6 +12,16 @@ const LOGO_LETTERS = [
   { text: 'O', color: '#000000' },
   { text: 'M', color: '#0066FF' },
 ]
+
+/** Animation settings for staggered letter entrance */
+const letterAnimation = {
+  initial: { opacity: 0, scale: 0.5 },
+  animate: { opacity: 1, scale: 1 },
+}
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export function Header() {
   return (
@@ -21,21 +35,20 @@ export function Header() {
         {LOGO_LETTERS.map((letter, index) => (
           <motion.span
             key={index}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={letterAnimation.initial}
+            animate={letterAnimation.animate}
             transition={{
               delay: index * 0.1,
-              type: 'spring' as const,
+              type: 'spring',
               damping: 12,
               stiffness: 100,
             }}
-            style={{ 
+            style={{
               fontSize: '64px',
-              fontFamily: 'Montserrat, sans-serif', 
-              fontWeight: 900, 
-              fontStyle: 'normal',
+              fontFamily: 'Montserrat, sans-serif',
+              fontWeight: 900,
               color: letter.color,
-              lineHeight: '1',
+              lineHeight: 1,
               letterSpacing: '0.05em',
             }}
           >
