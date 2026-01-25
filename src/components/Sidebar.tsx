@@ -63,11 +63,12 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
   return (
     <motion.div
       ref={wheelRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="fixed left-0 top-1/2 flex items-center z-40"
-      style={{ width: '400px', height: '400px', transform: 'translate(-65%, -50%)' }}
+      initial={{ opacity: 0, scale: 0.50, x: '-65%', y: '-60%' }}
+      animate={{ opacity: 1, scale: 0.50, x: '-65%', y: '-60%' }}
+      whileHover={{ scale: 0.8 }}
+      transition={{ duration: 0.3, type: 'spring', damping: 18 }}
+      className="fixed left-0 flex items-center z-40"
+      style={{ top: 'calc(50% + 6vh)', width: '400px', height: '400px', transformOrigin: 'center center' }}
     >
       {/* Decorative Wheel Circle */}
       <div
