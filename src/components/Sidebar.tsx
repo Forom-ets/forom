@@ -13,13 +13,13 @@ interface SidebarProps {
   onSelect: (id: string) => void
 }
 
-// Color mapping for each category for visual distinction
+// Color mapping for each category
 const CATEGORY_COLORS: Record<string, string> = {
-  Partenaires: 'text-green-500',
-  Culture: 'text-purple-500',
-  Clubs: 'text-red-600',
-  Trésorerie: 'text-yellow-500',
-  Atelier: 'text-blue-500',
+  Partenaires: '#9CA3AF', // gray
+  Culture: '#374151', // darker gray
+  Clubs: '#000000', // black (active)
+  Trésorie: '#6B7280', // gray
+  Atelier: '#9CA3AF', // light gray
 }
 
 export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
@@ -30,19 +30,22 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
       if (!wheelRef.current?.contains(e.target as Node)) return
       
       e.preventDefault()
-      const enabledItems = items.filter((item) => !item.disabled)
-      const currentEnabledIndex = enabledItems.findIndex((item) => item.id === activeId)
+      const currentIndex = items.findIndex((item) => item.id === activeId)
       
-      if (currentEnabledIndex === -1) return
+      if (currentIndex === -1) return
       
-      let nextIndex = currentEnabledIndex
+      let nextIndex = currentIndex
       if (e.deltaY > 0) {
-        nextIndex = (currentEnabledIndex + 1) % enabledItems.length
+        // Scroll down - go to next category
+        nextIndex = Math.min(currentIndex + 1, items.length - 1)
       } else {
-        nextIndex = (currentEnabledIndex - 1 + enabledItems.length) % enabledItems.length
+        // Scroll up - go to previous category
+        nextIndex = Math.max(currentIndex - 1, 0)
       }
       
-      onSelect(enabledItems[nextIndex].id)
+      if (nextIndex !== currentIndex) {
+        onSelect(items[nextIndex].id)
+      }
     }
 
     const wheel = wheelRef.current
@@ -52,91 +55,86 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
     }
   }, [items, activeId, onSelect])
 
+  // Calculate position for each category on the wheel
+  const getItemPosition = (index: number) => {
+    const activeIndex = items.findIndex((item) => item.id === activeId)
+    const relativeIndex = index - activeIndex
+    
+    // Vertical spacing between items
+    const spacing = 80
+    const y = relativeIndex * spacing
+    
+    return { y }
+  }
+
   return (
-    <>
-      {/* Dark background panel on the left */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed left-0 top-0 bottom-0 w-20 bg-gray-800 z-30"
+    <motion.div
+      ref={wheelRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="fixed left-0 top-1/2 flex items-center justify-end cursor-grab active:cursor-grabbing z-40"
+      style={{
+        width: '320px',
+        height: '320px',
+        transform: 'translate(-50%, -50%)',
+      }}
+    >
+      {/* Grey Wheel Circle */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          left: 0,
+          border: '3px solid #9ca3af',
+          background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.05), 0 4px 20px rgba(0,0,0,0.1)',
+        }}
       />
 
-      {/* Wheel Container - Centered vertically on left side */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        ref={wheelRef}
-        className="fixed top-1/2 flex items-center justify-center cursor-grab active:cursor-grabbing pointer-events-auto z-40"
-        style={{
-          width: '40vh',
-          height: '40vh',
-          left: '-15vh',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          aspectRatio: '1',
+      {/* Categories positioned vertically */}
+      <div 
+        className="relative flex flex-col items-start justify-center"
+        style={{ 
+          marginLeft: '180px',
+          height: '100%',
         }}
       >
-        {/* Grey Wheel Circle */}
-        <div
-          className="absolute rounded-full flex items-center justify-center"
-          style={{
-            width: '100%',
-            height: '100%',
-            border: '2px solid #9ca3af',
-            background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.1), transparent)',
-            boxShadow: 'inset 0 0 30px rgba(0,0,0,0.05), 0 10px 30px rgba(0,0,0,0.1)'
-          }}
-        />
-
-        {/* Categories positioned around the visible portion of wheel */}
         {items.map((item, index) => {
           const isActive = activeId === item.id
-          const totalItems = items.length
-          const angle = (index / totalItems) * 360
-          const radius = 50 // percentage from center
-
-          // Convert angle to radians for positioning
-          const rad = (angle * Math.PI) / 180
-          const x = radius * Math.cos(rad - Math.PI / 2)
-          const y = radius * Math.sin(rad - Math.PI / 2)
-
+          const { y } = getItemPosition(index)
+          
           return (
             <motion.button
               key={item.id}
-              onClick={() => !item.disabled && onSelect(item.id)}
-              disabled={item.disabled}
-              initial={{ opacity: 0 }}
+              onClick={() => onSelect(item.id)}
               animate={{
-                opacity: isActive ? 1 : item.disabled ? 0.3 : 0.6,
-                scale: isActive ? 1.15 : 0.85,
+                y,
+                opacity: Math.abs(y) > 120 ? 0.3 : 1,
+                scale: isActive ? 1 : 0.85,
               }}
               transition={{
                 type: 'spring',
-                damping: 12,
-                stiffness: 100,
+                damping: 20,
+                stiffness: 150,
               }}
-              className={`absolute whitespace-nowrap font-bold transition-all ${
-                isActive
-                  ? `px-4 py-2 rounded-lg border-2 ${CATEGORY_COLORS[item.id] || 'text-gray-900'} border-current shadow-lg`
-                  : item.disabled
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : `${CATEGORY_COLORS[item.id] || 'text-gray-700'} hover:scale-105`
-              }`}
+              className="absolute whitespace-nowrap text-left transition-colors"
               style={{
-                fontSize: isActive ? 'clamp(1.25rem, 4vw, 2.5rem)' : 'clamp(0.875rem, 2.5vw, 1.5rem)',
-                left: `calc(50% + ${x}%)`,
-                top: `calc(50% + ${y}%)`,
-                transform: 'translate(-50%, -50%)',
-                pointerEvents: 'auto',
+                fontFamily: 'Arial, sans-serif',
+                fontSize: isActive ? '2.5rem' : '1.5rem',
+                fontWeight: isActive ? 900 : 400,
+                fontStyle: isActive ? 'normal' : 'italic',
+                color: CATEGORY_COLORS[item.id] || '#6B7280',
+                cursor: 'pointer',
+                left: 0,
               }}
             >
               {item.label}
             </motion.button>
           )
         })}
-      </motion.div>
-    </>
+      </div>
+    </motion.div>
   )
 }

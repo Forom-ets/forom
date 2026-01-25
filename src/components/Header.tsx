@@ -15,9 +15,9 @@ export function Header() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white border-b border-gray-200 py-8 px-16"
+      className="bg-white py-6 px-16"
     >
-      <div className="flex items-center justify-center gap-0">
+      <div className="flex items-center justify-center gap-4">
         {LOGO_LETTERS.map((letter, index) => (
           <motion.span
             key={index}
@@ -30,13 +30,13 @@ export function Header() {
               stiffness: 100,
             }}
             style={{ 
-              fontSize: '120px',
+              fontSize: '64px',
               fontFamily: 'Montserrat, sans-serif', 
               fontWeight: 900, 
               fontStyle: 'normal',
               color: letter.color,
               lineHeight: '1',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.05em',
             }}
           >
             {letter.text}

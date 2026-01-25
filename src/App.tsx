@@ -8,14 +8,13 @@ function App() {
   const [activeCategory, setActiveCategory] = useState('Clubs')
 
   // Available categories for the application
-  const categories = ['Partenaires', 'Culture', 'Clubs', 'Trésorerie', 'Atelier']
+  const categories = ['Partenaires', 'Culture', 'Clubs', 'Trésorie', 'Atelier']
 
-  // Map categories to sidebar items with enablement logic
+  // Map categories to sidebar items - all are selectable now
   const sidebarItems = categories.map((cat) => ({
     id: cat,
     label: cat,
-    // Only 'Clubs' and 'Culture' are enabled in this demo
-    disabled: cat !== 'Clubs' && cat !== 'Culture',
+    disabled: false,
   }))
 
   return (

@@ -1,6 +1,5 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface Video {
   id: string
@@ -18,10 +17,16 @@ interface CarouselGridProps {
   onCategoryChange: (category: string) => void
 }
 
-const VISIBLE_VIDEOS = 5
+// Category color mapping - each category has its own color
+const CATEGORY_COLORS: Record<string, string> = {
+  Partenaires: '#86B89E', // green
+  Culture: '#C084FC', // purple
+  Clubs: '#E85C5C', // red
+  Trésorie: '#F4C98E', // orange/yellow
+  Atelier: '#60A5FA', // blue
+}
 
 export function CarouselGrid({
-  videos,
   categories,
   activeCategory,
   onCategoryChange,
@@ -29,26 +34,27 @@ export function CarouselGrid({
   const [horizontalIndex, setHorizontalIndex] = React.useState(0)
   const activeIndex = categories.indexOf(activeCategory)
 
-  // Calculate video slices for different rows
-  const startIdx = horizontalIndex
-  const activeRowVideos = videos.slice(startIdx, startIdx + VISIBLE_VIDEOS)
-  const topRowVideos = videos.slice(0, 3)
-  const bottomRowVideos = videos.slice(3, 6)
+  // Get colors for top, middle (active), and bottom rows
+  const getRowColor = (rowOffset: number) => {
+    const rowIndex = activeIndex + rowOffset
+    if (rowIndex < 0 || rowIndex >= categories.length) return '#E5E7EB' // gray for out of bounds
+    return CATEGORY_COLORS[categories[rowIndex]] || '#E5E7EB'
+  }
 
   // Handlers for category navigation
   const handlePrevCategory = () => {
-    const newIndex = (activeIndex - 1 + categories.length) % categories.length
-    onCategoryChange(categories[newIndex])
-    setHorizontalIndex(0)
+    if (activeIndex > 0) {
+      onCategoryChange(categories[activeIndex - 1])
+    }
   }
 
   const handleNextCategory = () => {
-    const newIndex = (activeIndex + 1) % categories.length
-    onCategoryChange(categories[newIndex])
-    setHorizontalIndex(0)
+    if (activeIndex < categories.length - 1) {
+      onCategoryChange(categories[activeIndex + 1])
+    }
   }
 
-  // Handlers for video carousel navigation
+  // Handlers for horizontal navigation
   const handlePrevVideo = () => {
     if (horizontalIndex > 0) {
       setHorizontalIndex(horizontalIndex - 1)
@@ -56,39 +62,29 @@ export function CarouselGrid({
   }
 
   const handleNextVideo = () => {
-    if (startIdx + VISIBLE_VIDEOS < videos.length) {
+    if (horizontalIndex < 10) {
       setHorizontalIndex(horizontalIndex + 1)
     }
   }
 
   /**
-   * Renders a video card with scaling animation
-   * @param video - Video object to render
-   * @param scale - Scale factor (0.6, 0.8, or 1)
-   * @param zIndex - Z-index for layering
-   * @param width - Tailwind width class
+   * Renders a video placeholder box
    */
-  const renderVideoCard = (
-    video: Video,
-    scale: number,
-    zIndex: number
-  ) => (
+  const renderVideoBox = (borderColor: string, isCentered: boolean = false, isSmall: boolean = false) => (
     <motion.div
-      key={video.id}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-      className="relative rounded-lg overflow-hidden cursor-pointer transition-all flex-shrink-0"
+      className="relative rounded-sm overflow-hidden bg-pink-100 flex items-center justify-center"
       style={{
-        zIndex,
-        width: scale === 1 ? 'clamp(15rem, 35vw, 32rem)' : scale === 0.8 ? 'clamp(12rem, 28vw, 24rem)' : 'clamp(8rem, 18vw, 16rem)',
-        height: scale === 1 ? 'clamp(12rem, 26vw, 28rem)' : scale === 0.8 ? 'clamp(9rem, 20vw, 22rem)' : 'clamp(6rem, 14vw, 14rem)',
+        border: `3px solid ${borderColor}`,
+        width: isCentered ? '280px' : isSmall ? '120px' : '140px',
+        height: isCentered ? '180px' : isSmall ? '80px' : '90px',
       }}
     >
-      <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
-      {scale === 1 && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-          <svg className="w-12 h-12 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+      {isCentered && (
+        <div className="bg-red-600 rounded-lg p-3">
+          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
           </svg>
         </div>
@@ -96,122 +92,117 @@ export function CarouselGrid({
     </motion.div>
   )
 
-  /**
-   * Renders a row of videos with perspective scaling
-   * @param rowVideos - Array of videos to display
-   * @param isActive - Whether this is the active middle row
-   */
-  const renderRow = (rowVideos: Video[], isActive: boolean) => {
-    const centerIdx = Math.floor(VISIBLE_VIDEOS / 2)
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: isActive ? 0 : 20 }}
-        animate={{ opacity: isActive ? 1 : 0.5, y: 0 }}
-        transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-        className={`flex items-center justify-center gap-4 ${
-          isActive ? 'h-96' : 'h-32'
-        } flex-shrink-0`}
-      >
-        {rowVideos.map((video, idx) => {
-          if (!isActive) {
-            return renderVideoCard(video, 0.6, 1)
-          }
-
-          // For active row, apply perspective scaling based on position
-          const relativeIdx = idx
-          if (relativeIdx === centerIdx - 2) return renderVideoCard(video, 0.6, 1)
-          if (relativeIdx === centerIdx - 1) return renderVideoCard(video, 0.8, 5)
-          if (relativeIdx === centerIdx) return renderVideoCard(video, 1, 10)
-          if (relativeIdx === centerIdx + 1) return renderVideoCard(video, 0.8, 5)
-          if (relativeIdx === centerIdx + 2) return renderVideoCard(video, 0.6, 1)
-          return null
-        })}
-      </motion.div>
-    )
-  }
+  const topRowColor = getRowColor(-1)
+  const middleRowColor = getRowColor(0)
+  const bottomRowColor = getRowColor(1)
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8" style={{ gap: 'clamp(1.5rem, 4vw, 2rem)', marginLeft: 'clamp(4rem, 12vw, 10rem)' }}>
-      {/* Vertical Navigation + Grid Container */}
+    <div className="flex-1 flex flex-col items-center justify-center" style={{ marginLeft: '160px' }}>
+      {/* Main Content - Grid + Vertical Navigation */}
       <div className="flex items-center gap-12">
-        {/* Category Navigation (Vertical) */}
+        {/* 3x3 Grid */}
+        <div className="flex flex-col items-center gap-4">
+          {/* Top Row */}
+          <motion.div 
+            className="flex gap-8 justify-center"
+            animate={{ opacity: activeIndex > 0 ? 1 : 0.3 }}
+          >
+            {renderVideoBox(topRowColor, false, true)}
+            {renderVideoBox(topRowColor, false, true)}
+            {renderVideoBox(topRowColor, false, true)}
+          </motion.div>
+
+          {/* Middle Row - Active with larger center box */}
+          <div className="flex gap-6 items-center justify-center">
+            {renderVideoBox(middleRowColor)}
+            {renderVideoBox(middleRowColor, true)}
+            {renderVideoBox(middleRowColor)}
+          </div>
+
+          {/* Bottom Row */}
+          <motion.div 
+            className="flex gap-8 justify-center"
+            animate={{ opacity: activeIndex < categories.length - 1 ? 1 : 0.3 }}
+          >
+            {renderVideoBox(bottomRowColor, false, true)}
+            {renderVideoBox(bottomRowColor, false, true)}
+            {renderVideoBox(bottomRowColor, false, true)}
+          </motion.div>
+        </div>
+
+        {/* Vertical Navigation */}
         <div className="flex flex-col items-center justify-center gap-2">
           <motion.button
-            whileHover={{ scale: 1.2 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handlePrevCategory}
-            className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
-            style={{ fontFamily: "'Jersey 15'" }}
+            className="text-black text-2xl font-bold"
             aria-label="Previous category"
           >
-            <ChevronUp size={24} className="text-gray-900" />
+            ^
           </motion.button>
 
-          {/* Navigation indicator */}
-          <div className="flex flex-col items-center justify-center relative" style={{ height: '200px', width: '20px', position: 'relative' }}>
-            <div style={{ position: 'absolute', width: '4px', height: '200px', backgroundColor: 'black', left: '50%', transform: 'translateX(-50%)' }} />
+          {/* Vertical slider */}
+          <div className="flex flex-col items-center justify-center relative" style={{ height: '140px', width: '8px' }}>
+            <div style={{ position: 'absolute', width: '2px', height: '100%', backgroundColor: 'black', left: '50%', transform: 'translateX(-50%)' }} />
             <motion.div
-              style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'black', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
-              animate={{
-                top: `${50 + (activeIndex / Math.max(1, categories.length - 1) - 0.5) * 100}%`,
+              style={{ 
+                width: '12px', 
+                height: '12px', 
+                borderRadius: '50%', 
+                backgroundColor: 'black', 
+                position: 'absolute', 
+                left: '50%', 
+                transform: 'translateX(-50%)',
               }}
+              animate={{
+                top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%`,
+              }}
+              transition={{ type: 'spring', damping: 15, stiffness: 150 }}
             />
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.2 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleNextCategory}
-            className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
-            style={{ fontFamily: "'Jersey 15'" }}
+            className="text-black text-2xl font-bold"
             aria-label="Next category"
           >
-            <ChevronDown size={24} className="text-gray-900" />
+            v
           </motion.button>
-        </div>
-
-        {/* Grid Container with 3 Rows */}
-        <div className="flex flex-col items-center justify-center gap-6 flex-1">
-          {/* Top Row - Inactive */}
-          {renderRow(topRowVideos, false)}
-
-          {/* Active Row */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-          >
-            {renderRow(activeRowVideos, true)}
-          </motion.div>
-
-          {/* Bottom Row - Inactive */}
-          {renderRow(bottomRowVideos, false)}
         </div>
       </div>
 
-      {/* Horizontal Navigation - Video Carousel Controls */}
-      <div className="flex items-center justify-center gap-6 mt-4">
+      {/* Horizontal Navigation - Below Grid */}
+      <div className="flex items-center justify-center gap-4 mt-8">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handlePrevVideo}
-          disabled={horizontalIndex === 0}
-          className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          style={{ fontFamily: "'Jersey 15'" }}
-          aria-label="Previous videos"
+          className="text-black text-xl"
+          aria-label="Previous"
         >
-          <ChevronLeft size={24} className="text-gray-900" />
+          {'<'}
         </motion.button>
 
-        {/* Progress indicator */}
-        <div className="flex items-center justify-center relative" style={{ width: '200px', height: '20px', position: 'relative' }}>
-          <div style={{ position: 'absolute', width: '200px', height: '4px', backgroundColor: 'black', top: '50%', transform: 'translateY(-50%)' }} />
+        {/* Horizontal slider */}
+        <div className="flex items-center justify-center relative" style={{ width: '160px', height: '8px' }}>
+          <div style={{ position: 'absolute', width: '100%', height: '2px', backgroundColor: 'black', top: '50%', transform: 'translateY(-50%)' }} />
           <motion.div
-            style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'black', position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)' }}
-            animate={{
-              left: `${50 + (horizontalIndex / Math.max(1, videos.length - VISIBLE_VIDEOS) - 0.5) * 100}%`,
+            style={{ 
+              width: '12px', 
+              height: '12px', 
+              borderRadius: '50%', 
+              backgroundColor: 'black', 
+              position: 'absolute', 
+              top: '50%', 
+              transform: 'translate(-50%, -50%)',
             }}
+            animate={{
+              left: `${(horizontalIndex / 10) * 100}%`,
+            }}
+            transition={{ type: 'spring', damping: 15, stiffness: 150 }}
           />
         </div>
 
@@ -219,12 +210,10 @@ export function CarouselGrid({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handleNextVideo}
-          disabled={startIdx + VISIBLE_VIDEOS >= videos.length}
-          style={{ fontFamily: "'Jersey 15'" }}
-          className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next videos"
+          className="text-black text-xl"
+          aria-label="Next"
         >
-          <ChevronRight size={24} className="text-gray-900" />
+          {'>'}
         </motion.button>
       </div>
     </div>
