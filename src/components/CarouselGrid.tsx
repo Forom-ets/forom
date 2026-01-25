@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { VideoBox } from './VideoBox'
+import { VideoModal } from './VideoModal'
+import { getVideoId, getVideoData } from '../data/videos'
 
 // =============================================================================
 // TYPES
@@ -56,8 +59,13 @@ export function CarouselGrid({
 }: CarouselGridProps) {
   // Start at position 10 so center rectangle shows 10 (middle of 0-19)
   const [horizontalIndex, setHorizontalIndex] = useState(10)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
+
+  // Get current video data for modal
+  const currentVideoData = getVideoData(categories[activeIndex], horizontalIndex)
+  const currentColor = CATEGORY_COLORS[categories[activeIndex]] ?? DEFAULT_COLOR
 
   // ---------------------------------------------------------------------------
   // Helper Functions
@@ -109,6 +117,8 @@ export function CarouselGrid({
     let lastAxis: 'x' | 'y' | null = null
 
     const handleWheel = (e: WheelEvent) => {
+      // Don't handle wheel events if modal is open
+      if (isModalOpen) return
       if (!gridRef.current?.contains(e.target as Node)) return
       e.preventDefault()
 
@@ -144,7 +154,7 @@ export function CarouselGrid({
       node.addEventListener('wheel', handleWheel, { passive: false })
       return () => node.removeEventListener('wheel', handleWheel)
     }
-  }, [handlePrevCategory, handleNextCategory, handlePrevVideo, handleNextVideo])
+  }, [isModalOpen, handlePrevCategory, handleNextCategory, handlePrevVideo, handleNextVideo])
 
   /** Handle click on a video box to navigate to it */
   const handleBoxClick = (rowOffset: number, colOffset: number) => {
@@ -170,62 +180,6 @@ export function CarouselGrid({
   // Render Helpers
   // ---------------------------------------------------------------------------
 
-  /** Renders a video placeholder box with responsive sizing */
-  const renderVideoBox = (
-    borderColor: string,
-    num: number | null,
-    isCentered = false,
-    isSmall = false,
-    isExtraSmall = false,
-    onClick?: () => void
-  ) => {
-    // Don't render if num is null (out of bounds)
-    const dimensions = isCentered
-      ? { width: '14vw', height: '9.5vw', minWidth: '140px', minHeight: '95px' }
-      : isExtraSmall
-        ? { width: '3vw', height: '2vw', minWidth: '30px', minHeight: '20px' }
-        : isSmall
-          ? { width: '6vw', height: '4vw', minWidth: '60px', minHeight: '40px' }
-          : { width: '8vw', height: '5.5vw', minWidth: '80px', minHeight: '55px' }
-
-    if (num === null) {
-      return <div style={{ ...dimensions, visibility: 'hidden' }} />
-    }
-
-    const fontSize = isCentered
-      ? 'clamp(24px, 2.5vw, 48px)'
-      : isExtraSmall
-        ? 'clamp(8px, 1vw, 14px)'
-        : isSmall
-          ? 'clamp(14px, 1.5vw, 24px)'
-          : 'clamp(16px, 1.8vw, 28px)'
-
-    return (
-      <motion.div
-        key={num}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-        className="relative rounded-sm overflow-hidden flex items-center justify-center transition-colors duration-300"
-        onClick={onClick}
-        whileHover={onClick ? { scale: 1.05 } : undefined}
-        style={{ 
-          border: `3px solid ${borderColor}`, 
-          backgroundColor: isDark ? '#27272a' : '#fce7f3',
-          ...dimensions,
-          cursor: onClick ? 'pointer' : 'default'
-        }}
-      >
-        <span 
-          className="font-bold transition-colors duration-300" 
-          style={{ fontSize, color: isDark ? '#a1a1aa' : '#4b5563' }}
-        >
-          {num}
-        </span>
-      </motion.div>
-    )
-  }
-
   /** Returns video number based on row offset and column position (0-99 total, 20 per row) */
   const getVideoNum = (rowOffset: number, col: number): number | null => {
     // Calculate the actual category index for this row
@@ -241,6 +195,20 @@ export function CarouselGrid({
     if (num < baseNumber || num >= baseNumber + 20) return null
     
     return num
+  }
+
+  /** Returns YouTube video ID based on row offset and column position */
+  const getYouTubeId = (rowOffset: number, col: number): string | null => {
+    const rowCategoryIndex = activeIndex + rowOffset
+    if (rowCategoryIndex < 0 || rowCategoryIndex >= categories.length) return null
+    
+    const category = categories[rowCategoryIndex]
+    const videoIndex = horizontalIndex + col
+    
+    // Check bounds for the 20 videos per category
+    if (videoIndex < 0 || videoIndex >= 20) return null
+    
+    return getVideoId(category, videoIndex)
   }
 
   // ---------------------------------------------------------------------------
@@ -262,17 +230,29 @@ export function CarouselGrid({
         {[-2, -1, 0, 1, 2].map((col) => {
           // Center box of the middle row gets special treatment
           const isCentered = rowOffset === 0 && col === 0
+          const videoNum = getVideoNum(rowOffset, col)
+          const youtubeId = getYouTubeId(rowOffset, col)
+          
+          // Check if centered box has video data for info button
+          const videoData = isCentered 
+            ? getVideoData(categories[activeIndex], horizontalIndex)
+            : null
+          const hasInfo = Boolean(videoData?.title || videoData?.description)
+          
           return (
-            <div key={`${rowOffset}-${col}`}>
-              {renderVideoBox(
-                rowColor,
-                getVideoNum(rowOffset, col),
-                isCentered,
-                isSmall,
-                isExtraSmall,
-                () => handleBoxClick(rowOffset, col)
-              )}
-            </div>
+            <VideoBox
+              key={`${rowOffset}-${col}`}
+              videoId={youtubeId}
+              borderColor={rowColor}
+              displayNumber={videoNum}
+              isCentered={isCentered}
+              isSmall={isSmall}
+              isExtraSmall={isExtraSmall}
+              isDark={isDark}
+              onClick={() => handleBoxClick(rowOffset, col)}
+              onInfoClick={isCentered ? () => setIsModalOpen(true) : undefined}
+              hasInfo={hasInfo}
+            />
           )
         })}
       </motion.div>
@@ -404,6 +384,16 @@ export function CarouselGrid({
           {'>'}
         </motion.button>
       </nav>
+
+      {/* Video Info Modal */}
+      <VideoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        videoId={currentVideoData?.youtubeId ?? null}
+        title={currentVideoData?.title ?? null}
+        description={currentVideoData?.description ?? null}
+        borderColor={currentColor}
+      />
     </div>
   )
 }
