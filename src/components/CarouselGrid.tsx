@@ -237,14 +237,8 @@ export function CarouselGrid({
     return num
   }
 
-  /** Check if a row is visible (within category bounds) */
-  const isRowVisible = (rowOffset: number): boolean => {
-    // Always return true to maintain layout stability
-    return true
-  }
-
   // ---------------------------------------------------------------------------
-  // Super 10x Grid Logic Render Helper
+  // Grid Render Logic
   // ---------------------------------------------------------------------------
 
   const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {

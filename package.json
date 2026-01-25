@@ -1,7 +1,8 @@
 {
-  "name": "forom",
+  "name": "frm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "FRM - The Infinite Feed Grid. A scalable, category-based navigation system by Forom.",
   "type": "module",
   "scripts": {
     "dev": "vite",
