@@ -37,19 +37,41 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
 
   // Handle mouse wheel scrolling for category navigation
   useEffect(() => {
+    // Smooth/resistant wheel scrolling: accumulate deltaY and trigger
+    // navigation only when a threshold is reached, then apply cooldown.
+    const THRESHOLD = 60 // required accumulated delta before action
+    const COOLDOWN_MS = 350 // cooldown period to avoid rapid repeats
+
+    let acc = 0
+    let cooling = false
+
     const handleWheel = (e: WheelEvent) => {
       if (!wheelRef.current?.contains(e.target as Node)) return
-
       e.preventDefault()
-      const currentIndex = items.findIndex((item) => item.id === activeId)
-      if (currentIndex === -1) return
 
-      const nextIndex = e.deltaY > 0
-        ? Math.min(currentIndex + 1, items.length - 1)
-        : Math.max(currentIndex - 1, 0)
+      if (cooling) return
 
-      if (nextIndex !== currentIndex) {
-        onSelect(items[nextIndex].id)
+      // accumulate vertical deltas only (sidebar is vertical)
+      acc += e.deltaY
+
+      if (Math.abs(acc) >= THRESHOLD) {
+        const currentIndex = items.findIndex((item) => item.id === activeId)
+        if (currentIndex === -1) {
+          acc = 0
+          return
+        }
+
+        const nextIndex = acc > 0
+          ? Math.min(currentIndex + 1, items.length - 1)
+          : Math.max(currentIndex - 1, 0)
+
+        if (nextIndex !== currentIndex) {
+          onSelect(items[nextIndex].id)
+        }
+
+        acc = 0
+        cooling = true
+        setTimeout(() => { cooling = false }, COOLDOWN_MS)
       }
     }
 

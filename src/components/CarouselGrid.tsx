@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 // =============================================================================
@@ -55,6 +55,7 @@ export function CarouselGrid({
   // Start at position 10 so center rectangle shows 10 (middle of 0-19)
   const [horizontalIndex, setHorizontalIndex] = useState(10)
   const activeIndex = categories.indexOf(activeCategory)
+  const gridRef = useRef<HTMLDivElement | null>(null)
 
   // ---------------------------------------------------------------------------
   // Helper Functions
@@ -95,6 +96,53 @@ export function CarouselGrid({
       setHorizontalIndex(0)
     }
   }
+
+  // Handle mouse wheel with resistance and cooldown to avoid rapid skips
+  useEffect(() => {
+    const THRESHOLD = 80 // required accumulated delta before action
+    const COOLDOWN_MS = 450 // cooldown after a triggered navigation
+
+    let acc = 0
+    let cooling = false
+    let lastAxis: 'x' | 'y' | null = null
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!gridRef.current?.contains(e.target as Node)) return
+      e.preventDefault()
+
+      const isVertical = Math.abs(e.deltaY) > Math.abs(e.deltaX)
+      const axis = isVertical ? 'y' : 'x'
+      const delta = isVertical ? e.deltaY : e.deltaX
+
+      // Reset accumulator when axis changes
+      if (lastAxis && lastAxis !== axis) acc = 0
+      lastAxis = axis
+
+      if (cooling) return
+
+      acc += delta
+
+      if (Math.abs(acc) >= THRESHOLD) {
+        if (isVertical) {
+          if (acc > 0) handleNextCategory()
+          else handlePrevCategory()
+        } else {
+          if (acc > 0) handleNextVideo()
+          else handlePrevVideo()
+        }
+
+        acc = 0
+        cooling = true
+        setTimeout(() => { cooling = false }, COOLDOWN_MS)
+      }
+    }
+
+    const node = gridRef.current
+    if (node) {
+      node.addEventListener('wheel', handleWheel, { passive: false })
+      return () => node.removeEventListener('wheel', handleWheel)
+    }
+  }, [handlePrevCategory, handleNextCategory, handlePrevVideo, handleNextVideo])
 
   /** Handle click on a video box to navigate to it */
   const handleBoxClick = (rowOffset: number, colOffset: number) => {
@@ -237,7 +285,7 @@ export function CarouselGrid({
       style={{ paddingLeft: '22vw', paddingRight: '22vw', paddingTop: '17vh', paddingBottom: '22vh' }}
     >
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
-      <div className="relative flex items-center justify-center pointer-events-auto">
+      <div ref={gridRef} className="relative flex items-center justify-center pointer-events-auto">
         {/* 5x5 Grid - centered */}
         <div className="flex flex-col items-center" style={{ gap: '1.5vh' }}>
           {/* Extra Top Row (-2) */}
