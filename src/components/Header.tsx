@@ -30,6 +30,7 @@ export function Header() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="bg-white py-6 px-16"
+      style={{ paddingTop: '5vh' }}
     >
       <div className="flex items-center justify-center gap-4">
         {LOGO_LETTERS.map((letter, index) => (
