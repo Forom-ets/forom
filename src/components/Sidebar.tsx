@@ -15,6 +15,7 @@ interface SidebarProps {
   items: SidebarItem[]
   activeId: string
   onSelect: (id: string) => void
+  isDark?: boolean
 }
 
 // =============================================================================
@@ -31,7 +32,7 @@ const CURVE_INTENSITY = 12
 // COMPONENT
 // =============================================================================
 
-export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
+export function Sidebar({ items, activeId, onSelect, isDark = false }: SidebarProps) {
   const wheelRef = useRef<HTMLDivElement>(null)
   const activeIndex = items.findIndex((item) => item.id === activeId)
 
@@ -94,10 +95,12 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
     >
       {/* Decorative Wheel Circle */}
       <div
-        className="absolute rounded-full w-full h-full left-0"
+        className="absolute rounded-full w-full h-full left-0 transition-all duration-300"
         style={{
-          border: '3px solid #9ca3af',
-          background: 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
+          border: `3px solid ${isDark ? '#52525b' : '#9ca3af'}`,
+          background: isDark 
+            ? 'linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%)' 
+            : 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
         }}
       />
 
@@ -122,13 +125,15 @@ export function Sidebar({ items, activeId, onSelect }: SidebarProps) {
               onClick={() => onSelect(item.id)}
               animate={{ y, x: xOffset, opacity }}
               transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-              className="absolute whitespace-nowrap text-left"
+              className="absolute whitespace-nowrap text-left transition-colors duration-300"
               style={{
                 fontFamily: "'Jersey 15', sans-serif",
                 fontSize: isActive ? '3rem' : '1.75rem',
                 fontWeight: isActive ? 900 : 400,
                 fontStyle: isActive ? 'normal' : 'italic',
-                color: isActive ? '#000000' : '#9CA3AF',
+                color: isActive 
+                  ? (isDark ? '#ffffff' : '#000000') 
+                  : (isDark ? '#71717a' : '#9CA3AF'),
                 cursor: 'pointer',
                 background: 'none',
                 border: 'none',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
@@ -39,7 +39,7 @@ function Modal({
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
+            animate={{ opacity: 0.7 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 bg-black z-[60] cursor-pointer"
@@ -49,24 +49,68 @@ function Modal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white rounded-xl shadow-2xl z-[70] p-8 flex flex-col border-4 border-black"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-xl shadow-2xl z-[70] p-8 flex flex-col border-4 transition-colors duration-300"
+            style={{ 
+              backgroundColor: 'var(--color-surface)', 
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text)'
+            }}
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold font-['Montserrat']">{title}</h2>
               <button 
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-xl transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition-colors"
+                style={{ backgroundColor: 'var(--color-bg-secondary)' }}
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-auto text-lg text-gray-600">
+            <div className="flex-1 overflow-auto text-lg" style={{ color: 'var(--color-text-secondary)' }}>
               {children}
             </div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
+  )
+}
+
+/** Modern Theme Toggle Switch */
+function ThemeToggle({ 
+  isDark, 
+  onToggle 
+}: { 
+  isDark: boolean
+  onToggle: () => void 
+}) {
+  return (
+    <motion.button
+      onClick={onToggle}
+      className="relative flex items-center justify-between rounded-full p-1 cursor-pointer"
+      style={{
+        width: '56px',
+        height: '28px',
+        backgroundColor: isDark ? '#3b82f6' : '#e5e7eb',
+        border: '2px solid',
+        borderColor: isDark ? '#2563eb' : '#d1d5db',
+      }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {/* Sun icon */}
+      <span className="text-xs" style={{ opacity: isDark ? 0.4 : 1 }}>☀️</span>
+      {/* Moon icon */}
+      <span className="text-xs" style={{ opacity: isDark ? 1 : 0.4 }}>🌙</span>
+      {/* Toggle knob */}
+      <motion.div
+        className="absolute rounded-full bg-white shadow-md"
+        style={{ width: '20px', height: '20px', top: '2px' }}
+        animate={{ left: isDark ? '32px' : '2px' }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      />
+    </motion.button>
   )
 }
 
@@ -77,6 +121,16 @@ function Modal({
 function App() {
   const [activeCategory, setActiveCategory] = useState('Clubs')
   const [activeModal, setActiveModal] = useState<'token' | 'support' | null>(null)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDarkMode])
 
   // Map categories to sidebar items
   const sidebarItems = CATEGORIES.map((category) => ({
@@ -85,14 +139,25 @@ function App() {
     disabled: false,
   }))
 
-  const cornerIconStyle = "rounded-full overflow-hidden cursor-pointer shadow-lg hover:shadow-xl bg-white border-2 border-transparent hover:border-black transition-all flex items-center justify-center"
-  const cornerIconSize = { width: '64px', height: '64px' } // Explicit sizing
+  const cornerIconStyle = "rounded-full overflow-hidden cursor-pointer shadow-lg hover:shadow-xl border-2 border-transparent transition-all flex items-center justify-center"
+  const cornerIconSize = { width: '64px', height: '64px' }
 
   return (
-    <div className="h-screen bg-white overflow-hidden relative">
+    <div 
+      className="h-screen overflow-hidden relative transition-colors duration-300"
+      style={{ backgroundColor: 'var(--color-bg)' }}
+    >
+      {/* Theme Toggle - Bottom Right */}
+      <div 
+        className="fixed z-50 flex items-center gap-2"
+        style={{ bottom: '32px', right: '32px' }}
+      >
+        <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+      </div>
       <Header 
         onTokenClick={() => setActiveModal('token')}
         onSupportClick={() => setActiveModal('support')}
+        isDark={isDarkMode}
       />
 
       {/* --------------------------------------------------------------------------
@@ -105,7 +170,7 @@ function App() {
         target="_blank"
         rel="noopener noreferrer"
         className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, top: '32px', left: '32px' }}
+        style={{ ...cornerIconSize, top: '32px', left: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
         whileHover={{ scale: 1.1, rotate: -5 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -115,11 +180,16 @@ function App() {
       {/* Top Right - User */}
       <motion.div
         className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, top: '32px', right: '32px' }}
+        style={{ ...cornerIconSize, top: '32px', right: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
         whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.95 }}
       >
-        <img src={userIcon} alt="User Profile" className="w-full h-full object-cover" />
+        <img
+          src={userIcon}
+          alt="User Profile"
+          className="w-3/4 h-3/4 object-contain"
+          style={{ filter: isDarkMode ? 'invert(1)' : 'none' }}
+        />
       </motion.div>
 
       {/* Bottom Left - Wiki */}
@@ -128,7 +198,7 @@ function App() {
         target="_blank"
         rel="noopener noreferrer"
         className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, bottom: '32px', left: '32px' }}
+        style={{ ...cornerIconSize, bottom: '32px', left: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
         whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -143,12 +213,14 @@ function App() {
         items={sidebarItems}
         activeId={activeCategory}
         onSelect={setActiveCategory}
+        isDark={isDarkMode}
       />
 
       <CarouselGrid
         categories={CATEGORIES}
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
+        isDark={isDarkMode}
       />
 
       {/* --------------------------------------------------------------------------

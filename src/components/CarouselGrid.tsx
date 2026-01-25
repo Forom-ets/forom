@@ -9,6 +9,7 @@ interface CarouselGridProps {
   categories: string[]
   activeCategory: string
   onCategoryChange: (category: string) => void
+  isDark?: boolean
 }
 
 // =============================================================================
@@ -31,17 +32,17 @@ const DEFAULT_COLOR = '#E5E7EB'
 const MAX_HORIZONTAL_INDEX = 19
 
 /** Shared styles for navigation buttons */
-const navButtonStyle: React.CSSProperties = {
+const getNavButtonStyle = (isDark: boolean): React.CSSProperties => ({
   fontFamily: "'Jersey 15', sans-serif",
   fontSize: '42px',
-  color: 'black',
+  color: isDark ? '#ffffff' : '#000000',
   background: 'none',
   border: 'none',
   cursor: 'pointer',
   lineHeight: 1,
   padding: '8px',
   userSelect: 'none',
-}
+})
 
 // =============================================================================
 // COMPONENT
@@ -51,6 +52,7 @@ export function CarouselGrid({
   categories,
   activeCategory,
   onCategoryChange,
+  isDark = false,
 }: CarouselGridProps) {
   // Start at position 10 so center rectangle shows 10 (middle of 0-19)
   const [horizontalIndex, setHorizontalIndex] = useState(10)
@@ -204,16 +206,20 @@ export function CarouselGrid({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-        className="relative rounded-sm overflow-hidden bg-pink-100 flex items-center justify-center"
+        className="relative rounded-sm overflow-hidden flex items-center justify-center transition-colors duration-300"
         onClick={onClick}
         whileHover={onClick ? { scale: 1.05 } : undefined}
         style={{ 
           border: `3px solid ${borderColor}`, 
+          backgroundColor: isDark ? '#27272a' : '#fce7f3',
           ...dimensions,
           cursor: onClick ? 'pointer' : 'default'
         }}
       >
-        <span className="font-bold text-gray-600" style={{ fontSize }}>
+        <span 
+          className="font-bold transition-colors duration-300" 
+          style={{ fontSize, color: isDark ? '#a1a1aa' : '#4b5563' }}
+        >
           {num}
         </span>
       </motion.div>
@@ -309,7 +315,7 @@ export function CarouselGrid({
             whileTap={{ scale: 0.9 }}
             onClick={handlePrevCategory}
             className="nav-button"
-            style={navButtonStyle}
+            style={getNavButtonStyle(isDark)}
             aria-label="Previous category"
           >
             ^
@@ -320,9 +326,13 @@ export function CarouselGrid({
             className="flex flex-col items-center justify-center relative"
             style={{ height: '200px', width: '24px' }}
           >
-            <div className="absolute w-[3px] h-full bg-black left-1/2 -translate-x-1/2" />
+            <div 
+              className="absolute w-[3px] h-full left-1/2 -translate-x-1/2 transition-colors duration-300" 
+              style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
+            />
             <motion.div
-              className="absolute w-6 h-6 rounded-full bg-black left-1/2 -translate-x-1/2"
+              className="absolute w-6 h-6 rounded-full left-1/2 -translate-x-1/2 transition-colors duration-300"
+              style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
               animate={{ top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%` }}
               transition={{ type: 'spring', damping: 15, stiffness: 150 }}
             />
@@ -332,7 +342,7 @@ export function CarouselGrid({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleNextCategory}
-            style={navButtonStyle}
+            style={getNavButtonStyle(isDark)}
             aria-label="Next category"
           >
             v
@@ -350,7 +360,7 @@ export function CarouselGrid({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handlePrevVideo}
-          style={navButtonStyle}
+          style={getNavButtonStyle(isDark)}
           aria-label="Previous video"
         >
           {'<'}
@@ -358,9 +368,13 @@ export function CarouselGrid({
 
         {/* Horizontal Slider Track */}
         <div className="flex items-center justify-center relative" style={{ width: '300px', height: '24px' }}>
-          <div className="absolute w-full h-[3px] bg-black top-1/2 -translate-y-1/2" />
+          <div 
+            className="absolute w-full h-[3px] top-1/2 -translate-y-1/2 transition-colors duration-300" 
+            style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
+          />
           <motion.div
-            className="absolute w-6 h-6 rounded-full bg-black top-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="absolute w-6 h-6 rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-300"
+            style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
             animate={{ left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%` }}
             transition={{ type: 'spring', damping: 15, stiffness: 150 }}
           />
@@ -370,7 +384,7 @@ export function CarouselGrid({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handleNextVideo}
-          style={navButtonStyle}
+          style={getNavButtonStyle(isDark)}
           aria-label="Next video"
         >
           {'>'}

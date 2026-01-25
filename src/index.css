@@ -17,23 +17,72 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Root Variables */
+/* =============================================================================
+   Theme Variables
+   ============================================================================= */
+
 :root {
+  /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light;
-  color: #000000;
-  background-color: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Light Theme (default) */
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f3f4f6;
+  --color-bg-tertiary: #e5e7eb;
+  --color-text: #000000;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #000000;
+  --color-border-light: #d1d5db;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-grid-box: #fce7f3;
+  --color-wheel-bg: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  --color-wheel-border: #9ca3af;
+
+  color-scheme: light;
+  color: var(--color-text);
+  background-color: var(--color-bg);
 }
 
-/* Base Body Styles */
+/* Dark Theme */
+.dark {
+  --color-bg: #0f0f0f;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-tertiary: #2a2a2a;
+  --color-text: #ffffff;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-border: #ffffff;
+  --color-border-light: #3f3f46;
+  --color-surface: #18181b;
+  --color-surface-hover: #27272a;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-grid-box: #27272a;
+  --color-wheel-bg: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  --color-wheel-border: #52525b;
+
+  color-scheme: dark;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* =============================================================================
+   Base Styles
+   ============================================================================= */
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
