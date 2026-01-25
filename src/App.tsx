@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { CarouselGrid } from './components/CarouselGrid'
+import { SupportModal } from './components/SupportModal'
 
 // Import Icons
 import userIcon from './assets/icons/user.png'
@@ -194,7 +195,7 @@ function App() {
 
       {/* Bottom Left - Wiki */}
       <motion.a
-        href="https://cedille.etsmtl.ca/"
+        href="https://wiki.etsmtl.club/share/8cnz7bzxf3/p/services-offerts-j8LxYBFxrs"
         target="_blank"
         rel="noopener noreferrer"
         className={`absolute z-50 ${cornerIconStyle}`}
@@ -230,38 +231,39 @@ function App() {
       <Modal 
         isOpen={activeModal === 'token'} 
         onClose={() => setActiveModal(null)}
-        title="Forom Tokens"
+        title="The FOROM Ecosystem"
       >
         <div className="flex flex-col gap-4">
-          <p>
-            Welcome to the Token system explanation.
-          </p>
-          <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 italic border-2 border-dashed border-gray-300">
-            Token Info Placeholder
+          <p className="text-lg font-medium text-zinc-600 dark:text-zinc-300">Learn to earn. Support to build.</p>
+
+          <section className="pt-2 pb-2">
+            <h3 className="text-xl font-semibold text-black dark:text-white">How to Earn</h3>
+            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+              Knowledge is currency here. For every tutorial you complete, you automatically earn <span className="font-semibold">1,000 Tokens</span>.
+              The more you learn, the more you collect.
+            </p>
+          </section>
+
+          <section className="pt-2 pb-2">
+            <h3 className="text-xl font-semibold text-black dark:text-white">How to Support</h3>
+            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+              Want to push the project further? You can acquire tokens to directly finance the development team.
+              Your contributions help us create new iterations, fund new projects, and improve the application faster.
+            </p>
+          </section>
+
+          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-sm italic text-zinc-500 dark:text-zinc-400">
+              Whether you earn them or buy them, your tokens fuel the collective. Use them to vote on the next big update.
+            </p>
           </div>
-          <p className="text-sm">
-            This container will be populated with more detailed information about how tokens work within the Forom ecosystem later.
-          </p>
         </div>
       </Modal>
 
-      <Modal 
+      <SupportModal 
         isOpen={activeModal === 'support'} 
         onClose={() => setActiveModal(null)}
-        title="Support Center"
-      >
-        <div className="flex flex-col gap-4">
-          <p>
-            Need help? Here is how support works at Forom.
-          </p>
-          <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 italic border-2 border-dashed border-gray-300">
-            Support Info Placeholder
-          </div>
-          <p className="text-sm">
-            Contact us for technical assistant or platform guidance.
-          </p>
-        </div>
-      </Modal>
+      />
 
     </div>
   )

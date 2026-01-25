@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import contactIcon from '../assets/icons/contact.png'
 import supportIcon from '../assets/icons/support.png'
 import tokenIcon from '../assets/icons/tokens.png'
+import cedilleIcon from '../assets/icons/cedille.png'
 
 // =============================================================================
 // CONSTANTS
@@ -49,7 +50,7 @@ export function Header({ onTokenClick, onSupportClick, isDark = false }: HeaderP
       className="pt-4 pb-4 px-16 relative z-50 flex flex-col items-center gap-6 transition-colors duration-300"
       style={{ paddingTop: '2vh', backgroundColor: 'var(--color-bg)' }}
     >
-      <div className="flex items-center justify-center gap-4">
+      <div className="relative flex items-center justify-center gap-4">
         {LOGO_LETTERS.map((letter, index) => (
           <motion.span
             key={index}
@@ -74,6 +75,27 @@ export function Header({ onTokenClick, onSupportClick, isDark = false }: HeaderP
             {letter.text}
           </motion.span>
         ))}
+        {/* Tiny cedille easter-egg dot (very small, links to Cedille) */}
+        <a
+          href="https://cedille.etsmtl.ca/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Cedille"
+          style={{
+            position: 'absolute',
+            right: '-22px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '18px',
+            height: '18px',
+            display: 'block',
+            borderRadius: '9999px',
+            overflow: 'visible',
+            cursor: 'pointer'
+          }}
+        >
+          <img src={cedilleIcon} alt="Cedille" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+        </a>
       </div>
 
       <div className="flex items-center justify-between mt-32" style={{ width: '240px', marginTop: '4vh' }}>

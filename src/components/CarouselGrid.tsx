@@ -326,16 +326,23 @@ export function CarouselGrid({
             className="flex flex-col items-center justify-center relative"
             style={{ height: '200px', width: '24px' }}
           >
-            <div 
-              className="absolute w-[3px] h-full left-1/2 -translate-x-1/2 transition-colors duration-300" 
-              style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
-            />
-            <motion.div
-              className="absolute w-6 h-6 rounded-full left-1/2 -translate-x-1/2 transition-colors duration-300"
-              style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
-              animate={{ top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%` }}
-              transition={{ type: 'spring', damping: 15, stiffness: 150 }}
-            />
+              <div
+                className="absolute w-[2px] h-full left-1/2 -translate-x-1/2 transition-colors duration-300"
+                style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
+              />
+              <motion.div
+                className="absolute rounded-full left-1/2 -translate-x-1/2 transition-colors duration-300"
+                style={{
+                    width: '32px',
+                    height: '32px',
+                    backgroundColor: isDark ? '#ffffff' : '#000000',
+                    boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
+                    border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
+                    zIndex: 40
+                  }}
+                animate={{ top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%` }}
+                transition={{ type: 'spring', damping: 15, stiffness: 150 }}
+              />
           </div>
 
           <motion.button
@@ -368,16 +375,23 @@ export function CarouselGrid({
 
         {/* Horizontal Slider Track */}
         <div className="flex items-center justify-center relative" style={{ width: '300px', height: '24px' }}>
-          <div 
-            className="absolute w-full h-[3px] top-1/2 -translate-y-1/2 transition-colors duration-300" 
-            style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
-          />
-          <motion.div
-            className="absolute w-6 h-6 rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-300"
-            style={{ backgroundColor: isDark ? '#ffffff' : '#000000' }}
-            animate={{ left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%` }}
-            transition={{ type: 'spring', damping: 15, stiffness: 150 }}
-          />
+            <div
+              className="absolute w-full h-[2px] top-1/2 -translate-y-1/2 transition-colors duration-300"
+              style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
+            />
+            <motion.div
+              className="absolute rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-300"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: isDark ? '#ffffff' : '#000000',
+                boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
+                border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
+                zIndex: 40
+              }}
+              animate={{ left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%` }}
+              transition={{ type: 'spring', damping: 15, stiffness: 150 }}
+            />
         </div>
 
         <motion.button
