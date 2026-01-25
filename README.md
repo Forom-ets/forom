@@ -5,6 +5,7 @@ An interactive category-based navigation interface built with React, TypeScript,
 ## Features
 
 - 🎯 **Interactive Grid Navigation** - Navigate through content with a responsive 3x3 video grid
+- 🚀 **Super 10x Grid Logic** - Advanced infinite looping and smart category boundary management
 - 🎨 **Category Wheel** - Unique wheel-based sidebar for category selection
 - ✨ **Smooth Animations** - Fluid transitions powered by Framer Motion
 - 🎡 **Scroll Navigation** - Mouse wheel support for effortless browsing

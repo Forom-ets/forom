@@ -28,7 +28,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = '#E5E7EB'
 
 /** Maximum horizontal scroll index (20 rectangles per row - 5 visible = 15) */
-const MAX_HORIZONTAL_INDEX = 17
+const MAX_HORIZONTAL_INDEX = 19
 
 /** Shared styles for navigation buttons */
 const navButtonStyle: React.CSSProperties = {
@@ -81,11 +81,39 @@ export function CarouselGrid({
 
   const handlePrevVideo = () => {
     // Don't go below 0 (leftmost column shows 0)
-    if (horizontalIndex > 2) setHorizontalIndex(horizontalIndex - 1)
+    if (horizontalIndex > 0) {
+      setHorizontalIndex(horizontalIndex - 1)
+    } else {
+      setHorizontalIndex(MAX_HORIZONTAL_INDEX)
+    }
   }
 
   const handleNextVideo = () => {
-    if (horizontalIndex < MAX_HORIZONTAL_INDEX) setHorizontalIndex(horizontalIndex + 1)
+    if (horizontalIndex < MAX_HORIZONTAL_INDEX) {
+      setHorizontalIndex(horizontalIndex + 1)
+    } else {
+      setHorizontalIndex(0)
+    }
+  }
+
+  /** Handle click on a video box to navigate to it */
+  const handleBoxClick = (rowOffset: number, colOffset: number) => {
+    // 1. Update Category if clicking a different row
+    if (rowOffset !== 0) {
+      const newRowIndex = activeIndex + rowOffset
+      if (newRowIndex >= 0 && newRowIndex < categories.length) {
+        onCategoryChange(categories[newRowIndex])
+      }
+    }
+
+    // 2. Center the clicked video (update horizontal index)
+    if (colOffset !== 0) {
+      const newIndex = horizontalIndex + colOffset
+      // Respect existing bounds (2 to MAX_HORIZONTAL_INDEX)
+      if (newIndex >= 0 && newIndex <= MAX_HORIZONTAL_INDEX) {
+        setHorizontalIndex(newIndex)
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -98,11 +126,10 @@ export function CarouselGrid({
     num: number | null,
     isCentered = false,
     isSmall = false,
-    isExtraSmall = false
+    isExtraSmall = false,
+    onClick?: () => void
   ) => {
     // Don't render if num is null (out of bounds)
-    if (num === null) return null
-    
     const dimensions = isCentered
       ? { width: '14vw', height: '9.5vw', minWidth: '140px', minHeight: '95px' }
       : isExtraSmall
@@ -110,6 +137,10 @@ export function CarouselGrid({
         : isSmall
           ? { width: '6vw', height: '4vw', minWidth: '60px', minHeight: '40px' }
           : { width: '8vw', height: '5.5vw', minWidth: '80px', minHeight: '55px' }
+
+    if (num === null) {
+      return <div style={{ ...dimensions, visibility: 'hidden' }} />
+    }
 
     const fontSize = isCentered
       ? 'clamp(24px, 2.5vw, 48px)'
@@ -126,7 +157,13 @@ export function CarouselGrid({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', damping: 12, stiffness: 100 }}
         className="relative rounded-sm overflow-hidden bg-pink-100 flex items-center justify-center"
-        style={{ border: `3px solid ${borderColor}`, ...dimensions }}
+        onClick={onClick}
+        whileHover={onClick ? { scale: 1.05 } : undefined}
+        style={{ 
+          border: `3px solid ${borderColor}`, 
+          ...dimensions,
+          cursor: onClick ? 'pointer' : 'default'
+        }}
       >
         <span className="font-bold text-gray-600" style={{ fontSize }}>
           {num}
@@ -144,23 +181,55 @@ export function CarouselGrid({
     // Each category has 20 numbers: category 0 = 0-19, category 1 = 20-39, etc.
     const baseNumber = rowCategoryIndex * 20
     const num = baseNumber + horizontalIndex + col
-    // Don't show negative numbers or numbers >= 100
-    if (num < 0 || num >= 100) return null
+    
+    // Strict bounds check: only return number if it belongs to this category's range
+    // This ensures no "leaking" of numbers from adjacent categories into the current row
+    if (num < baseNumber || num >= baseNumber + 20) return null
+    
     return num
   }
 
   /** Check if a row is visible (within category bounds) */
   const isRowVisible = (rowOffset: number): boolean => {
-    const rowCategoryIndex = activeIndex + rowOffset
-    return rowCategoryIndex >= 0 && rowCategoryIndex < categories.length
+    // Always return true to maintain layout stability
+    return true
   }
 
-  // Pre-compute all row colors
-  const extraTopRowColor = getRowColor(-2)
-  const secondTopRowColor = getRowColor(-1)
-  const middleRowColor = getRowColor(0)
-  const bottomRowColor = getRowColor(1)
-  const extraBottomRowColor = getRowColor(2)
+  // ---------------------------------------------------------------------------
+  // Super 10x Grid Logic Render Helper
+  // ---------------------------------------------------------------------------
+
+  const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
+    const rowColor = getRowColor(rowOffset)
+    const isSmall = Math.abs(rowOffset) === 1
+    const isExtraSmall = Math.abs(rowOffset) === 2
+    
+    return (
+      <motion.div 
+        key={rowOffset}
+        className="flex items-center justify-center"
+        style={{ gap }}
+        animate={{ opacity }}
+      >
+        {[-2, -1, 0, 1, 2].map((col) => {
+          // Center box of the middle row gets special treatment
+          const isCentered = rowOffset === 0 && col === 0
+          return (
+            <div key={`${rowOffset}-${col}`}>
+              {renderVideoBox(
+                rowColor,
+                getVideoNum(rowOffset, col),
+                isCentered,
+                isSmall,
+                isExtraSmall,
+                () => handleBoxClick(rowOffset, col)
+              )}
+            </div>
+          )
+        })}
+      </motion.div>
+    )
+  }
 
   return (
     <div 
@@ -171,74 +240,20 @@ export function CarouselGrid({
       <div className="relative flex items-center justify-center pointer-events-auto">
         {/* 5x5 Grid - centered */}
         <div className="flex flex-col items-center" style={{ gap: '1.5vh' }}>
-          {/* Extra Top Row (-2) - Numbers 1-20 */}
-          {isRowVisible(-2) && (
-            <motion.div 
-              className="flex justify-center"
-              style={{ gap: '2vw' }}
-              animate={{ opacity: 0.5 }}
-            >
-              {renderVideoBox(extraTopRowColor, getVideoNum(-2, -2), false, false, true)}
-              {renderVideoBox(extraTopRowColor, getVideoNum(-2, -1), false, false, true)}
-              {renderVideoBox(extraTopRowColor, getVideoNum(-2, 0), false, false, true)}
-              {renderVideoBox(extraTopRowColor, getVideoNum(-2, 1), false, false, true)}
-              {renderVideoBox(extraTopRowColor, getVideoNum(-2, 2), false, false, true)}
-            </motion.div>
-          )}
+          {/* Extra Top Row (-2) */}
+          {renderRow(-2, 0.5)}
 
-          {/* Second Top Row (-1) - Numbers 21-40 */}
-          {isRowVisible(-1) && (
-            <motion.div 
-              className="flex justify-center"
-              style={{ gap: '2vw' }}
-              animate={{ opacity: 0.7 }}
-            >
-              {renderVideoBox(secondTopRowColor, getVideoNum(-1, -2), false, true)}
-              {renderVideoBox(secondTopRowColor, getVideoNum(-1, -1), false, true)}
-              {renderVideoBox(secondTopRowColor, getVideoNum(-1, 0), false, true)}
-              {renderVideoBox(secondTopRowColor, getVideoNum(-1, 1), false, true)}
-              {renderVideoBox(secondTopRowColor, getVideoNum(-1, 2), false, true)}
-            </motion.div>
-          )}
+          {/* Second Top Row (-1) */}
+          {renderRow(-1, 0.7)}
 
-          {/* Middle Row (0) - Numbers 41-60 - Active with larger center box */}
-          <div className="flex items-center justify-center" style={{ gap: '2vw' }}>
-            {renderVideoBox(middleRowColor, getVideoNum(0, -2))}
-            {renderVideoBox(middleRowColor, getVideoNum(0, -1))}
-            {renderVideoBox(middleRowColor, getVideoNum(0, 0), true)}
-            {renderVideoBox(middleRowColor, getVideoNum(0, 1))}
-            {renderVideoBox(middleRowColor, getVideoNum(0, 2))}
-          </div>
+          {/* Middle Row (0) - Active with larger center box */}
+          {renderRow(0, 1)}
 
-          {/* Second Bottom Row (+1) - Numbers 61-80 */}
-          {isRowVisible(1) && (
-            <motion.div 
-              className="flex justify-center"
-              style={{ gap: '3vw' }}
-              animate={{ opacity: 0.7 }}
-            >
-              {renderVideoBox(bottomRowColor, getVideoNum(1, -2), false, true)}
-              {renderVideoBox(bottomRowColor, getVideoNum(1, -1), false, true)}
-              {renderVideoBox(bottomRowColor, getVideoNum(1, 0), false, true)}
-              {renderVideoBox(bottomRowColor, getVideoNum(1, 1), false, true)}
-              {renderVideoBox(bottomRowColor, getVideoNum(1, 2), false, true)}
-            </motion.div>
-          )}
+          {/* Second Bottom Row (+1) */}
+          {renderRow(1, 0.7, '3vw')}
 
-          {/* Extra Bottom Row (+2) - Numbers 81-100 */}
-          {isRowVisible(2) && (
-            <motion.div 
-              className="flex justify-center"
-              style={{ gap: '2vw' }}
-              animate={{ opacity: 0.5 }}
-            >
-              {renderVideoBox(extraBottomRowColor, getVideoNum(2, -2), false, false, true)}
-              {renderVideoBox(extraBottomRowColor, getVideoNum(2, -1), false, false, true)}
-              {renderVideoBox(extraBottomRowColor, getVideoNum(2, 0), false, false, true)}
-              {renderVideoBox(extraBottomRowColor, getVideoNum(2, 1), false, false, true)}
-              {renderVideoBox(extraBottomRowColor, getVideoNum(2, 2), false, false, true)}
-            </motion.div>
-          )}
+          {/* Extra Bottom Row (+2) */}
+          {renderRow(2, 0.5)}
         </div>
 
         {/* Vertical Navigation - positioned to the right of grid */}
