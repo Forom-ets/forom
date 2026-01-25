@@ -33,7 +33,8 @@ interface HeaderProps {
 
 export function Header({ onTokenClick, onSupportClick }: HeaderProps) {
   // Icon sizing and style tuned to match centered circular badges
-  const iconContainerStyle = { width: '28px', height: '28px' }
+  // Increased default size so icons are larger before hover
+  const iconContainerStyle = { width: '44px', height: '44px' }
   const iconStyle = "rounded-full border-[3px] border-black p-1 cursor-pointer bg-white flex items-center justify-center overflow-hidden hover:bg-gray-50 transition-colors"
   
   return (
@@ -71,7 +72,7 @@ export function Header({ onTokenClick, onSupportClick }: HeaderProps) {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-32" style={{ width: '240px' }}>
+      <div className="flex items-center justify-between mt-32" style={{ width: '240px', marginTop: '4vh' }}>
         {/* Support Icon - Left */}
         <motion.div 
           className={iconStyle}

@@ -282,7 +282,7 @@ export function CarouselGrid({
   return (
     <div 
       className="fixed inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-      style={{ paddingLeft: '22vw', paddingRight: '22vw', paddingTop: '17vh', paddingBottom: '22vh' }}
+      style={{ paddingLeft: '22vw', paddingRight: '22vw', paddingTop: '10vh', paddingBottom: '22vh' }}
     >
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
       <div ref={gridRef} className="relative flex items-center justify-center pointer-events-auto">
