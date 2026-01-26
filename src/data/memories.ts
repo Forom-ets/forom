@@ -1,0 +1,172 @@
+// =============================================================================
+// MEMORY DATA STRUCTURE
+// =============================================================================
+
+export interface Memory {
+  /** Unique identifier for the memory */
+  id: string
+  /** Category this memory belongs to */
+  category: 'Partenaires' | 'Culture' | 'Clubs' | 'Trésorie' | 'Atelier'
+  /** Title of the memory (displayed under active item) */
+  title: string
+  /** Description of the memory (up to 400 words) */
+  description: string
+  /** Optional YouTube video URL (full URL or video ID) */
+  videoUrl: string | null
+  /** Optional custom thumbnail URL (overrides YouTube thumbnail) */
+  thumbnailUrl: string | null
+}
+
+// =============================================================================
+// CATEGORY CONFIGURATION
+// =============================================================================
+
+export const CATEGORIES = ['Partenaires', 'Culture', 'Clubs', 'Trésorie', 'Atelier'] as const
+export type CategoryType = (typeof CATEGORIES)[number]
+
+export const ITEMS_PER_ROW = 20
+export const TOTAL_ROWS = 5
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Extracts YouTube video ID from various YouTube URL formats
+ * Supports: 
+ * - https://www.youtube.com/watch?v=VIDEO_ID
+ * - https://youtu.be/VIDEO_ID
+ * - https://www.youtube.com/embed/VIDEO_ID
+ * - Just the video ID itself
+ */
+export function extractYouTubeId(url: string | null): string | null {
+  if (!url) return null
+  
+  // If it's already just an ID (11 characters, alphanumeric + dash/underscore)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+    return url
+  }
+  
+  try {
+    const urlObj = new URL(url)
+    
+    // youtube.com/watch?v=VIDEO_ID
+    if (urlObj.hostname.includes('youtube.com') && urlObj.searchParams.has('v')) {
+      return urlObj.searchParams.get('v')
+    }
+    
+    // youtu.be/VIDEO_ID
+    if (urlObj.hostname === 'youtu.be') {
+      return urlObj.pathname.slice(1)
+    }
+    
+    // youtube.com/embed/VIDEO_ID
+    if (urlObj.pathname.includes('/embed/')) {
+      return urlObj.pathname.split('/embed/')[1]?.split('/')[0] || null
+    }
+  } catch {
+    // Not a valid URL, return null
+    return null
+  }
+  
+  return null
+}
+
+/**
+ * Gets the YouTube thumbnail URL for a video
+ */
+export function getYouTubeThumbnail(videoId: string): string {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+}
+
+/**
+ * Gets the thumbnail URL for a memory
+ * Priority: customThumbnail > YouTube thumbnail > null
+ */
+export function getMemoryThumbnail(memory: Memory): string | null {
+  if (memory.thumbnailUrl) {
+    return memory.thumbnailUrl
+  }
+  
+  const videoId = extractYouTubeId(memory.videoUrl)
+  if (videoId) {
+    return getYouTubeThumbnail(videoId)
+  }
+  
+  return null
+}
+
+/**
+ * Checks if a memory has a video
+ */
+export function hasVideo(memory: Memory): boolean {
+  return memory.videoUrl !== null && extractYouTubeId(memory.videoUrl) !== null
+}
+
+// =============================================================================
+// PLACEHOLDER DATA GENERATION
+// =============================================================================
+
+/**
+ * Generates placeholder memories for development/testing
+ * Creates 100 items (5 categories × 20 items each)
+ * All slots are empty by default - ready to be filled with real content
+ */
+function generatePlaceholderMemories(): Memory[] {
+  const memories: Memory[] = []
+
+  CATEGORIES.forEach((category, _categoryIndex) => {
+    for (let i = 0; i < ITEMS_PER_ROW; i++) {
+      memories.push({
+        id: `${category.toLowerCase()}-${i}`,
+        category,
+        title: `Emplacement ${i + 1}`,
+        description: 'Cet emplacement est disponible. Ajoutez une vidéo ou un contenu pour le remplir.',
+        videoUrl: null,
+        thumbnailUrl: null,
+      })
+    }
+  })
+
+  return memories
+}
+
+// =============================================================================
+// EXPORTED DATA
+// =============================================================================
+
+/**
+ * All memories organized by category
+ * Edit this array to add real content
+ */
+export const MEMORIES: Memory[] = generatePlaceholderMemories()
+
+/**
+ * Get memories for a specific category
+ */
+export function getMemoriesByCategory(category: CategoryType): Memory[] {
+  return MEMORIES.filter(m => m.category === category)
+}
+
+/**
+ * Get a specific memory by category and index
+ */
+export function getMemory(category: CategoryType, index: number): Memory | null {
+  const categoryMemories = getMemoriesByCategory(category)
+  return categoryMemories[index] ?? null
+}
+
+/**
+ * Get a specific memory by its global index (0-99)
+ */
+export function getMemoryByGlobalIndex(index: number): Memory | null {
+  return MEMORIES[index] ?? null
+}
+
+/**
+ * Get memories organized by rows for the carousel
+ * Returns a 2D array: rows[categoryIndex][itemIndex]
+ */
+export function getMemoriesGrid(): Memory[][] {
+  return CATEGORIES.map(category => getMemoriesByCategory(category))
+}

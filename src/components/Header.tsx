@@ -125,7 +125,9 @@ export function Header({ onTokenClick, onSupportClick, isDark = false }: HeaderP
 
         {/* Contact Icon - Right */}
         <motion.a 
-          href="mailto:xaviermartelprod@gmail.com"
+          href="https://discord.gg/MdeNvRs5R9"
+          target="_blank"
+          rel="noopener noreferrer"
           className={iconStyle}
           style={{ ...iconContainerStyle, ...iconColors }}
           whileHover={{ scale: 1.1, rotate: -5 }}

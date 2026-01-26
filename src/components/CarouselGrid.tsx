@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { VideoBox } from './VideoBox'
-import { VideoModal } from './VideoModal'
-import { getVideoId, getVideoData } from '../data/videos'
+import { MemoryBox } from './MemoryBox'
+import { MemoryModal } from './MemoryModal'
+import { getMemory, ITEMS_PER_ROW } from '../data/memories'
+import type { Memory, CategoryType } from '../data/memories'
 
 // =============================================================================
 // TYPES
@@ -31,8 +32,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 /** Fallback color for categories without defined colors */
 const DEFAULT_COLOR = '#E5E7EB'
 
-/** Maximum horizontal scroll index (20 rectangles per row - 5 visible = 15) */
-const MAX_HORIZONTAL_INDEX = 19
+/** Maximum horizontal scroll index (20 rectangles per row - 1 = 19) */
+const MAX_HORIZONTAL_INDEX = ITEMS_PER_ROW - 1
 
 /** Shared styles for navigation buttons */
 const getNavButtonStyle = (isDark: boolean): React.CSSProperties => ({
@@ -63,8 +64,8 @@ export function CarouselGrid({
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
 
-  // Get current video data for modal
-  const currentVideoData = getVideoData(categories[activeIndex], horizontalIndex)
+  // Get current memory data for modal
+  const currentMemory = getMemory(categories[activeIndex] as CategoryType, horizontalIndex)
   const currentColor = CATEGORY_COLORS[categories[activeIndex]] ?? DEFAULT_COLOR
 
   // ---------------------------------------------------------------------------
@@ -79,33 +80,26 @@ export function CarouselGrid({
   }
 
   // ---------------------------------------------------------------------------
-  // Navigation Handlers
+  // Navigation Handlers (memoized to prevent unnecessary re-renders)
   // ---------------------------------------------------------------------------
 
-  const handlePrevCategory = () => {
-    if (activeIndex > 0) onCategoryChange(categories[activeIndex - 1])
-  }
+  const handlePrevCategory = useCallback(() => {
+    const newIndex = activeIndex > 0 ? activeIndex - 1 : categories.length - 1
+    onCategoryChange(categories[newIndex])
+  }, [activeIndex, categories, onCategoryChange])
 
-  const handleNextCategory = () => {
-    if (activeIndex < categories.length - 1) onCategoryChange(categories[activeIndex + 1])
-  }
+  const handleNextCategory = useCallback(() => {
+    const newIndex = activeIndex < categories.length - 1 ? activeIndex + 1 : 0
+    onCategoryChange(categories[newIndex])
+  }, [activeIndex, categories, onCategoryChange])
 
-  const handlePrevVideo = () => {
-    // Don't go below 0 (leftmost column shows 0)
-    if (horizontalIndex > 0) {
-      setHorizontalIndex(horizontalIndex - 1)
-    } else {
-      setHorizontalIndex(MAX_HORIZONTAL_INDEX)
-    }
-  }
+  const handlePrevVideo = useCallback(() => {
+    setHorizontalIndex(prev => prev > 0 ? prev - 1 : MAX_HORIZONTAL_INDEX)
+  }, [])
 
-  const handleNextVideo = () => {
-    if (horizontalIndex < MAX_HORIZONTAL_INDEX) {
-      setHorizontalIndex(horizontalIndex + 1)
-    } else {
-      setHorizontalIndex(0)
-    }
-  }
+  const handleNextVideo = useCallback(() => {
+    setHorizontalIndex(prev => prev < MAX_HORIZONTAL_INDEX ? prev + 1 : 0)
+  }, [])
 
   // Handle mouse wheel with resistance and cooldown to avoid rapid skips
   useEffect(() => {
@@ -180,35 +174,34 @@ export function CarouselGrid({
   // Render Helpers
   // ---------------------------------------------------------------------------
 
-  /** Returns video number based on row offset and column position (0-99 total, 20 per row) */
-  const getVideoNum = (rowOffset: number, col: number): number | null => {
+  /** Returns global video number based on row offset and column position (0-99 total, 20 per row) */
+  const getGlobalIndex = (rowOffset: number, col: number): number | null => {
     // Calculate the actual category index for this row
     const rowCategoryIndex = activeIndex + rowOffset
     // If out of bounds, return null (row should be hidden)
     if (rowCategoryIndex < 0 || rowCategoryIndex >= categories.length) return null
     // Each category has 20 numbers: category 0 = 0-19, category 1 = 20-39, etc.
-    const baseNumber = rowCategoryIndex * 20
-    const num = baseNumber + horizontalIndex + col
+    const baseNumber = rowCategoryIndex * ITEMS_PER_ROW
+    const itemIndex = horizontalIndex + col
     
-    // Strict bounds check: only return number if it belongs to this category's range
-    // This ensures no "leaking" of numbers from adjacent categories into the current row
-    if (num < baseNumber || num >= baseNumber + 20) return null
+    // Check if item index is within valid range for this category
+    if (itemIndex < 0 || itemIndex >= ITEMS_PER_ROW) return null
     
-    return num
+    return baseNumber + itemIndex
   }
 
-  /** Returns YouTube video ID based on row offset and column position */
-  const getYouTubeId = (rowOffset: number, col: number): string | null => {
+  /** Returns Memory data based on row offset and column position */
+  const getMemoryForPosition = (rowOffset: number, col: number): Memory | null => {
     const rowCategoryIndex = activeIndex + rowOffset
     if (rowCategoryIndex < 0 || rowCategoryIndex >= categories.length) return null
     
-    const category = categories[rowCategoryIndex]
-    const videoIndex = horizontalIndex + col
+    const category = categories[rowCategoryIndex] as CategoryType
+    const itemIndex = horizontalIndex + col
     
-    // Check bounds for the 20 videos per category
-    if (videoIndex < 0 || videoIndex >= 20) return null
+    // Check bounds for the items per category
+    if (itemIndex < 0 || itemIndex >= ITEMS_PER_ROW) return null
     
-    return getVideoId(category, videoIndex)
+    return getMemory(category, itemIndex)
   }
 
   // ---------------------------------------------------------------------------
@@ -219,58 +212,41 @@ export function CarouselGrid({
     const rowColor = getRowColor(rowOffset)
     
     return (
-      <motion.div 
+      <div 
         key={rowOffset}
-        className="flex items-center justify-center"
-        style={{ gap }}
-        animate={{ opacity }}
+        className="flex items-center justify-center transition-opacity duration-200"
+        style={{ gap, opacity }}
       >
         {[-2, -1, 0, 1, 2].map((col) => {
           // Center box of the middle row gets special treatment
           const isCentered = rowOffset === 0 && col === 0
-          const videoNum = getVideoNum(rowOffset, col)
-          const youtubeId = getYouTubeId(rowOffset, col)
+          const globalIndex = getGlobalIndex(rowOffset, col)
+          const memory = getMemoryForPosition(rowOffset, col)
 
           // Calculate sizing based on positions to create sphere perspective
           const absRow = Math.abs(rowOffset)
           const absCol = Math.abs(col)
 
           // Make outer columns smaller to enhance depth effect
-          // Row 2 is typically extra small
-          // Row 1 is small, but its outer columns become extra small
-          // Row 0 is default/large, but its outer columns become small
           const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
           const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
           
-          // Get video specific data for title
-          const rowCategoryIndex = activeIndex + rowOffset
-          const currentCategory = categories[rowCategoryIndex]
-          const videoIndex = horizontalIndex + col
-          // Helper to safely get data without duplicate bounds checks (getYouTubeId already checks)
-          const videoData = (currentCategory && videoIndex >= 0 && videoIndex < 20)
-            ? getVideoData(currentCategory, videoIndex)
-            : null
-
-          const hasInfo = Boolean(videoData?.title || videoData?.description)
-          
           return (
-            <VideoBox
+            <MemoryBox
               key={`${rowOffset}-${col}`}
-              videoId={youtubeId}
-              title={videoData?.title}
+              memory={memory}
               borderColor={rowColor}
-              displayNumber={videoNum}
+              displayNumber={globalIndex}
               isCentered={isCentered}
               isSmall={isSmall}
               isExtraSmall={isExtraSmall}
               isDark={isDark}
               onClick={() => handleBoxClick(rowOffset, col)}
               onInfoClick={isCentered ? () => setIsModalOpen(true) : undefined}
-              hasInfo={hasInfo}
             />
           )
         })}
-      </motion.div>
+      </div>
     )
   }
 
@@ -325,18 +301,17 @@ export function CarouselGrid({
                 className="absolute w-[2px] h-full left-1/2 -translate-x-1/2 transition-colors duration-300"
                 style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
               />
-              <motion.div
-                className="absolute rounded-full left-1/2 -translate-x-1/2 transition-colors duration-300"
+              <div
+                className="absolute rounded-full left-1/2 -translate-x-1/2 transition-all duration-300 ease-out"
                 style={{
                     width: '32px',
                     height: '32px',
                     backgroundColor: isDark ? '#ffffff' : '#000000',
                     boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
                     border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
-                    zIndex: 40
+                    zIndex: 40,
+                    top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%`
                   }}
-                animate={{ top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%` }}
-                transition={{ type: 'spring', damping: 15, stiffness: 150 }}
               />
           </div>
 
@@ -374,18 +349,17 @@ export function CarouselGrid({
               className="absolute w-full h-[2px] top-1/2 -translate-y-1/2 transition-colors duration-300"
               style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
             />
-            <motion.div
-              className="absolute rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-300"
+            <div
+              className="absolute rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ease-out"
               style={{
                 width: '32px',
                 height: '32px',
                 backgroundColor: isDark ? '#ffffff' : '#000000',
                 boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
                 border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
-                zIndex: 40
+                zIndex: 40,
+                left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%`
               }}
-              animate={{ left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%` }}
-              transition={{ type: 'spring', damping: 15, stiffness: 150 }}
             />
         </div>
 
@@ -400,14 +374,13 @@ export function CarouselGrid({
         </motion.button>
       </nav>
 
-      {/* Video Info Modal */}
-      <VideoModal
+      {/* Memory Info Modal */}
+      <MemoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        videoId={currentVideoData?.youtubeId ?? null}
-        title={currentVideoData?.title ?? null}
-        description={currentVideoData?.description ?? null}
+        memory={currentMemory}
         borderColor={currentColor}
+        index={activeIndex * ITEMS_PER_ROW + horizontalIndex}
       />
     </div>
   )
