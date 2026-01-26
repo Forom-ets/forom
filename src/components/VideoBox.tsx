@@ -7,9 +7,12 @@ import { motion } from 'framer-motion'
 export interface VideoBoxProps {
   /** YouTube video ID (e.g., 'dQw4w9WgXcQ') - null hides the box */
   videoId: string | null
+  /** Optional title for the video */
+  title?: string
   /** Border color for the box */
   borderColor: string
   /** Display number shown when no video is available */
+
   displayNumber?: number | null
   /** Whether this is the center (active) box */
   isCentered?: boolean
@@ -33,6 +36,7 @@ export interface VideoBoxProps {
 
 export function VideoBox({
   videoId,
+  title,
   borderColor,
   displayNumber,
   isCentered = false,
@@ -48,12 +52,12 @@ export function VideoBox({
   // ---------------------------------------------------------------------------
 
   const dimensions = isCentered
-    ? { width: '14vw', height: '9.5vw', minWidth: '140px', minHeight: '95px' }
+    ? { width: '17vw', height: '11.5vw', minWidth: '170px', minHeight: '115px' }
     : isExtraSmall
-      ? { width: '3vw', height: '2vw', minWidth: '30px', minHeight: '20px' }
+      ? { width: '4vw', height: '2.7vw', minWidth: '40px', minHeight: '27px' }
       : isSmall
-        ? { width: '6vw', height: '4vw', minWidth: '60px', minHeight: '40px' }
-        : { width: '8vw', height: '5.5vw', minWidth: '80px', minHeight: '55px' }
+        ? { width: '7.5vw', height: '5vw', minWidth: '75px', minHeight: '50px' }
+        : { width: '10vw', height: '6.8vw', minWidth: '100px', minHeight: '68px' }
 
   // Hide box if no video AND no display number
   if (videoId === null && displayNumber === null) {
@@ -120,7 +124,7 @@ export function VideoBox({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-        className="relative rounded-sm overflow-hidden flex items-center justify-center transition-colors duration-300"
+        className="relative overflow-hidden flex items-center justify-center transition-colors duration-300"
         onClick={onClick}
         whileHover={onClick ? { scale: 1.05 } : undefined}
         style={{
@@ -128,6 +132,7 @@ export function VideoBox({
           backgroundColor: isDark ? '#27272a' : '#fce7f3',
           ...dimensions,
           cursor: onClick ? 'pointer' : 'default',
+          borderRadius: '16px', // Force rounded corners via inline style
         }}
       >
         {showEmbed && renderYouTubeEmbed()}
@@ -135,25 +140,30 @@ export function VideoBox({
         {!hasVideo && renderPlaceholder()}
       </motion.div>
       
-      {/* Info button shown below the centered/selected container */}
+      {/* Info bar shown below the centered/selected container */}
       {showInfoButton && (
-        <motion.button
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 120 }}
-          onClick={(e) => {
-            e.stopPropagation()
-            onInfoClick()
-          }}
-          className="mt-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105"
-          style={{
-            backgroundColor: borderColor,
-            color: '#ffffff',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          }}
+        <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 15, stiffness: 120 }}
+            className="w-full flex justify-between items-center mt-2 cursor-pointer select-none"
+            onClick={(e) => {
+                e.stopPropagation()
+                onInfoClick()
+            }}
+            style={{
+                fontFamily: "'Jersey 15', sans-serif",
+                color: isDark ? '#ffffff' : '#000000',
+                fontSize: '24px'
+            }}
         >
-          More Info
-        </motion.button>
+            <span>
+                {displayNumber !== null && displayNumber !== undefined ? (displayNumber + 1).toString().padStart(2, '0') + '.' : ''}
+            </span>
+            <span className="truncate ml-2">
+                {title || 'Sans titre'}
+            </span>
+        </motion.div>
       )}
     </div>
   )

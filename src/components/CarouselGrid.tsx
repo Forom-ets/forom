@@ -217,8 +217,6 @@ export function CarouselGrid({
 
   const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
     const rowColor = getRowColor(rowOffset)
-    const isSmall = Math.abs(rowOffset) === 1
-    const isExtraSmall = Math.abs(rowOffset) === 2
     
     return (
       <motion.div 
@@ -232,17 +230,34 @@ export function CarouselGrid({
           const isCentered = rowOffset === 0 && col === 0
           const videoNum = getVideoNum(rowOffset, col)
           const youtubeId = getYouTubeId(rowOffset, col)
+
+          // Calculate sizing based on positions to create sphere perspective
+          const absRow = Math.abs(rowOffset)
+          const absCol = Math.abs(col)
+
+          // Make outer columns smaller to enhance depth effect
+          // Row 2 is typically extra small
+          // Row 1 is small, but its outer columns become extra small
+          // Row 0 is default/large, but its outer columns become small
+          const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
+          const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
           
-          // Check if centered box has video data for info button
-          const videoData = isCentered 
-            ? getVideoData(categories[activeIndex], horizontalIndex)
+          // Get video specific data for title
+          const rowCategoryIndex = activeIndex + rowOffset
+          const currentCategory = categories[rowCategoryIndex]
+          const videoIndex = horizontalIndex + col
+          // Helper to safely get data without duplicate bounds checks (getYouTubeId already checks)
+          const videoData = (currentCategory && videoIndex >= 0 && videoIndex < 20)
+            ? getVideoData(currentCategory, videoIndex)
             : null
+
           const hasInfo = Boolean(videoData?.title || videoData?.description)
           
           return (
             <VideoBox
               key={`${rowOffset}-${col}`}
               videoId={youtubeId}
+              title={videoData?.title}
               borderColor={rowColor}
               displayNumber={videoNum}
               isCentered={isCentered}
@@ -262,7 +277,7 @@ export function CarouselGrid({
   return (
     <div 
       className="fixed inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-      style={{ paddingLeft: '22vw', paddingRight: '22vw', paddingTop: '10vh', paddingBottom: '22vh' }}
+      style={{ paddingLeft: '19vw', paddingRight: '22vw', paddingTop: '2vh', paddingBottom: '22vh' }}
     >
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
       <div ref={gridRef} className="relative flex items-center justify-center pointer-events-auto">
