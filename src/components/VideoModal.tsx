@@ -1,9 +1,6 @@
 import Modal from 'react-modal'
 import { X, Play } from 'lucide-react'
 
-// Set the app element for accessibility (prevents background scrolling/interaction)
-Modal.setAppElement('#root')
-
 // =============================================================================
 // TYPES
 // =============================================================================

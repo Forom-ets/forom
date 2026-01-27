@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
@@ -16,6 +17,62 @@ import wikiIcon from './assets/icons/wiki.png'
 
 /** Available categories for the application */
 const CATEGORIES = ['Partenaires', 'Culture', 'Clubs', 'Trésorie', 'Atelier']
+
+// =============================================================================
+// MODAL STYLES
+// =============================================================================
+
+const tokenModalStyles: ReactModal.Styles = {
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    zIndex: 9998,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    position: 'relative',
+    inset: 'auto',
+    width: '600px',
+    height: '400px',
+    padding: 0,
+    border: 'none',
+    background: 'transparent',
+    overflow: 'visible',
+    borderRadius: 0,
+  },
+}
+
+const modalVariants = {
+  hidden: { 
+    opacity: 0, 
+    scale: 0.9, 
+    y: 20,
+  },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: {
+      type: 'spring' as const,
+      damping: 25,
+      stiffness: 300,
+    },
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.9, 
+    y: 20,
+    transition: {
+      duration: 0.2,
+    },
+  },
+}
 
 // =============================================================================
 // HELPER COMPONENTS
@@ -36,21 +93,22 @@ function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
+        <ReactModal
+          isOpen={isOpen}
+          onRequestClose={onClose}
+          style={tokenModalStyles}
+          closeTimeoutMS={200}
+          contentLabel={title}
+          shouldCloseOnOverlayClick={true}
+          shouldCloseOnEsc={true}
+          ariaHideApp={true}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black z-[60] cursor-pointer"
-          />
-          {/* Modal Content */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-xl shadow-2xl z-[70] p-8 flex flex-col border-4 transition-colors duration-300"
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="w-full h-full rounded-xl shadow-2xl p-8 flex flex-col border-4 transition-colors duration-300"
             style={{ 
               backgroundColor: 'var(--color-surface)', 
               borderColor: 'var(--color-border)',
@@ -61,8 +119,10 @@ function Modal({
               <h2 className="text-3xl font-bold font-['Montserrat']">{title}</h2>
               <button 
                 onClick={onClose}
-                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition-colors cursor-pointer"
                 style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+                type="button"
+                aria-label="Close modal"
               >
                 ✕
               </button>
@@ -71,7 +131,7 @@ function Modal({
               {children}
             </div>
           </motion.div>
-        </>
+        </ReactModal>
       )}
     </AnimatePresence>
   )

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MemoryBox } from './MemoryBox'
 import { MemoryModal } from './MemoryModal'
 import { getMemory, ITEMS_PER_ROW } from '../data/memories'
@@ -61,6 +61,7 @@ export function CarouselGrid({
   // Start at position 10 so center rectangle shows 10 (middle of 0-19)
   const [horizontalIndex, setHorizontalIndex] = useState(10)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
   const horizontalTrackRef = useRef<HTMLDivElement | null>(null)
@@ -98,10 +99,12 @@ export function CarouselGrid({
   }, [activeIndex, categories, onCategoryChange])
 
   const handlePrevVideo = useCallback(() => {
+    setSlideDirection('left')
     setHorizontalIndex(prev => prev > 0 ? prev - 1 : MAX_HORIZONTAL_INDEX)
   }, [])
 
   const handleNextVideo = useCallback(() => {
+    setSlideDirection('right')
     setHorizontalIndex(prev => prev < MAX_HORIZONTAL_INDEX ? prev + 1 : 0)
   }, [])
 
@@ -123,7 +126,11 @@ export function CarouselGrid({
     const x = e.clientX - rect.left
     const percentage = Math.max(0, Math.min(1, x / rect.width))
     const newIndex = Math.round(percentage * MAX_HORIZONTAL_INDEX)
-    setHorizontalIndex(newIndex)
+    setHorizontalIndex(prev => {
+      if (newIndex > prev) setSlideDirection('right')
+      else if (newIndex < prev) setSlideDirection('left')
+      return newIndex
+    })
   }, [isDraggingHorizontal])
 
   const handleHorizontalDragEnd = useCallback(() => {
@@ -240,6 +247,7 @@ export function CarouselGrid({
       const newIndex = horizontalIndex + colOffset
       // Respect existing bounds (2 to MAX_HORIZONTAL_INDEX)
       if (newIndex >= 0 && newIndex <= MAX_HORIZONTAL_INDEX) {
+        setSlideDirection(colOffset > 0 ? 'right' : 'left')
         setHorizontalIndex(newIndex)
       }
     }
@@ -283,44 +291,82 @@ export function CarouselGrid({
   // Grid Render Logic
   // ---------------------------------------------------------------------------
 
+  // Animation variants for horizontal slide with translation and scaling
+  const slideVariants = {
+    enter: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? 80 : -80,
+      scale: 0.85,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      scale: 1,
+      opacity: 1,
+      transition: {
+        duration: 0.2,
+        ease: 'easeOut',
+      },
+    },
+    exit: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? -80 : 80,
+      scale: 0.85,
+      opacity: 0,
+      transition: {
+        duration: 0.2,
+        ease: 'easeIn',
+      },
+    }),
+  }
+
   const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
     const rowColor = getRowColor(rowOffset)
     
     return (
       <div 
         key={rowOffset}
-        className="flex items-center justify-center transition-opacity duration-200"
+        className="flex items-center justify-center transition-opacity duration-200 overflow-hidden"
         style={{ gap, opacity }}
       >
-        {[-2, -1, 0, 1, 2].map((col) => {
-          // Center box of the middle row gets special treatment
-          const isCentered = rowOffset === 0 && col === 0
-          const globalIndex = getGlobalIndex(rowOffset, col)
-          const memory = getMemoryForPosition(rowOffset, col)
+        <AnimatePresence mode="popLayout" custom={slideDirection}>
+          {[-2, -1, 0, 1, 2].map((col) => {
+            // Center box of the middle row gets special treatment
+            const isCentered = rowOffset === 0 && col === 0
+            const globalIndex = getGlobalIndex(rowOffset, col)
+            const memory = getMemoryForPosition(rowOffset, col)
 
-          // Calculate sizing based on positions to create sphere perspective
-          const absRow = Math.abs(rowOffset)
-          const absCol = Math.abs(col)
+            // Calculate sizing based on positions to create sphere perspective
+            const absRow = Math.abs(rowOffset)
+            const absCol = Math.abs(col)
 
-          // Make outer columns smaller to enhance depth effect
-          const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
-          const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
-          
-          return (
-            <MemoryBox
-              key={`${rowOffset}-${col}`}
-              memory={memory}
-              borderColor={rowColor}
-              displayNumber={globalIndex}
-              isCentered={isCentered}
-              isSmall={isSmall}
-              isExtraSmall={isExtraSmall}
-              isDark={isDark}
-              onClick={() => handleBoxClick(rowOffset, col)}
-              onInfoClick={isCentered ? () => setIsModalOpen(true) : undefined}
-            />
-          )
-        })}
+            // Make outer columns smaller to enhance depth effect
+            const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
+            const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
+            
+            return (
+              <motion.div
+                key={`${rowOffset}-${col}-${horizontalIndex + col}`}
+                custom={slideDirection}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                layout
+              >
+                <MemoryBox
+                  memory={memory}
+                  borderColor={rowColor}
+                  displayNumber={globalIndex}
+                  isCentered={isCentered}
+                  isSmall={isSmall}
+                  isExtraSmall={isExtraSmall}
+                  isDark={isDark}
+                  onClick={() => handleBoxClick(rowOffset, col)}
+                  onInfoClick={isCentered ? () => setIsModalOpen(true) : undefined}
+                />
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
       </div>
     )
   }
@@ -441,6 +487,8 @@ export function CarouselGrid({
             const x = e.clientX - rect.left
             const percentage = Math.max(0, Math.min(1, x / rect.width))
             const newIndex = Math.round(percentage * MAX_HORIZONTAL_INDEX)
+            if (newIndex > horizontalIndex) setSlideDirection('right')
+            else if (newIndex < horizontalIndex) setSlideDirection('left')
             setHorizontalIndex(newIndex)
           }}
         >
