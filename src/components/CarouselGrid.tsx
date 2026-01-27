@@ -63,6 +63,10 @@ export function CarouselGrid({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
+  const horizontalTrackRef = useRef<HTMLDivElement | null>(null)
+  const verticalTrackRef = useRef<HTMLDivElement | null>(null)
+  const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
+  const [isDraggingVertical, setIsDraggingVertical] = useState(false)
 
   // Get current memory data for modal
   const currentMemory = getMemory(categories[activeIndex] as CategoryType, horizontalIndex)
@@ -100,6 +104,77 @@ export function CarouselGrid({
   const handleNextVideo = useCallback(() => {
     setHorizontalIndex(prev => prev < MAX_HORIZONTAL_INDEX ? prev + 1 : 0)
   }, [])
+
+  // ---------------------------------------------------------------------------
+  // Drag Handlers for Sliders
+  // ---------------------------------------------------------------------------
+
+  // Horizontal slider drag
+  const handleHorizontalDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDraggingHorizontal(true)
+  }, [])
+
+  const handleHorizontalDrag = useCallback((e: MouseEvent) => {
+    if (!isDraggingHorizontal || !horizontalTrackRef.current) return
+    
+    const track = horizontalTrackRef.current
+    const rect = track.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const percentage = Math.max(0, Math.min(1, x / rect.width))
+    const newIndex = Math.round(percentage * MAX_HORIZONTAL_INDEX)
+    setHorizontalIndex(newIndex)
+  }, [isDraggingHorizontal])
+
+  const handleHorizontalDragEnd = useCallback(() => {
+    setIsDraggingHorizontal(false)
+  }, [])
+
+  // Vertical slider drag
+  const handleVerticalDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDraggingVertical(true)
+  }, [])
+
+  const handleVerticalDrag = useCallback((e: MouseEvent) => {
+    if (!isDraggingVertical || !verticalTrackRef.current) return
+    
+    const track = verticalTrackRef.current
+    const rect = track.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const percentage = Math.max(0, Math.min(1, y / rect.height))
+    const newIndex = Math.round(percentage * (categories.length - 1))
+    if (newIndex >= 0 && newIndex < categories.length) {
+      onCategoryChange(categories[newIndex])
+    }
+  }, [isDraggingVertical, categories, onCategoryChange])
+
+  const handleVerticalDragEnd = useCallback(() => {
+    setIsDraggingVertical(false)
+  }, [])
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    if (isDraggingHorizontal) {
+      window.addEventListener('mousemove', handleHorizontalDrag)
+      window.addEventListener('mouseup', handleHorizontalDragEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleHorizontalDrag)
+        window.removeEventListener('mouseup', handleHorizontalDragEnd)
+      }
+    }
+  }, [isDraggingHorizontal, handleHorizontalDrag, handleHorizontalDragEnd])
+
+  useEffect(() => {
+    if (isDraggingVertical) {
+      window.addEventListener('mousemove', handleVerticalDrag)
+      window.addEventListener('mouseup', handleVerticalDragEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleVerticalDrag)
+        window.removeEventListener('mouseup', handleVerticalDragEnd)
+      }
+    }
+  }, [isDraggingVertical, handleVerticalDrag, handleVerticalDragEnd])
 
   // Handle mouse wheel with resistance and cooldown to avoid rapid skips
   useEffect(() => {
@@ -294,15 +369,25 @@ export function CarouselGrid({
 
           {/* Vertical Slider Track */}
           <div
+            ref={verticalTrackRef}
             className="flex flex-col items-center justify-center relative"
-            style={{ height: '200px', width: '24px' }}
+            style={{ height: '200px', width: '24px', cursor: 'pointer' }}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              const y = e.clientY - rect.top
+              const percentage = Math.max(0, Math.min(1, y / rect.height))
+              const newIndex = Math.round(percentage * (categories.length - 1))
+              if (newIndex >= 0 && newIndex < categories.length) {
+                onCategoryChange(categories[newIndex])
+              }
+            }}
           >
               <div
                 className="absolute w-[2px] h-full left-1/2 -translate-x-1/2 transition-colors duration-300"
                 style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
               />
               <div
-                className="absolute rounded-full left-1/2 -translate-x-1/2 transition-all duration-300 ease-out"
+                className="absolute rounded-full left-1/2 -translate-x-1/2"
                 style={{
                     width: '32px',
                     height: '32px',
@@ -310,8 +395,11 @@ export function CarouselGrid({
                     boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
                     border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
                     zIndex: 40,
-                    top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%`
+                    top: `${(activeIndex / Math.max(1, categories.length - 1)) * 100}%`,
+                    cursor: 'grab',
+                    transition: isDraggingVertical ? 'none' : 'top 0.3s ease-out'
                   }}
+                onMouseDown={handleVerticalDragStart}
               />
           </div>
 
@@ -344,13 +432,24 @@ export function CarouselGrid({
         </motion.button>
 
         {/* Horizontal Slider Track */}
-        <div className="flex items-center justify-center relative" style={{ width: '300px', height: '24px' }}>
+        <div 
+          ref={horizontalTrackRef}
+          className="flex items-center justify-center relative" 
+          style={{ width: '300px', height: '24px', cursor: 'pointer' }}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            const x = e.clientX - rect.left
+            const percentage = Math.max(0, Math.min(1, x / rect.width))
+            const newIndex = Math.round(percentage * MAX_HORIZONTAL_INDEX)
+            setHorizontalIndex(newIndex)
+          }}
+        >
             <div
               className="absolute w-full h-[2px] top-1/2 -translate-y-1/2 transition-colors duration-300"
               style={{ backgroundColor: isDark ? '#ffffff' : '#000000', opacity: 0.9 }}
             />
             <div
-              className="absolute rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ease-out"
+              className="absolute rounded-full top-1/2 -translate-x-1/2 -translate-y-1/2"
               style={{
                 width: '32px',
                 height: '32px',
@@ -358,8 +457,11 @@ export function CarouselGrid({
                 boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.6)' : '0 6px 18px rgba(0,0,0,0.35)',
                 border: isDark ? '3px solid rgba(0,0,0,0.6)' : '3px solid rgba(255,255,255,0.85)',
                 zIndex: 40,
-                left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%`
+                left: `${(horizontalIndex / MAX_HORIZONTAL_INDEX) * 100}%`,
+                cursor: 'grab',
+                transition: isDraggingHorizontal ? 'none' : 'left 0.3s ease-out'
               }}
+              onMouseDown={handleHorizontalDragStart}
             />
         </div>
 
