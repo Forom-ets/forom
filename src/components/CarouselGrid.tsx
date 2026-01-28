@@ -291,31 +291,28 @@ export function CarouselGrid({
   // Grid Render Logic
   // ---------------------------------------------------------------------------
 
-  // Animation variants for horizontal slide with translation and scaling
+  // Animation variants for horizontal slide with scaling (instant swap feel)
   const slideVariants = {
-    enter: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? 80 : -80,
-      scale: 0.85,
+    enter: {
+      scale: 0.9,
       opacity: 0,
-    }),
+    },
     center: {
-      x: 0,
       scale: 1,
       opacity: 1,
       transition: {
-        duration: 0.2,
+        duration: 0.1,
         ease: 'easeOut',
       },
     },
-    exit: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? -80 : 80,
-      scale: 0.85,
+    exit: {
+      scale: 0.9,
       opacity: 0,
       transition: {
-        duration: 0.2,
+        duration: 0.08,
         ease: 'easeIn',
       },
-    }),
+    },
   }
 
   const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
@@ -324,7 +321,7 @@ export function CarouselGrid({
     return (
       <div 
         key={rowOffset}
-        className="flex items-center justify-center transition-opacity duration-200 overflow-hidden"
+        className="flex items-center justify-center transition-opacity duration-200"
         style={{ gap, opacity }}
       >
         <AnimatePresence mode="popLayout" custom={slideDirection}>
