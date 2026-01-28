@@ -2,19 +2,35 @@
 // MEMORY DATA STRUCTURE
 // =============================================================================
 
+/** Available WH-questions for memories */
+export const WH_QUESTIONS = [
+  'Comment ?',
+  'Pourquoi ?',
+  'Quand ?',
+  'Où ?',
+  'Quoi ?',
+  'Qui ?',
+] as const
+
+export type WhQuestion = (typeof WH_QUESTIONS)[number]
+
 export interface Memory {
   /** Unique identifier for the memory */
   id: string
   /** Category this memory belongs to */
   category: 'Partenaires' | 'Culture' | 'Clubs' | 'Trésorie' | 'Atelier'
-  /** Title of the memory (displayed under active item) */
+  /** WH-question for this memory (Comment?, Pourquoi?, etc.) */
+  question: WhQuestion | null
+  /** Title of the memory - acts as the response to the question */
   title: string
-  /** Description of the memory (up to 400 words) */
+  /** Description of the memory (up to 400 words) - tutorial information */
   description: string
   /** Optional YouTube video URL (full URL or video ID) */
   videoUrl: string | null
   /** Optional custom thumbnail URL (overrides YouTube thumbnail) */
   thumbnailUrl: string | null
+  /** Whether this memory has been filled by a user */
+  isFilled: boolean
 }
 
 // =============================================================================
@@ -120,10 +136,12 @@ function generatePlaceholderMemories(): Memory[] {
       memories.push({
         id: `${category.toLowerCase()}-${i}`,
         category,
+        question: null,
         title: `Emplacement ${i + 1}`,
         description: 'Cet emplacement est disponible. Ajoutez une vidéo ou un contenu pour le remplir.',
         videoUrl: null,
         thumbnailUrl: null,
+        isFilled: false,
       })
     }
   })
@@ -161,6 +179,30 @@ export function getMemory(category: CategoryType, index: number): Memory | null 
  */
 export function getMemoryByGlobalIndex(index: number): Memory | null {
   return MEMORIES[index] ?? null
+}
+
+/**
+ * Update a memory in the global array
+ */
+export function updateMemory(
+  category: CategoryType,
+  index: number,
+  updates: Partial<Omit<Memory, 'id' | 'category'>>
+): Memory | null {
+  const categoryMemories = getMemoriesByCategory(category)
+  const memory = categoryMemories[index]
+  if (!memory) return null
+
+  // Find the memory in the global array and update it
+  const globalIndex = MEMORIES.findIndex(m => m.id === memory.id)
+  if (globalIndex === -1) return null
+
+  MEMORIES[globalIndex] = {
+    ...MEMORIES[globalIndex],
+    ...updates,
+  }
+
+  return MEMORIES[globalIndex]
 }
 
 /**

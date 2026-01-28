@@ -62,8 +62,19 @@ export const MemoryBox = memo(function MemoryBox({
   const memoryHasVideo = memory ? hasVideo(memory) : false
   const thumbnail = memory ? getMemoryThumbnail(memory) : null
   const title = memory?.title ?? 'Sans titre'
+  const question = memory?.question ?? null
+  const isFilled = memory?.isFilled ?? false
   const iconSize = isCentered ? 48 : isExtraSmall ? 12 : isSmall ? 20 : 28
   const showThumbnail = memoryHasVideo && thumbnail
+
+  // Font size for question text based on size
+  const questionFontSize = isCentered 
+    ? 'clamp(14px, 1.2vw, 20px)' 
+    : isExtraSmall 
+      ? 'clamp(6px, 0.5vw, 8px)'
+      : isSmall 
+        ? 'clamp(8px, 0.8vw, 12px)'
+        : 'clamp(10px, 1vw, 14px)'
 
   return (
     <div className="flex flex-col items-center">
@@ -79,7 +90,7 @@ export const MemoryBox = memo(function MemoryBox({
         }}
       >
         {showThumbnail ? (
-          // Thumbnail with play overlay
+          // Thumbnail with play overlay and question text
           <div className="relative w-full h-full">
             <img
               src={thumbnail}
@@ -87,7 +98,20 @@ export const MemoryBox = memo(function MemoryBox({
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
+              {/* Question text at top for filled memories */}
+              {isFilled && question && (
+                <span 
+                  className="absolute top-2 left-2 right-2 text-white font-bold text-center truncate"
+                  style={{ 
+                    fontFamily: "'Jersey 15', sans-serif",
+                    fontSize: questionFontSize,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  {question}
+                </span>
+              )}
               <div 
                 className="rounded-full flex items-center justify-center"
                 style={{

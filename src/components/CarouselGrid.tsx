@@ -62,6 +62,7 @@ export function CarouselGrid({
   const [horizontalIndex, setHorizontalIndex] = useState(10)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
+  const [memoryUpdateKey, setMemoryUpdateKey] = useState(0) // For triggering re-renders
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
   const horizontalTrackRef = useRef<HTMLDivElement | null>(null)
@@ -72,6 +73,12 @@ export function CarouselGrid({
   // Get current memory data for modal
   const currentMemory = getMemory(categories[activeIndex] as CategoryType, horizontalIndex)
   const currentColor = CATEGORY_COLORS[categories[activeIndex]] ?? DEFAULT_COLOR
+
+  // Handle memory update from modal
+  const handleMemoryUpdate = useCallback((_updatedMemory: Memory) => {
+    // Force re-render of the grid to reflect changes
+    setMemoryUpdateKey(prev => prev + 1)
+  }, [])
 
   // ---------------------------------------------------------------------------
   // Helper Functions
@@ -341,7 +348,7 @@ export function CarouselGrid({
             
             return (
               <motion.div
-                key={`${rowOffset}-${col}-${horizontalIndex + col}`}
+                key={`${rowOffset}-${col}-${horizontalIndex + col}-${memoryUpdateKey}`}
                 custom={slideDirection}
                 variants={slideVariants}
                 initial="enter"
@@ -528,6 +535,7 @@ export function CarouselGrid({
         memory={currentMemory}
         borderColor={currentColor}
         index={activeIndex * ITEMS_PER_ROW + horizontalIndex}
+        onMemoryUpdate={handleMemoryUpdate}
       />
     </div>
   )
