@@ -67,6 +67,17 @@ export const MemoryBox = memo(function MemoryBox({
   const iconSize = isCentered ? 48 : isExtraSmall ? 12 : isSmall ? 20 : 28
   const showThumbnail = memoryHasVideo && thumbnail
 
+  // For centered empty boxes, clicking should open the modal to create a memory
+  const handleBoxClick = () => {
+    if (isCentered && !isFilled && onInfoClick) {
+      // Empty centered box - open modal to create memory
+      onInfoClick()
+    } else if (onClick) {
+      // Navigate to this box
+      onClick()
+    }
+  }
+
   // Font size for question text based on size
   const questionFontSize = isCentered 
     ? 'clamp(14px, 1.2vw, 20px)' 
@@ -80,12 +91,12 @@ export const MemoryBox = memo(function MemoryBox({
     <div className="flex flex-col items-center">
       <div
         className="relative overflow-hidden flex items-center justify-center transition-transform duration-150 hover:scale-105"
-        onClick={onClick}
+        onClick={handleBoxClick}
         style={{
           border: `3px solid ${borderColor}`,
           backgroundColor: isDark ? '#27272a' : '#fefefe',
           ...dimensions,
-          cursor: onClick ? 'pointer' : 'default',
+          cursor: onClick || (isCentered && !isFilled && onInfoClick) ? 'pointer' : 'default',
           borderRadius: '16px',
         }}
       >
