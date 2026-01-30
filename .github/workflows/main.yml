@@ -1,0 +1,20 @@
+name: Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build-push-ghcr:
+    permissions:
+      contents: read
+      packages: write
+    uses: ClubCedille/cedille-workflows/.github/workflows/external-build-push-ghcr.yaml@master
+    with:
+      container-name: ${{ github.event.repository.name }}
+    secrets:
+      GIT_AUTH_TOKEN: ${{ secrets.GIT_AUTH_TOKEN }}
