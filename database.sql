@@ -14,5 +14,5 @@ CREATE TABLE memos(
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    yesthebotworkstestxgfghxf
+    YAYYYYY
 )
