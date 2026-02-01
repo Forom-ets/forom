@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, easeOut, easeIn } from 'framer-motion'
 import { MemoryBox } from './MemoryBox'
 import { MemoryModal } from './MemoryModal'
 import { getMemory, ITEMS_PER_ROW } from '../data/memories'
@@ -127,7 +127,7 @@ export function CarouselGrid({
 
   const handleHorizontalDrag = useCallback((e: MouseEvent) => {
     if (!isDraggingHorizontal || !horizontalTrackRef.current) return
-    
+
     const track = horizontalTrackRef.current
     const rect = track.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -152,7 +152,7 @@ export function CarouselGrid({
 
   const handleVerticalDrag = useCallback((e: MouseEvent) => {
     if (!isDraggingVertical || !verticalTrackRef.current) return
-    
+
     const track = verticalTrackRef.current
     const rect = track.getBoundingClientRect()
     const y = e.clientY - rect.top
@@ -273,10 +273,10 @@ export function CarouselGrid({
     // Each category has 20 numbers: category 0 = 0-19, category 1 = 20-39, etc.
     const baseNumber = rowCategoryIndex * ITEMS_PER_ROW
     const itemIndex = horizontalIndex + col
-    
+
     // Check if item index is within valid range for this category
     if (itemIndex < 0 || itemIndex >= ITEMS_PER_ROW) return null
-    
+
     return baseNumber + itemIndex
   }
 
@@ -284,13 +284,13 @@ export function CarouselGrid({
   const getMemoryForPosition = (rowOffset: number, col: number): Memory | null => {
     const rowCategoryIndex = activeIndex + rowOffset
     if (rowCategoryIndex < 0 || rowCategoryIndex >= categories.length) return null
-    
+
     const category = categories[rowCategoryIndex] as CategoryType
     const itemIndex = horizontalIndex + col
-    
+
     // Check bounds for the items per category
     if (itemIndex < 0 || itemIndex >= ITEMS_PER_ROW) return null
-    
+
     return getMemory(category, itemIndex)
   }
 
@@ -309,7 +309,7 @@ export function CarouselGrid({
       opacity: 1,
       transition: {
         duration: 0.1,
-        ease: 'easeOut',
+        ease: easeOut,
       },
     },
     exit: {
@@ -317,16 +317,16 @@ export function CarouselGrid({
       opacity: 0,
       transition: {
         duration: 0.08,
-        ease: 'easeIn',
+        ease: easeIn,
       },
     },
   }
 
   const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
     const rowColor = getRowColor(rowOffset)
-    
+
     return (
-      <div 
+      <div
         key={rowOffset}
         className="flex items-center justify-center transition-opacity duration-200"
         style={{ gap, opacity }}
@@ -345,7 +345,7 @@ export function CarouselGrid({
             // Make outer columns smaller to enhance depth effect
             const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
             const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
-            
+
             return (
               <motion.div
                 key={`${rowOffset}-${col}-${horizontalIndex + col}-${memoryUpdateKey}`}
@@ -376,7 +376,7 @@ export function CarouselGrid({
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
       style={{ paddingLeft: '19vw', paddingRight: '22vw', paddingTop: '2vh', paddingBottom: '22vh' }}
     >
@@ -482,9 +482,9 @@ export function CarouselGrid({
         </motion.button>
 
         {/* Horizontal Slider Track */}
-        <div 
+        <div
           ref={horizontalTrackRef}
-          className="flex items-center justify-center relative" 
+          className="flex items-center justify-center relative"
           style={{ width: '300px', height: '24px', cursor: 'pointer' }}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect()
