@@ -9,10 +9,19 @@ CREATE TABLE users (
     likes INTEGER DEFAULT 0
 );
 
+CREATE TABLE category{
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(50) NOT NULL,
+    color VARCHAR(6) NOT NULL
+}
+
 CREATE TABLE memos(
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    YAYYYYY
-)
+    category_id INTEGER REFERENCES category(id),
+    title VARCHAR(100) NOT NULL,
+    description TEXT(max),
+    yt_url VARCHAR (300),
+    question ENUM('comment','ou','pourquoi','quoi','quand','qui'),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
+);
