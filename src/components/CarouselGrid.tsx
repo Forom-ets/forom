@@ -322,7 +322,7 @@ export function CarouselGrid({
     },
   }
 
-  const renderRow = (rowOffset: number, opacity: number, gap: string = '2vw') => {
+  const renderRow = (rowOffset: number, opacity: number, gap: string = '32px') => {
     const rowColor = getRowColor(rowOffset)
 
     return (
@@ -343,8 +343,8 @@ export function CarouselGrid({
             const absCol = Math.abs(col)
 
             // Make outer columns smaller to enhance depth effect
-            const isExtraSmall = absRow === 2 || (absRow === 1 && absCol === 2)
-            const isSmall = absRow === 1 || (absRow === 0 && absCol === 2)
+            const isExtraSmall = absRow === 1 && absCol === 2
+            const isSmall = (absRow === 1 && absCol === 1) || (absRow === 0 && absCol === 2)
 
             return (
               <motion.div
@@ -377,33 +377,27 @@ export function CarouselGrid({
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-      style={{ paddingLeft: '19vw', paddingRight: '22vw', paddingTop: '2vh', paddingBottom: '22vh' }}
+      className="absolute flex flex-col items-center justify-center z-10 pointer-events-none"
+      style={{ top: 0, bottom: 0, left: '80px', right: 0, paddingBottom: '30px' }}
     >
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
       <div ref={gridRef} className="relative flex items-center justify-center pointer-events-auto">
-        {/* 5x5 Grid - centered */}
-        <div className="flex flex-col items-center" style={{ gap: '1.5vh' }}>
-          {/* Extra Top Row (-2) */}
-          {renderRow(-2, 0.5)}
-
-          {/* Second Top Row (-1) */}
+        {/* 3x5 Grid - centered */}
+        <div className="flex flex-col items-center" style={{ gap: '32px' }}>
+          {/* Top Row (-1) */}
           {renderRow(-1, 0.7)}
 
           {/* Middle Row (0) - Active with larger center box */}
           {renderRow(0, 1)}
 
-          {/* Second Bottom Row (+1) */}
-          {renderRow(1, 0.7, '3vw')}
-
-          {/* Extra Bottom Row (+2) */}
-          {renderRow(2, 0.5)}
+          {/* Bottom Row (+1) */}
+          {renderRow(1, 0.7)}
         </div>
 
         {/* Vertical Navigation - positioned to the right of grid */}
         <nav
-          className="absolute flex flex-col items-center justify-center pointer-events-auto"
-          style={{ gap: '15px', left: '100%', marginLeft: '3vw' }}
+          className="fixed flex flex-col items-center justify-center pointer-events-auto z-50"
+          style={{ gap: '15px', right: '3%', top: '50%', transform: 'translateY(-50%)', marginRight: '14px' }}
           aria-label="Category navigation"
         >
           <motion.button
@@ -467,8 +461,8 @@ export function CarouselGrid({
 
       {/* Horizontal Navigation - Below Grid */}
       <nav
-        className="flex items-center justify-center pointer-events-auto"
-        style={{ marginTop: '5vh', gap: '30px' }}
+        className="fixed flex items-center justify-center pointer-events-auto z-50"
+        style={{ bottom: '48px', left: '50%', transform: 'translateX(-50%)', gap: '30px' }}
         aria-label="Video navigation"
       >
         <motion.button
