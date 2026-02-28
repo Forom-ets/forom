@@ -275,57 +275,53 @@ export function MemoryModal({
     return (
       <div className="w-full h-full bg-[#D9D9D9] relative" style={{ boxSizing: 'border-box', overflow: 'hidden' }}>
 
-        {/* Top section — header + categories + title */}
-        <div className="flex flex-col items-center px-[10%] pt-10" style={{ boxSizing: 'border-box' }}>
-
-          {/* MEMO Header */}
-          <h2 className="text-6xl md:text-7xl text-white mb-6 text-center uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+        {/* MEMO Header — 10% from top */}
+        <div className="absolute left-0 right-0 flex justify-center" style={{ left: '50%', top: '7.5%', transform: 'translateX(-50%) translateY(-50%)' }}>
+          <h2 className="text-6xl md:text-7xl text-white text-center uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif",fontSize: '50px' }}>
             MEMO
           </h2>
+        </div>
 
-          {/* Categories */}
-          <div className="flex flex-wrap justify-center items-center mb-8 w-full" style={{ gap: '5%' }}>
-            {QUESTION_ORDER.map((q) => {
-              const color = QUESTION_COLORS[q] || '#888888'
-              const isSelected = formData.question === q
-              return (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, question: q }))}
-                  className="px-6 py-2 border-[3px] border-black cursor-pointer uppercase text-white font-bold tracking-wide text-4xl md:text-5xl shadow-sm transition-transform hover:scale-105"
+        {/* Categories — 20% from top */}
+        <div className="absolute flex flex-wrap justify-center items-center left-[10%] right-[10%]" style={{ top: '17.5%', transform: 'translateY(-50%)', gap: '5%' }}>
+          {QUESTION_ORDER.map((q) => {
+            const color = QUESTION_COLORS[q] || '#888888'
+            const isSelected = formData.question === q
+            return (
+              <button
+                key={q}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, question: q }))}
+                className="cursor-pointer uppercase text-white font-bold tracking-wide shadow-sm transition-transform hover:scale-105"
                   style={{ 
                     backgroundColor: color,
                     fontFamily: "'Jersey 15', sans-serif",
+                    fontSize: '25px',
                     opacity: isSelected ? 1 : 0.6,
-                    borderRadius: '9px',
-                  }}
-                >
-                  {q}
-                </button>
-              )
-            })}
-          </div>
+                    borderRadius: '12px',
+                    padding: '10px 30px',
+                    border: '4px solid black',
+                }}
+              >
+                {q}
+              </button>
+            )
+          })}
+        </div>
 
-          {/* Title Row */}
-          <div className="flex flex-row items-center w-full mb-6">
-            <div className="w-1/4 flex justify-start">
-              <span className="text-3xl md:text-4xl font-bold text-black uppercase tracking-widest" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                TITRE :
-              </span>
-            </div>
-            <div className="w-2/4 flex justify-center">
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="SANS TITRE"
-                className="text-3xl md:text-4xl font-bold bg-transparent border-none outline-none text-center uppercase tracking-widest w-full text-black placeholder:text-black/50"
-                style={{ fontFamily: "'Jersey 15', sans-serif" }}
-              />
-            </div>
-            <div className="w-1/4" />
-          </div>
+        {/* Title Row — 30% from top */}
+        <div className="absolute" style={{ top: '30%', left: '10%', right: '10%', transform: 'translateY(-50%)' }}>
+          <span className="absolute left-0 top-1/2 font-bold text-black uppercase tracking-widest whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '35px', transform: 'translateY(-50%)' }}>
+            TITRE :
+          </span>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="SANS TITRE"
+            className="font-bold bg-transparent border-none outline-none text-center uppercase tracking-widest w-full text-black placeholder:text-black/50"
+            style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '30px' }}
+          />
         </div>
 
         {/* Centered notepad area */}
@@ -357,7 +353,7 @@ export function MemoryModal({
         {/* VIDEO URL + word count — above buttons */}
         <div className="absolute left-[10%] right-[10%] flex flex-row justify-between items-center" style={{ bottom: 'calc(10% + 60px)' }}>
           <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl text-[#FF3B30] uppercase tracking-wide font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+            <span className="text-3xl md:text-4xl text-[#FF3B30] uppercase tracking-wide font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '35px' }}>
               VIDEO URL:
             </span>
             <input
@@ -366,24 +362,24 @@ export function MemoryModal({
               onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
               placeholder="https://..."
               className="bg-transparent border-none outline-none text-lg md:text-xl w-full text-black placeholder:text-black/30"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
+              style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '25px' }}
             />
           </div>
-          <span className="text-3xl md:text-4xl text-black font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+          <span className="text-3xl md:text-4xl text-black font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '35px' }}>
             {wordCount}/400
           </span>
         </div>
 
         {/* Action Buttons — 10% from bottom */}
-        <div className="absolute flex gap-6 sm:gap-12" style={{ bottom: '10%', left: '50%', transform: 'translateX(-50%)' }}>
+        <div className="absolute flex" style={{ bottom: '7.5%', left: '50%', transform: 'translateX(-50%)', gap: '20%' }}>
           <button
             type="button"
             onClick={() => {
               if (memory.isFilled) setIsEditing(false)
               else onClose()
             }}
-            className="px-8 md:px-12 py-2 md:py-3 bg-white text-black rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors text-xl md:text-2xl shadow-sm border-2 border-black/10"
-            style={{ fontFamily: "'Jersey 15', sans-serif" }}
+            className="bg-white text-black rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors shadow-sm border-2 border-black/10"
+            style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '40px', padding: '10px 56px' }}
           >
             ANNULER
           </button>
@@ -391,8 +387,8 @@ export function MemoryModal({
             type="button"
             onClick={handleSave}
             disabled={!formData.question || !formData.title.trim()}
-            className="px-8 md:px-12 py-2 md:py-3 bg-black text-white rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xl md:text-2xl shadow-sm border-2 border-transparent"
-            style={{ fontFamily: "'Jersey 15', sans-serif" }}
+            className="bg-black text-white rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border-2 border-transparent"
+            style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '40px', padding: '10px 50px' }}
           >
             CONFIRMER
           </button>
