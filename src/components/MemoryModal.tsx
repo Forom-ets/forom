@@ -30,22 +30,23 @@ interface FormData {
 // =============================================================================
 
 const QUESTION_COLORS: Record<string, string> = {
-  'Comment ?': '#8000FF',
-  'Qui ?': '#FF007F',
-  'Pourquoi ?': '#FF8000',
-  'Quoi ?': '#0080FF',
-  'Quand ?': '#7FFF00',
-  'Ou ?': '#00FF7F',
+  'QUI?': '#F59E0B',
+  'QUOI?': '#FACC15',
+  'OU?': '#84CC16',
+  'QUAND?': '#10B981',
+  'COMMENT?': '#0EA5E9',
+  'COMBIEN?': '#4F46E5',
+  'POURQUOI?': '#8B5CF6',
 }
 
-// Order for display (2 rows of 3)
 const QUESTION_ORDER: WhQuestion[] = [
-  'Comment ?',
-  'Qui ?',
-  'Pourquoi ?',
-  'Quoi ?',
-  'Quand ?',
-  'Ou ?',
+  'QUI?',
+  'QUOI?',
+  'OU?',
+  'QUAND?',
+  'COMMENT?',
+  'COMBIEN?',
+  'POURQUOI?',
 ]
 
 // =============================================================================
@@ -66,20 +67,22 @@ const customStyles: Modal.Styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '2rem',
   },
   content: {
-    display: 'flex', 
-    flexDirection: 'column', 
     position: 'relative',
     inset: 'auto',
-    width: '75vw',
-    height: '75vh',
+    width: '80vw',
+    maxWidth: 'none',
+    maxHeight: '70vh',
+    height: '70vh',
     padding: 0,
     border: 'none',
     background: 'transparent',
-    overflow: 'visible',
+    overflow: 'hidden',
     borderRadius: 0,
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
   },
 }
 
@@ -88,28 +91,18 @@ const customStyles: Modal.Styles = {
 // =============================================================================
 
 const modalVariants = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0.8, 
-    y: 50,
-  },
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
   visible: { 
     opacity: 1, 
     scale: 1, 
     y: 0,
-    transition: {
-      type: 'spring' as const,
-      damping: 25,
-      stiffness: 300,
-    },
+    transition: { type: 'spring' as const, damping: 25, stiffness: 300 },
   },
   exit: { 
     opacity: 0, 
-    scale: 0.9, 
-    y: 30,
-    transition: {
-      duration: 0.2,
-    },
+    scale: 0.95, 
+    y: 20,
+    transition: { duration: 0.2 },
   },
 }
 
@@ -126,6 +119,7 @@ export function MemoryModal({
   onMemoryUpdate,
 }: MemoryModalProps) {
   const [isEditing, setIsEditing] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     question: null,
     title: '',
@@ -133,7 +127,6 @@ export function MemoryModal({
     description: '',
   })
 
-  // Reset form when memory changes or modal opens
   useEffect(() => {
     if (memory) {
       setFormData({
@@ -142,17 +135,14 @@ export function MemoryModal({
         videoUrl: memory.videoUrl || '',
         description: memory.isFilled ? memory.description : '',
       })
-      // Auto-open edit mode for empty memories
       setIsEditing(!memory.isFilled)
+      setIsVideoPlaying(false)
     }
   }, [memory, isOpen])
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape' && isOpen) onClose()
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
@@ -163,11 +153,8 @@ export function MemoryModal({
   const videoId = extractYouTubeId(memory.videoUrl)
   const memoryHasVideo = hasVideo(memory)
 
-  // Handle form submission
   const handleSave = () => {
-    if (!formData.question || !formData.title.trim()) {
-      return // Don't save if required fields are empty
-    }
+    if (!formData.question || !formData.title.trim()) return
 
     const updatedMemory = updateMemory(memory.category as CategoryType, 
       parseInt(memory.id.split('-')[1]), {
@@ -179,156 +166,127 @@ export function MemoryModal({
       }
     )
 
-    if (updatedMemory && onMemoryUpdate) {
-      onMemoryUpdate(updatedMemory)
-    }
-
+    if (updatedMemory && onMemoryUpdate) onMemoryUpdate(updatedMemory)
     setIsEditing(false)
   }
 
-  // Render the filled memory view (display mode)
+  // ===========================================================================
+  // FILLED VIEW
+  // ===========================================================================
   const renderFilledView = () => (
-    <div className="relative w-full h-full flex flex-coloverflow-hidden rounded-xl">
-      {/* Background - Video Thumbnail or Embed */}
-      <div className="absolute inset-0 z-0 w-full h-full">
-        {memoryHasVideo && videoId ? (
-          <>
-            <img
-              src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-              alt={memory.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          </>
+    <div className="relative w-full flex flex-col" style={{ height: '70vh', overflow: 'hidden' }}>
+
+      {/* Background layer: thumbnail stretched to full container */}
+      {memoryHasVideo && videoId ? (
+        isVideoPlaying ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full border-none z-0"
+          />
         ) : (
-          <div 
-            className="w-full h-full"
-            style={{ backgroundColor: '#2a2a2e' }}
+          <img
+            src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+            alt={memory.title}
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
-        )}
-      </div>
+        )
+      ) : (
+        <div className="absolute inset-0 w-full h-full bg-[#2a2a2e] z-0" />
+      )}
 
-      {/* Content Overlay */}
-      <div className="relative z-10 flex-1 flex flex-col p-8">
-        {/* Top: YouTube Link */}
-        <div className="text-center mb-6">
-          <span 
-            className="text-2xl text-white uppercase tracking-wide"
-            style={{ fontFamily: "'Jersey 15', sans-serif" }}
-          >
-            Youtube link:
-          </span>
-          {memory.videoUrl && (
-            <a 
-              href={memory.videoUrl.startsWith('http') ? memory.videoUrl : `https://www.youtube.com/watch?v=${memory.videoUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-sm text-white/80 hover:text-white underline mt-1 truncate"
-            >
-              {memory.videoUrl.startsWith('http') ? memory.videoUrl : `https://www.youtube.com/watch?v=${memory.videoUrl}`}
-            </a>
+      {/* 25% black overlay – always on top of background, below content */}
+      {!isVideoPlaying && (
+        <div className="absolute inset-0 z-10" style={{ backgroundColor: 'rgba(0,0,0,0.25)' }} />
+      )}
+
+      {/* Overlay content – hidden while video plays */}
+      {!isVideoPlaying && (
+        <div className="relative z-20 flex flex-col justify-between h-full px-12 py-10">
+
+          {/* Top: URL */}
+          <div className="flex justify-center">
+            {memory.videoUrl ? (
+              <a
+                href={memory.videoUrl.startsWith('http') ? memory.videoUrl : `https://www.youtube.com/watch?v=${memory.videoUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/80 hover:text-white underline drop-shadow-md truncate max-w-lg"
+                style={{ fontFamily: "'Montserrat', sans-serif" }}
+              >
+                {memory.videoUrl}
+              </a>
+            ) : (
+              <span className="text-xs text-white/40 italic" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                Aucune vidéo
+              </span>
+            )}
+          </div>
+
+          {/* Center: play button */}
+          {memoryHasVideo && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => setIsVideoPlaying(true)}
+                className="w-24 h-16 bg-white/90 hover:bg-white rounded-2xl flex items-center justify-center transition-all shadow-xl cursor-pointer border-none"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-black ml-2">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
           )}
-        </div>
 
-        {/* Center: Play Button */}
-        {/*memoryHasVideo && (
-          <div className="flex-1 flex items-center justify-center">
-            <a
-              href={memory.videoUrl?.startsWith('http') ? memory.videoUrl : `https://www.youtube.com/watch?v=${memory.videoUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-20 h-20 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <Play size={40} className="text-black ml-1" fill="currentColor" />
-            </a>
-          </div>
-        )*/}
-
-        {/* Bottom: Question & Response */}
-        <div className="mt-auto">
-          {/* Question and Response Row */}
-          <div className="flex justify-between items-end mb-4">
-            {/* Left: Question */}
-            <div>
-              <span 
-                className="text-sm uppercase tracking-widest text-white/70"
-                style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
-              >
-                QUESTION
-              </span>
-              <h2 
-                className="text-4xl text-white mt-1"
-                style={{ fontFamily: "'Jersey 15', sans-serif" }}
-              >
-                {memory.question || 'Question ?'}
-              </h2>
+          {/* Bottom: question / answer + description */}
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-end w-full">
+              <div className="flex flex-col items-start w-1/2">
+                <span className="text-xs uppercase tracking-widest text-white/80 font-black" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  QUESTION
+                </span>
+                <h2 className="text-4xl sm:text-5xl text-white leading-none mt-1 drop-shadow-lg" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                  {memory.question || '?'}
+                </h2>
+              </div>
+              <div className="flex flex-col items-end text-right w-1/2">
+                <span className="text-xs uppercase tracking-widest text-white/80 font-black" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  RÉPONSE
+                </span>
+                <h2 className="text-4xl sm:text-5xl text-white leading-none mt-1 drop-shadow-lg truncate w-full" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                  {memory.title}
+                </h2>
+              </div>
             </div>
-
-            {/* Right: Response */}
-            <div className="text-right">
-              <span 
-                className="text-sm uppercase tracking-widest text-white/70"
-                style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}
-              >
-                REPONSE
-              </span>
-              <h2 
-                className="text-4xl text-white mt-1"
-                style={{ fontFamily: "'Jersey 15', sans-serif" }}
-              >
-                {memory.title}
-              </h2>
-            </div>
+            {memory.description && (
+              <p className="text-sm text-white/90 leading-relaxed line-clamp-3 drop-shadow-md" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                {memory.description}
+              </p>
+            )}
           </div>
 
-          {/* Description */}
-          <div className="text-left">
-            <span 
-              className="text-xs uppercase tracking-widest text-white/60 block mb-2"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
-            >
-              L art de communiquer a l ere numerique
-            </span>
-            <p 
-              className="text-xs text-white/80 leading-relaxed line-clamp-3"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
-            >
-              {memory.description}
-            </p>
-          </div>
-
-          {/* Category Tag */}
-          <div 
-            className="mt-4 inline-block px-3 py-1 rounded text-sm"
-            style={{ 
-              backgroundColor: borderColor + '40',
-              color: borderColor,
-              fontFamily: "'Montserrat', sans-serif",
-            }}
-          >
-            {memory.category}
-          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 
-  // Render the edit/create form (MEMO style)
-  const renderEditView = () => (
-    <div className="w-full h-full flex flex-col items-center justify-between" style={{ padding: '30px 50px' }}>
-      {/* MEMO Title */}
-      <h2 
-        className="text-4xl text-[#FF3B30] mb-4 text-center uppercase tracking-wider"
-        style={{ fontFamily: "'Jersey 15', sans-serif" }}
-      >
-        MEMO
-      </h2>
+  // ===========================================================================
+  // EDIT VIEW
+  // ===========================================================================
+  const renderEditView = () => {
+    const wordCount = formData.description.split(/\s+/).filter(Boolean).length;
+    
+    return (
+      <div className="w-full h-full flex flex-col pt-12 pb-10 px-[10%] overflow-y-auto bg-[#D9D9D9]" style={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
+        
+        {/* MEMO Header */}
+        <h2 className="text-6xl md:text-7xl text-white mb-8 text-center uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+          MEMO
+        </h2>
 
-      {/* Question Buttons - 2 rows of 3, centered */}
-      <div className="flex flex-col items-center gap-2 mb-4 w-full">
-        {/* Row 1 */}
-        <div className="flex gap-4 justify-center">
-          {QUESTION_ORDER.slice(0, 3).map((q) => {
+        {/* Categories - Added gap-4 md:gap-6 for spacing */}
+        <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 mb-12 w-full">
+          {QUESTION_ORDER.map((q) => {
             const color = QUESTION_COLORS[q] || '#888888'
             const isSelected = formData.question === q
             return (
@@ -336,163 +294,113 @@ export function MemoryModal({
                 key={q}
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, question: q }))}
-                className="px-5 py-1.5 rounded transition-all cursor-pointer uppercase text-white font-bold tracking-wide text-sm"
+                className="px-6 py-2 rounded-md border-[3px] border-black cursor-pointer uppercase text-white font-bold tracking-wide text-sm md:text-base shadow-sm transition-transform hover:scale-105"
                 style={{ 
                   backgroundColor: color,
                   fontFamily: "'Jersey 15', sans-serif",
-                  border: isSelected ? '3px solid #000' : '3px solid transparent',
-                  boxShadow: isSelected ? '0 0 10px rgba(0,0,0,0.3)' : 'none',
-                  minWidth: '100px',
+                  opacity: isSelected ? 1 : 0.6,
                 }}
               >
-                {q.replace(' ?', '?').toUpperCase()}
+                {q}
               </button>
             )
           })}
         </div>
-        {/* Row 2 */}
-        <div className="flex gap-4 justify-center">
-          {QUESTION_ORDER.slice(3, 6).map((q) => {
-            const color = QUESTION_COLORS[q] || '#888888'
-            const isSelected = formData.question === q
-            return (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, question: q }))}
-                className="px-5 py-1.5 rounded transition-all cursor-pointer uppercase text-white font-bold tracking-wide text-sm"
-                style={{ 
-                  backgroundColor: color,
-                  fontFamily: "'Jersey 15', sans-serif",
-                  border: isSelected ? '3px solid #000' : '3px solid transparent',
-                  boxShadow: isSelected ? '0 0 10px rgba(0,0,0,0.3)' : 'none',
-                  minWidth: '100px',
-                }}
-              >
-                {q.replace(' ?', '?').toUpperCase()}
-              </button>
-            )
-          })}
-        </div>
-      </div>
 
-      {/* Title Row - Centered */}
-      <div className="flex items-center justify-center gap-6 mb-4 w-full">
-        <span 
-          className="text-xl text-black uppercase tracking-wide whitespace-nowrap"
-          style={{ fontFamily: "'Jersey 15', sans-serif" }}
-        >
-          TITRE :
-        </span>
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="SANS TITRE"
-          className="text-xl bg-transparent border-none outline-none uppercase tracking-wide text-center"
-          style={{ 
-            fontFamily: "'Jersey 15', sans-serif",
-            color: formData.title ? '#000' : '#666',
-            minWidth: '200px',
-          }}
-        />
-      </div>
-
-      {/* Lined Notepad Area for Description - Centered */}
-      <div 
-        className="relative w-full"
-        style={{ maxWidth: '85%', height: '180px', flexShrink: 0 }}
-      >
-        <textarea
-          value={formData.description}
-          onChange={(e) => {
-            const words = e.target.value.split(/\s+/).filter(Boolean)
-            if (words.length <= 400) {
-              setFormData(prev => ({ ...prev, description: e.target.value }))
-            }
-          }}
-          placeholder=""
-          className="w-full h-full bg-transparent border-none outline-none resize-none relative z-10 text-base"
-          style={{ 
-            fontFamily: "'Montserrat', sans-serif",
-            color: '#333',
-            lineHeight: '2rem',
-            paddingTop: '0.25rem',
-          }}
-        />
-        {/* Black Lines */}
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-start overflow-hidden">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div 
-              key={i}
-              className="w-full flex-shrink-0"
-              style={{ 
-                height: '2rem',
-                borderBottom: '1px solid #000',
-              }}
+        {/* Title Row - Flexbox trick to keep input perfectly centered while TITRE stays left */}
+        <div className="flex flex-row items-center w-full mb-10">
+          <div className="w-1/4 flex justify-start">
+            <span className="text-3xl md:text-4xl font-bold text-black uppercase tracking-widest" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+              TITRE :
+            </span>
+          </div>
+          
+          <div className="w-2/4 flex justify-center">
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="SANS TITRE"
+              className="text-3xl md:text-4xl font-bold bg-transparent border-none outline-none text-center uppercase tracking-widest w-full text-black placeholder:text-black/50"
+              style={{ fontFamily: "'Jersey 15', sans-serif" }}
             />
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Bottom Row: Video URL + Word Count */}
-      <div className="flex justify-between items-center w-full mt-4 mb-4" style={{ maxWidth: '85%' }}>
-        <div className="flex items-center gap-3">
-          <span 
-            className="text-lg text-[#FF8000] uppercase tracking-wide whitespace-nowrap font-bold"
-            style={{ fontFamily: "'Jersey 15', sans-serif" }}
-          >
-            VIDEO URL:
-          </span>
-          <input
-            type="text"
-            value={formData.videoUrl}
-            onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
-            placeholder=""
-            className="bg-transparent border-none outline-none text-sm"
+          <div className="w-1/4"></div> {/* Invisible spacer to balance the flex layout */}
+        </div>
+
+        {/* Lined Notepad Area — fixed at 4 lines, scrolls internally */}
+        <div className="mb-8" style={{ height: 'calc(4 * 3rem)', overflow: 'hidden' }}>
+          <textarea
+            value={formData.description}
+            onChange={(e) => {
+              const words = e.target.value.split(/\s+/).filter(Boolean)
+              if (words.length <= 400) {
+                setFormData(prev => ({ ...prev, description: e.target.value }))
+              }
+            }}
+            className="w-full bg-transparent border-0 outline-none resize-none text-lg md:text-xl font-medium"
             style={{ 
               fontFamily: "'Montserrat', sans-serif",
-              color: '#333',
-              width: '250px',
+              color: '#1a1a1a',
+              lineHeight: '3rem',
+              height: 'calc(4 * 3rem)',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              display: 'block',
+              backgroundImage: 'linear-gradient(transparent, transparent calc(3rem - 1px), #888 calc(3rem - 1px), #888 3rem)',
+              backgroundSize: '100% 3rem',
+              boxSizing: 'border-box',
             }}
           />
         </div>
-        <span 
-          className="text-lg text-black font-bold"
-          style={{ fontFamily: "'Jersey 15', sans-serif" }}
-        >
-          {formData.description.split(/\s+/).filter(Boolean).length}/400
-        </span>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-10 justify-center">
-        <button
-          type="button"
-          onClick={() => {
-            if (memory.isFilled) {
-              setIsEditing(false)
-            } else {
-              onClose()
-            }
-          }}
-          className="px-6 py-2 bg-white border-2 border-black text-black uppercase tracking-wide cursor-pointer hover:bg-gray-100 transition-colors text-sm"
-          style={{ fontFamily: "'Jersey 15', sans-serif" }}
-        >
-          ANNULER
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!formData.question || !formData.title.trim()}
-          className="px-6 py-2 bg-black border-2 border-black text-white uppercase tracking-wide cursor-pointer hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          style={{ fontFamily: "'Jersey 15', sans-serif" }}
-        >
-          CONFIRMER
-        </button>
+        {/* Bottom Section: URL & Words */}
+        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end w-full mb-10 gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-2/3">
+            <span className="text-3xl md:text-4xl text-[#FF3B30] uppercase tracking-wide font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+              VIDEO URL:
+            </span>
+            <input
+              type="text"
+              value={formData.videoUrl}
+              onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
+              placeholder="https://..."
+              className="bg-transparent border-none outline-none text-lg md:text-xl w-full text-black placeholder:text-black/30"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
+            />
+          </div>
+          <span className="text-3xl md:text-4xl text-black font-bold whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+            {wordCount}/400
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-6 sm:gap-12 w-full mt-auto">
+          <button
+            type="button"
+            onClick={() => {
+              if (memory.isFilled) setIsEditing(false)
+              else onClose()
+            }}
+            className="px-8 md:px-12 py-2 md:py-3 bg-white text-black rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors text-xl md:text-2xl shadow-sm border-2 border-black/10"
+            style={{ fontFamily: "'Jersey 15', sans-serif" }}
+          >
+            ANNULER
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!formData.question || !formData.title.trim()}
+            className="px-8 md:px-12 py-2 md:py-3 bg-black text-white rounded-full font-bold uppercase tracking-widest cursor-pointer hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xl md:text-2xl shadow-sm border-2 border-transparent"
+            style={{ fontFamily: "'Jersey 15', sans-serif" }}
+          >
+            CONFIRMER
+          </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <AnimatePresence>
@@ -502,65 +410,56 @@ export function MemoryModal({
           onRequestClose={onClose}
           style={customStyles}
           closeTimeoutMS={200}
-          contentLabel={memory.title}
+          contentLabel={memory.title || "Memory Modal"}
           shouldCloseOnOverlayClick={true}
           shouldCloseOnEsc={true}
-          ariaHideApp={true}
+          ariaHideApp={false}
         >
           <motion.div
             variants={modalVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative h-full" 
+            className="relative flex flex-col shadow-2xl w-full"
             style={{
+              height: '70vh',
               backgroundColor: isEditing ? '#D9D9D9' : 'transparent',
-              border: isEditing ? '6px solid #000000' : `6px solid ${borderColor}`,
-              borderRadius: '16px',
-              boxShadow: '0 0 40px rgba(0,0,0,0.3)',
+              border: isEditing ? '6px solid #FF3B30' : `6px solid ${borderColor}`,
+              borderRadius: '24px',
               overflow: 'hidden',
-              width: '100%',
-              minWidth: '100%',
-              display: 'block' 
+              overflowX: 'hidden',
+              boxSizing: 'border-box',
             }}
           >
-            {/* Button Modifier */}
+            {/* Modifier Button */}
             {memory.isFilled && !isEditing && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsEditing(true)}
-                className="absolute z-50 cursor-pointer bg-white/95 hover:bg-white text-black shadow-xl rounded-full border border-black/10"
-                style={{ 
-                  top: '18px',     
-                  left: '18px', 
-                  padding: '8px 20px',   
-                  fontSize: '0.95rem',   
-                  fontWeight: '600',     
-                  fontFamily: "'Montserrat', sans-serif",
-                }}
+                className="absolute z-50 cursor-pointer bg-white/95 hover:bg-white text-black shadow-xl rounded-full border border-black/10 transition-colors"
+                style={{ top: '20px', left: '20px', padding: '8px 24px', fontSize: '1rem', fontWeight: '600', fontFamily: "'Montserrat', sans-serif" }}
                 type="button"
               >
                 Modifier
               </motion.button>
             )}
 
-            {/* Button Close Modal*/}
+            {/* Close Button */}
             <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={onClose}
-              className="absolute z-50 cursor-pointer bg-[#FF3B30] w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
-              style={{ 
-                  top: '16px', 
-                  right: '16px' 
-              }}
+              className="absolute z-50 cursor-pointer bg-[#FF3B30] w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-transform"
+              style={{ top: '16px', right: '16px' }}
               aria-label="Close modal"
               type="button"
             >
-              <X size={24} strokeWidth={3} className="text-white" />
+              <X size={28} strokeWidth={4} className="text-white" />
             </motion.button>
             
-            {/* Contenu */}
-            <div className="w-full h-full">
+            {/* Main Content Area */}
+            <div className="w-full flex-1 flex flex-col overflow-y-auto" style={{ overflowX: 'hidden' }}>
               {isEditing ? renderEditView() : (memory.isFilled ? renderFilledView() : renderEditView())}
             </div>
           </motion.div>

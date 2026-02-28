@@ -24,10 +24,10 @@ export interface MemoryBoxProps {
 // =============================================================================
 
 const DIMENSIONS = {
-  centered: { width: '17vw', height: '11.5vw', minWidth: '170px', minHeight: '115px' },
-  extraSmall: { width: '4vw', height: '2.7vw', minWidth: '40px', minHeight: '27px' },
-  small: { width: '7.5vw', height: '5vw', minWidth: '75px', minHeight: '50px' },
-  default: { width: '10vw', height: '6.8vw', minWidth: '100px', minHeight: '68px' },
+  centered: { width: '560px', height: '315px', minWidth: '560px', minHeight: '315px' },
+  default: { width: '240px', height: '135px', minWidth: '240px', minHeight: '135px' },
+  small: { width: '160px', height: '90px', minWidth: '160px', minHeight: '90px' },
+  extraSmall: { width: '80px', height: '45px', minWidth: '80px', minHeight: '45px' },
 } as const
 
 // =============================================================================

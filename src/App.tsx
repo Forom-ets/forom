@@ -7,8 +7,6 @@ import { CarouselGrid } from './components/CarouselGrid'
 import { SupportModal } from './components/SupportModal'
 
 // Import Icons
-import userIcon from './assets/icons/user.png'
-import etsIcon from './assets/icons/ets.jpg'
 import wikiIcon from './assets/icons/wiki.png'
 
 // =============================================================================
@@ -38,8 +36,10 @@ const tokenModalStyles: ReactModal.Styles = {
   content: {
     position: 'relative',
     inset: 'auto',
-    width: '600px',
-    height: '400px',
+    width: '90vw',
+    maxWidth: '1200px',
+    height: 'auto',
+    maxHeight: '90vh',
     padding: 0,
     border: 'none',
     background: 'transparent',
@@ -108,26 +108,26 @@ function Modal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="w-full h-full rounded-xl shadow-2xl p-8 flex flex-col border-4 transition-colors duration-300"
+            className="w-full h-full flex flex-col relative"
             style={{ 
-              backgroundColor: 'var(--color-surface)', 
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text)'
+              backgroundColor: '#5FCB76', 
+              border: '8px solid black',
+              borderRadius: '38px',
+              color: 'white'
             }}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold font-['Montserrat']">{title}</h2>
-              <button 
-                onClick={onClose}
-                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition-colors cursor-pointer"
-                style={{ backgroundColor: 'var(--color-bg-secondary)' }}
-                type="button"
-                aria-label="Close modal"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto text-lg" style={{ color: 'var(--color-text-secondary)' }}>
+            <button 
+              onClick={onClose}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer bg-[#FF4B4B] hover:bg-[#ff3333] transition-colors z-10"
+              type="button"
+              aria-label="Close modal"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div className="flex-1 overflow-auto p-12">
               {children}
             </div>
           </motion.div>
@@ -211,7 +211,7 @@ function App() {
       {/* Theme Toggle - Bottom Right */}
       <div 
         className="fixed z-50 flex items-center gap-2"
-        style={{ bottom: '32px', right: '32px' }}
+        style={{ bottom: '48px', right: '3%' }}
       >
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
       </div>
@@ -225,41 +225,13 @@ function App() {
           Corner Icons
       -------------------------------------------------------------------------- */}
 
-      {/* Top Left - ETS */}
-      <motion.a
-        href="https://www.etsmtl.ca/experience-etudiante/clubs-etudiants"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, top: '32px', left: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
-        whileHover={{ scale: 1.1, rotate: -5 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src={etsIcon} alt="ÉTS Montréal" className="w-3/4 h-3/4 object-contain" />
-      </motion.a>
-
-      {/* Top Right - User */}
-      <motion.div
-        className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, top: '32px', right: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img
-          src={userIcon}
-          alt="User Profile"
-          className="w-3/4 h-3/4 object-contain"
-          style={{ filter: isDarkMode ? 'invert(1)' : 'none' }}
-        />
-      </motion.div>
-
       {/* Bottom Left - Wiki */}
       <motion.a
         href="https://wiki.etsmtl.club/share/8cnz7bzxf3/p/services-offerts-j8LxYBFxrs"
         target="_blank"
         rel="noopener noreferrer"
         className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, bottom: '32px', left: '32px', backgroundColor: 'transparent', borderColor: 'transparent' }}
+        style={{ ...cornerIconSize, bottom: '48px', left: '3%', backgroundColor: 'transparent', borderColor: 'transparent' }}
         whileHover={{ scale: 1.1, rotate: 5 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -291,31 +263,74 @@ function App() {
       <Modal 
         isOpen={activeModal === 'token'} 
         onClose={() => setActiveModal(null)}
-        title="The FOROM Ecosystem"
+        title="PIXELS"
       >
-        <div className="flex flex-col gap-4">
-          <p className="text-lg font-medium text-zinc-600 dark:text-zinc-300">Learn to earn. Support to build.</p>
+        <div className="flex flex-col h-full">
+          {/* Header Section */}
+          <div className="flex justify-between items-end mb-8">
+            <div className="flex-1 pb-4">
+              <h2 className="font-montserrat font-black text-[#FFD700] text-2xl tracking-wide">L'économie des pixels</h2>
+            </div>
+            
+            <div className="flex-shrink-0 px-4">
+              <h1 className="font-jersey-10 text-white text-[100px] tracking-widest drop-shadow-md m-0 leading-none">PIXELS</h1>
+            </div>
+            
+            <div className="flex-1 text-right pb-4">
+              <h2 className="font-montserrat font-black text-[#FFD700] text-2xl tracking-wide">The Pixel Economy</h2>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-16 text-white font-jetbrains text-sm leading-relaxed">
+            {/* Left Column - French */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-montserrat font-bold text-white text-lg">Connaissances et récompenses</h3>
+              </div>
+              <p>
+                Dans la grille interactive FOROM, l'économie est conçue pour encourager les contributions éducatives et le partage de connaissances.
+              </p>
+              
+              <ul className="space-y-4">
+                <li>
+                  <span className="font-bold">• Les couleurs comme catégories :</span> La grille est organisée par couleurs distinctes, chaque couleur représentant une catégorie, un sujet ou un thème spécifique. Cela fait du tableau une carte visuellement organisée de différents sujets.
+                </li>
+                <li>
+                  <span className="font-bold">• Gagner des pixels :</span> Les pixels servent de monnaie officielle à la plateforme. Les utilisateurs gagnent cette monnaie en contribuant activement à la communauté - plus précisément, en créant et en publiant des tutoriels utiles au sein des catégories de la grille.
+                </li>
+                <li>
+                  <span className="font-bold">• Les 9 super modérateurs :</span> Les neuf super modérateurs agissent comme les gestionnaires économiques de la plateforme. Plutôt que de rivaliser pour l'espace, ils supervisent le système de récompenses. Chaque modérateur est responsable de définir un catalogue unique de « cadeaux » ou d'avantages.
+                </li>
+                <li>
+                  <span className="font-bold">• Le système d'échange :</span> Une fois qu'un utilisateur a gagné des pixels grâce à ses tutoriels, il peut s'adresser aux super modérateurs pour échanger sa monnaie. Comme les modérateurs gèrent leurs propres récompenses, les utilisateurs peuvent magasiner et échanger leurs pixels contre les cadeaux spécifiques qui les intéressent le plus.
+                </li>
+              </ul>
+            </div>
 
-          <section className="pt-2 pb-2">
-            <h3 className="text-xl font-semibold text-black dark:text-white">How to Earn</h3>
-            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-              Knowledge is currency here. For every tutorial you complete, you automatically earn <span className="font-semibold">1,000 Tokens</span>.
-              The more you learn, the more you collect.
-            </p>
-          </section>
-
-          <section className="pt-2 pb-2">
-            <h3 className="text-xl font-semibold text-black dark:text-white">How to Support</h3>
-            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-              Want to push the project further? You can acquire tokens to directly finance the development team.
-              Your contributions help us create new iterations, fund new projects, and improve the application faster.
-            </p>
-          </section>
-
-          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-            <p className="text-sm italic text-zinc-500 dark:text-zinc-400">
-              Whether you earn them or buy them, your tokens fuel the collective. Use them to vote on the next big update.
-            </p>
+            {/* Right Column - English */}
+            <div className="space-y-6">
+              <div className="text-right">
+                <h3 className="font-montserrat font-bold text-white text-lg">Knowledge Creation and Rewards</h3>
+              </div>
+              <p>
+                In the FOROM interactive grid, the economy is built around incentivizing educational contributions and knowledge sharing.
+              </p>
+              
+              <ul className="space-y-4">
+                <li>
+                  <span className="font-bold">• Colors as Categories:</span> The grid is organized by distinct colors, with each color representing a specific category, subject, or theme. This makes the board a visually organized map of different topics.
+                </li>
+                <li>
+                  <span className="font-bold">• Earning Pixels:</span> Pixels serve as the platform's official currency. Users earn this currency by actively contributing to the community-specifically, by creating and publishing helpful tutorials within the grid's categories.
+                </li>
+                <li>
+                  <span className="font-bold">• The 9 Super Moderators:</span> The nine super moderators act as the economic managers of the platform. Rather than competing for space, they oversee the reward system. Each moderator is responsible for defining a unique catalog of "gifts" or perks.
+                </li>
+                <li>
+                  <span className="font-bold">• The Exchange System:</span> Once a user earns pixels from their tutorials, they can approach the super moderators to trade their currency. Because the moderators curate their own rewards, users can shop around and exchange their pixels for the specific gifts that appeal to them the most.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </Modal>
