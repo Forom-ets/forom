@@ -377,7 +377,7 @@ Under the following terms:
 - **Attribution** — You must give appropriate credit to **Forom**, provide a link to the license, and indicate if changes were made
 - **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license
 
-© 2024-2026 [Forom](https://github.com/forom)
+© 2024-2026 [Forom](https://github.com/forom.ets)
 
 ---
 
