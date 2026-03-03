@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Play, Plus } from 'lucide-react'
-import { getMemoryThumbnail, hasVideo } from '../data/memories'
+import { getMemoryThumbnail, hasVideo, QUESTION_COLORS } from '../data/memories'
 import type { Memory } from '../data/memories'
 
 // =============================================================================
@@ -104,43 +104,76 @@ export const MemoryBox = memo(function MemoryBox({
           borderRadius: '16px',
         }}
       >
-        {showThumbnail ? (
+        {showThumbnail || isFilled ? (
           // Thumbnail with play overlay and question text
-          <div className="relative w-full h-full">
-            <img
-              src={thumbnail}
-              alt={title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
-              {/* Question text at top for filled memories */}
+          <div className="absolute inset-0 w-full h-full bg-black">
+            {showThumbnail && (
+              <img
+                src={thumbnail}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ opacity: isCentered ? 0.85 : 0.5, zIndex: 1 }}
+                loading="lazy"
+              />
+            )}
+            {/* Dark overlay only for non-centered items */}
+            {!isCentered && (
+              <div className="absolute inset-0 bg-black/40" style={{ zIndex: 2 }} />
+            )}
+            {/* Centered layout: badge top, title middle */}
+            <div className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }}>
+              {/* Badge — pinned to top center */}
               {isFilled && question && (
-                <span 
-                  className="absolute top-2 left-2 right-2 text-white font-bold text-center truncate"
-                  style={{ 
-                    fontFamily: "'Jersey 15', sans-serif",
-                    fontSize: questionFontSize,
-                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                  }}
-                >
-                  {question}
-                </span>
+                <div style={{ position: 'absolute', top: isCentered ? '10%' : '5%', left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+                  <span
+                    className="flex items-center justify-center font-bold text-white uppercase shadow-lg"
+                    style={{
+                      fontFamily: "'Jersey 15', sans-serif",
+                      fontSize: isCentered ? '22px' : isSmall ? '12px' : isExtraSmall ? '8px' : '16px',
+                      backgroundColor: question ? (QUESTION_COLORS[question] || borderColor) : borderColor,
+                      padding: isCentered ? '8px 36px' : '2px 10px',
+                      borderRadius: isCentered ? '12px' : '4px',
+                      border: isCentered ? '3px solid #111' : `2px solid ${borderColor}`,
+                      letterSpacing: isCentered ? '1px' : 'normal',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {question}
+                  </span>
+                </div>
               )}
-              <div 
-                className="rounded-full flex items-center justify-center"
-                style={{
-                  width: iconSize * 1.5,
-                  height: iconSize * 1.5,
-                  backgroundColor: 'rgba(255,255,255,0.9)',
-                }}
-              >
-                <Play 
-                  size={iconSize * 0.6} 
-                  className="text-gray-800 ml-0.5" 
-                  fill="currentColor"
-                />
-              </div>
+              {/* Title — pinned to absolute center of the box */}
+              {isFilled && isCentered && (
+                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', justifyContent: 'center', padding: '0 24px' }}>
+                  <span
+                    className="text-white text-center font-bold uppercase w-full"
+                    style={{
+                      fontFamily: "'Jersey 15', sans-serif",
+                      fontSize: '52px',
+                      lineHeight: 1.1,
+                      textShadow: '2px 2px 8px rgba(0,0,0,0.95)',
+                    }}
+                  >
+                    {title}
+                  </span>
+                </div>
+              )}
+              {/* Title for non-centered items */}
+              {isFilled && !isCentered && (
+                <div style={{ position: 'absolute', bottom: '8px', left: 0, right: 0, display: 'flex', justifyContent: 'center', padding: '0 8px' }}>
+                  <span
+                    className="text-white text-center font-bold uppercase w-full"
+                    style={{
+                      fontFamily: "'Jersey 15', sans-serif",
+                      fontSize: isSmall ? '24px' : isExtraSmall ? '14px' : '32px',
+                      lineHeight: 1.1,
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    {title}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -165,7 +198,7 @@ export const MemoryBox = memo(function MemoryBox({
       {/* Info bar - only for centered items */}
       {isCentered && onInfoClick && (
         <div
-          className="w-full flex justify-between items-center mt-2 cursor-pointer select-none hover:opacity-80 transition-opacity"
+          className="w-full flex justify-start items-center mt-2 cursor-pointer select-none hover:opacity-80 transition-opacity"
           onClick={(e) => {
             e.stopPropagation()
             onInfoClick()
@@ -181,9 +214,7 @@ export const MemoryBox = memo(function MemoryBox({
               ? (displayNumber + 1).toString().padStart(2, '0') + '.' 
               : ''}
           </span>
-          <span className="truncate ml-2 text-right flex-1">
-            {title}
-          </span>
+          {/* Removed the external bottom title text since it is now centered inside the thumbnail box! */}
         </div>
       )}
     </div>
