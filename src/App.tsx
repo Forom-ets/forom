@@ -82,10 +82,11 @@ function ThemeToggle({
 // =============================================================================
 
 function App() {
-  const [activeCategory, setActiveCategory] = useState('F')
+  const [activeCategory, setActiveCategory] = useState('E')
   const [activeModal, setActiveModal] = useState<'token' | 'support' | 'user' | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isRubixView, setIsRubixView] = useState(false)
 
   // Economy & Leveling State
   const [pixels, setPixels] = useState(0)
@@ -164,6 +165,7 @@ function App() {
         onTokenClick={() => setActiveModal('token')}
         onSupportClick={() => setActiveModal('support')}
         onUserClick={() => setActiveModal('user')}
+        onRubixClick={() => setIsRubixView(prev => !prev)}
         isDark={isDarkMode}
       />
 
@@ -200,6 +202,7 @@ function App() {
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
         isDark={isDarkMode}
+        isRubixView={isRubixView}
         questionLabels={questionLabels}
         personalQuests={personalQuests}
       />
@@ -207,7 +210,6 @@ function App() {
       {/* --------------------------------------------------------------------------
           Modals
       -------------------------------------------------------------------------- */}
-
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -273,3 +275,4 @@ function App() {
 }
 
 export default App
+

@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Mail } from 'lucide-react'
 import cedilleIcon from '../assets/icons/cedille.png'
 import etsIcon from '../assets/icons/ets.jpg'
+import chromaNotesIcon from '../assets/icons/chroma_notes.svg'
+import rubixViewIcon from '../assets/icons/rubix_view.svg'
 import userIcon from '../assets/icons/user.png'
 
 // =============================================================================
@@ -32,10 +34,11 @@ interface HeaderProps {
   onTokenClick: () => void
   onSupportClick: () => void
   onUserClick: () => void
+  onRubixClick?: () => void
   isDark?: boolean
 }
 
-export function Header({ onTokenClick, onSupportClick, onUserClick, isDark = false }: HeaderProps) {
+export function Header({ onTokenClick, onSupportClick, onUserClick, onRubixClick, isDark = false }: HeaderProps) {
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -62,18 +65,41 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, isDark = fal
     >
       {/* ---- Left group: ETS, Search, FOROM ---- */}
       <div className="flex items-center" style={{ gap: '5%', flex: 1 }}>
-        {/* ETS Logo */}
-        <motion.a
-          href="https://www.etsmtl.ca/experience-etudiante/clubs-etudiants"
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center justify-center shrink-0"
-          style={{ width: '36px', height: '36px' }}
-        >
-          <img src={etsIcon} alt="ÉTS Montréal" className="w-full h-full object-contain rounded" />
-        </motion.a>
+        {/* Left Icons Group */}
+        <div className="flex items-center gap-3 shrink-0">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center rounded-full overflow-hidden"
+            style={{ width: '36px', height: '36px' }}
+            title="Roadmap"
+          >
+            <img src={chromaNotesIcon} alt="Roadmap (Chroma Notes)" className="w-full h-full object-cover" />
+          </motion.button>
+
+          <motion.button
+            onClick={onRubixClick}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center rounded-md"
+            style={{ width: '36px', height: '36px' }}
+            title="Rubix View"
+          >
+            <img src={rubixViewIcon} alt="Rubix View" className="w-full h-full object-contain" />
+          </motion.button>
+
+          <motion.a
+            href="https://www.etsmtl.ca/experience-etudiante/clubs-etudiants"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center shrink-0 rounded-full overflow-hidden"
+            style={{ width: '36px', height: '36px' }}
+          >
+            <img src={etsIcon} alt="ÉTS Montréal" className="w-full h-full object-cover" />
+          </motion.a>
+        </div>
 
         {/* Search – circle expand animation */}
         <form

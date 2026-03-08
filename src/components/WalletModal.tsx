@@ -72,11 +72,11 @@ function CircularProgress({ percentage, color, title, size = 180, strokeWidth = 
   const offset = circumference - (percentage / 100) * circumference
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {title && <span className="text-white text-[56px] drop-shadow-md leading-none font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{title}</span>}
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex flex-col items-center w-full">
+      {title && <span className="text-white font-jersey uppercase drop-shadow-md leading-none tracking-widest text-center" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(32px, 5vh, 64px)' }}>{title}</span>}
+      <div className="relative mt-2 flex items-center justify-center mx-auto" style={{ width: '100%', aspectRatio: '1/1', maxWidth: `${size}px` }}>
         {/* Background circle */}
-        <svg width={size} height={size} className="transform -rotate-90">
+        <svg viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 w-full h-full" style={{ display: 'block' }}>
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -98,11 +98,12 @@ function CircularProgress({ percentage, color, title, size = 180, strokeWidth = 
             strokeDashoffset={offset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
+            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
           />
         </svg>
         {/* Percentage text inside circle */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white text-[48px] drop-shadow-sm font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none w-full h-full">
+          <span className="text-white font-bold text-center" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 'clamp(20px, 4vw, 56px)' }}>
             {Math.round(percentage)}%
           </span>
         </div>
@@ -281,12 +282,12 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
               </svg>
             </button>
 
-            <div className="flex-1 overflow-auto" style={{ padding: '2rem 5%' }}>
-              <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-hidden" style={{ padding: '2rem 5%' }}>
+              <div className="flex flex-col w-full h-full">
 
                 {/* Content */}
                 {activeTab === 'personal' ? (
-                  <div className="flex flex-col items-center justify-center font-jersey text-center h-full space-y-16 mt-4 pb-12 w-full">
+                  <div className="flex flex-col items-center justify-center font-jersey text-center h-full space-y-16 mt-4 pb-12 w-full overflow-y-auto">
                     <h1 className="text-white text-[80px] tracking-widest drop-shadow-[4px_4px_0px_rgba(0,0,0,0.5)] uppercase m-0 leading-none font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif" }}>PIXEL WALLET</h1>
                     
                     <div className="flex items-center justify-center w-full max-w-4xl mx-auto h-[350px]">
@@ -308,62 +309,74 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-start font-jersey text-center h-full pt-4 pb-8 overflow-y-auto" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                  <div className="flex flex-col items-center justify-start font-jersey text-center h-full w-full overflow-hidden" style={{ fontFamily: "'Jersey 15', sans-serif", paddingTop: '2vh' }}>
                     {/* Header */}
-                    <div className="text-center mb-12 flex flex-col gap-6 w-full mt-4">
-                        <h2 className="text-[52px] leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    <div className="text-center flex flex-col gap-1 w-full flex-shrink-0 z-10">
+                        <h2 className="font-jersey leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 tracking-widest" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(32px, 7vh, 72px)' }}>
                           <span className="text-[#FF4B4B]">COMMUNITY</span> <span className="text-white">WALLET</span>
                         </h2>
-                        <h3 className="text-[40px] leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                        <h3 className="font-jersey leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 tracking-wider" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(24px, 5vh, 56px)' }}>
                           <span className="text-[#FF4B4B]">607</span> <span className="text-white">PIXELS</span> <span className="text-[#FF4B4B]">MAX.</span>
                         </h3>
                     </div>
 
                     {/* Circular Graphs Row */}
-                    <div className="flex justify-center flex-1 items-center w-full" style={{ gap: '2%' }}>
+                    <div className="flex justify-center flex-1 items-center w-full min-h-0" style={{ gap: '2%', transform: 'translateY(-12vh)' }}>
                       
                       {/* MI (My Impact) Graph */}
-                      <div style={{ transform: 'translateY(-80px)' }}>
-                        <CircularProgress 
-                          title="MI" 
-                          percentage={miPercentage} 
-                          color="#FFD700" 
-                          size={220} 
-                          strokeWidth={12} 
-                        />
+                      <div className="flex pt-4 flex-col justify-center items-center flex-shrink-1 w-full" style={{ maxWidth: '25vw', flexBasis: '25%' }}>
+                        <div style={{ width: '100%', maxWidth: '30vh' }}>
+                          <CircularProgress 
+                            title="MI" 
+                            percentage={miPercentage} 
+                            color="#FFD700" 
+                            size={280} 
+                            strokeWidth={16} 
+                          />
+                        </div>
                       </div>
 
                       {/* Main Corom Image with Total Percentage */}
-                      <div className="relative flex flex-col items-center justify-end" style={{ width: '380px', height: '380px', margin: '0 20px' }}>
+                      <div className="relative flex flex-col items-center justify-center flex-shrink-0 h-full" style={{ width: '40%', maxWidth: '50vh', aspectRatio: '1/1', margin: '0 2vw' }}>
                         <img 
                           src={coromIcon} 
                           alt="Corom Wallet" 
                           className="w-full h-full object-contain drop-shadow-2xl z-10" 
                         />
                         <div 
-                          className="absolute z-20 bg-white rounded-full flex items-center justify-center"
+                          className="absolute z-20 rounded-full flex items-center justify-center pointer-events-none"
                           style={{ 
                             bottom: '12%', 
-                            width: '90px', 
-                            height: '90px',
-                            boxShadow: '0 4px 0px rgba(0,0,0,0.2)'
+                            width: 'min(15vw, 15vh)', 
+                            height: 'min(15vw, 15vh)',
+                            background: `conic-gradient(#000 ${totalPercentage}%, #FFF ${totalPercentage}%)`,
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+                            border: 'clamp(3px, 0.5vh, 6px) solid white',
+                            overflow: 'hidden'
                           }}
                         >
-                          <span className="text-black text-[28px] font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                          <span className="font-bold tracking-tight z-30 pointer-events-none" style={{ 
+                            fontFamily: "'JetBrains Mono', monospace", 
+                            fontSize: 'clamp(20px, 3.5vw, 48px)',
+                            color: 'white',
+                            mixBlendMode: 'difference' 
+                          }}>
                             {Math.round(totalPercentage)}%
                           </span>
                         </div>
                       </div>
 
                       {/* MX (Others Impact) Graph */}
-                      <div style={{ transform: 'translateY(-80px)' }}>
-                        <CircularProgress 
-                          title="MX" 
-                          percentage={mxPercentage} 
-                          color="#0066FF" 
-                          size={220} 
-                          strokeWidth={12} 
-                        />
+                      <div className="flex pt-4 flex-col justify-center items-center flex-shrink-1 w-full" style={{ maxWidth: '25vw', flexBasis: '25%' }}>
+                        <div style={{ width: '100%', maxWidth: '30vh' }}>
+                          <CircularProgress 
+                            title="MX" 
+                            percentage={mxPercentage} 
+                            color="#0066FF" 
+                            size={280} 
+                            strokeWidth={16} 
+                          />
+                        </div>
                       </div>
 
                     </div>

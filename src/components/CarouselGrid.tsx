@@ -14,6 +14,7 @@ interface CarouselGridProps {
   activeCategory: string
   onCategoryChange: (category: string) => void
   isDark?: boolean
+  isRubixView?: boolean
   questionLabels?: Record<string, string>
   personalQuests?: Array<{ id: string; category: string; question: string | null; title: string }>
 }
@@ -75,9 +76,12 @@ export function CarouselGrid({
   activeCategory,
   onCategoryChange,
   isDark = false,
-  questionLabels = {},  personalQuests = [],}: CarouselGridProps) {
-  // Start at position 10 so center rectangle shows 10 (middle of 0-19)
-  const [horizontalIndex, setHorizontalIndex] = useState(4)
+  isRubixView = false,
+  questionLabels = {},
+  personalQuests = [],
+}: CarouselGridProps) {
+  // Start at horizontal index 5 so that the center tile (5 + activeIndex*10) hits 46 when paired with category E
+  const [horizontalIndex, setHorizontalIndex] = useState(5)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const [memoryUpdateKey, setMemoryUpdateKey] = useState(0) // For triggering re-renders
@@ -447,6 +451,82 @@ export function CarouselGrid({
             )
           })}
         </AnimatePresence>
+      </div>
+    )
+  }
+
+  if (isRubixView) {
+    return (
+      <div
+        className="absolute flex flex-col items-center justify-center z-10 pointer-events-auto"
+        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingBottom: '30px', backgroundColor: 'var(--color-bg)' }}
+      >
+        <div
+          className="absolute w-full flex flex-wrap justify-center items-center px-4 z-40"
+          style={{ top: 'max(9%, 80px)', gap: '1.5%' }}
+        >
+          {QUESTION_ORDER.map((q) => {
+            const color = QUESTION_COLORS[q] || '#888888'
+            return (
+              <div
+                key={q}
+                className="uppercase text-white font-bold tracking-wide shadow-sm"
+                style={{
+                  backgroundColor: color,
+                  fontFamily: "'Jersey 15', sans-serif",
+                  fontSize: 'clamp(14px, 1.5vw, 20px)',
+                  borderRadius: '8px',
+                  padding: '6px clamp(10px, 1.5vw, 20px)',
+                  border: '3px solid black',
+                }}
+              >
+                {questionLabels[q] || q}
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-col items-center justify-center mt-20" style={{ gap: '0.6vw', transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+          {categories.map((category, row) => (
+            <div key={category} className="flex items-center justify-center" style={{ gap: '0.6vw' }}>
+              {Array.from({ length: 10 }).map((_, col) => {
+                const globalIndex = row * 10 + col
+                let memory = getMemory(category as CategoryType, col)
+                let itemBorderColor = '#e5e7eb'
+                
+                if (memory) {
+                  const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
+                  if (matchedQuest) {
+                    const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
+                    const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
+                    itemBorderColor = mixColors(catColor, tagColor);
+                    memory = { ...memory, title: matchedQuest.title };
+                  }
+                }
+
+                return (
+                  <motion.div
+                    key={col}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: (row * 10 + col) * 0.005 }}
+                    className="flex justify-center items-center"
+                  >
+                    <MemoryBox
+                      memory={memory}
+                      borderColor={itemBorderColor}
+                      displayNumber={globalIndex}
+                      isCentered={false}
+                      isSmall={true}
+                      isExtraSmall={false}
+                      isDark={isDark}
+                    />
+                  </motion.div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

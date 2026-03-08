@@ -1,5 +1,4 @@
 import { memo } from 'react'
-import { Plus } from 'lucide-react'
 import { getMemoryThumbnail, hasVideo, QUESTION_COLORS } from '../data/memories'
 import type { Memory } from '../data/memories'
 
@@ -66,7 +65,6 @@ export const MemoryBox = memo(function MemoryBox({
   const title = memory?.title ?? 'Sans titre'
   const question = memory?.question ?? null
   const isFilled = memory?.isFilled ?? false
-  const iconSize = isCentered ? 48 : isExtraSmall ? 12 : isSmall ? 20 : 28
   const showThumbnail = memoryHasVideo && thumbnail
 
   // For centered empty boxes, clicking should open the modal to create a memory
@@ -170,7 +168,7 @@ export const MemoryBox = memo(function MemoryBox({
             </div>
           </div>
         ) : (
-          // Empty slot with plus sign
+          // Empty slot with frame number
           <div 
             className="w-full h-full flex items-center justify-center"
             style={{
@@ -179,37 +177,21 @@ export const MemoryBox = memo(function MemoryBox({
                 : 'linear-gradient(135deg, #fefefe 0%, #f0f0f5 100%)',
             }}
           >
-            <Plus 
-              size={iconSize} 
-              strokeWidth={isCentered ? 2.5 : 2}
-              style={{ color: borderColor, opacity: isCentered ? 0.7 : 0.5 }} 
-            />
+            <span
+              style={{
+                fontFamily: "'Jersey 15', sans-serif",
+                fontSize: isCentered ? '120px' : isSmall ? '48px' : isExtraSmall ? '24px' : '72px',
+                color: borderColor,
+                opacity: isCentered ? 0.6 : 0.4,
+                lineHeight: 1
+              }}
+            >
+              {displayNumber !== null && displayNumber !== undefined ? (displayNumber + 1).toString().padStart(2, '0') : ''}
+            </span>
           </div>
         )}
       </div>
       
-      {/* Info bar - only for centered items */}
-      {isCentered && onInfoClick && (
-        <div
-          className="w-full flex justify-start items-center mt-2 cursor-pointer select-none hover:opacity-80 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation()
-            onInfoClick()
-          }}
-          style={{
-            fontFamily: "'Jersey 15', sans-serif",
-            color: isDark ? '#ffffff' : '#000000',
-            fontSize: '24px',
-          }}
-        >
-          <span>
-            {displayNumber !== null && displayNumber !== undefined 
-              ? (displayNumber + 1).toString().padStart(2, '0') + '.' 
-              : ''}
-          </span>
-          {/* Removed the external bottom title text since it is now centered inside the thumbnail box! */}
-        </div>
-      )}
     </div>
   )
 })
