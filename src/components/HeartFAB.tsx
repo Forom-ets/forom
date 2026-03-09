@@ -183,7 +183,7 @@ export function HeartFAB() {
   return (
     <div
       className="fixed z-50"
-      style={{ bottom: '56px', left: '50%', transform: 'translateX(-50%)' }}
+      style={{ bottom: '60px', left: '50%', transform: 'translateX(-50%)' }}
       aria-label={`Heart counter: ${heartCount}`}
     >
       {/* Floating voxel heart particles */}

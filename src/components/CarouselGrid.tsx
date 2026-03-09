@@ -15,6 +15,9 @@ interface CarouselGridProps {
   onCategoryChange: (category: string) => void
   isDark?: boolean
   isRubixView?: boolean
+  onCloseRubix?: () => void
+  acceptedQuestId?: string | null
+  onQuestComplete?: (questId: string) => void
   questionLabels?: Record<string, string>
   personalQuests?: Array<{ id: string; category: string; question: string | null; title: string }>
 }
@@ -77,6 +80,9 @@ export function CarouselGrid({
   onCategoryChange,
   isDark = false,
   isRubixView = false,
+  onCloseRubix,
+  acceptedQuestId = null,
+  onQuestComplete,
   questionLabels = {},
   personalQuests = [],
 }: CarouselGridProps) {
@@ -91,6 +97,11 @@ export function CarouselGrid({
   const verticalTrackRef = useRef<HTMLDivElement | null>(null)
   const [isDraggingHorizontal, setIsDraggingHorizontal] = useState(false)
   const [isDraggingVertical, setIsDraggingVertical] = useState(false)
+
+  // Grid swipe-drag state
+  const [isGridDragging, setIsGridDragging] = useState(false)
+  const gridDragOrigin = useRef<{ x: number; y: number } | null>(null)
+  const gridDragMoved = useRef(false)
 
   // Get current memory data for modal
   let currentMemory = getMemory(categories[activeIndex] as CategoryType, horizontalIndex)
@@ -210,6 +221,79 @@ export function CarouselGrid({
       }
     }
   }, [isDraggingVertical, handleVerticalDrag, handleVerticalDragEnd])
+
+  // ---------------------------------------------------------------------------
+  // Grid swipe-drag (hold + drag on the grid itself)
+  // ---------------------------------------------------------------------------
+  const DRAG_THRESHOLD = 40  // px before a navigation fires
+  const DRAG_COOLDOWN = 350  // ms between navigations
+
+  const gridDragCooling = useRef(false)
+  const gridDragAccX = useRef(0)
+  const gridDragAccY = useRef(0)
+  const gridDragLastPos = useRef<{ x: number; y: number } | null>(null)
+
+  const handleGridMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return
+    gridDragOrigin.current = { x: e.clientX, y: e.clientY }
+    gridDragLastPos.current = { x: e.clientX, y: e.clientY }
+    gridDragMoved.current = false
+    gridDragAccX.current = 0
+    gridDragAccY.current = 0
+    setIsGridDragging(true)
+  }, [])
+
+  const handleGridMouseMove = useCallback((e: MouseEvent) => {
+    if (!isGridDragging || !gridDragLastPos.current) return
+
+    const dx = e.clientX - gridDragLastPos.current.x
+    const dy = e.clientY - gridDragLastPos.current.y
+    gridDragLastPos.current = { x: e.clientX, y: e.clientY }
+
+    const totalDx = Math.abs(e.clientX - (gridDragOrigin.current?.x ?? e.clientX))
+    const totalDy = Math.abs(e.clientY - (gridDragOrigin.current?.y ?? e.clientY))
+    if (totalDx > 5 || totalDy > 5) gridDragMoved.current = true
+
+    if (gridDragCooling.current) return
+
+    gridDragAccX.current += dx
+    gridDragAccY.current += dy
+
+    const absX = Math.abs(gridDragAccX.current)
+    const absY = Math.abs(gridDragAccY.current)
+
+    if (absY >= DRAG_THRESHOLD && absY >= absX) {
+      if (gridDragAccY.current < 0) handleNextCategory()   // drag up → next row
+      else handlePrevCategory()                             // drag down → prev row
+      gridDragAccX.current = 0
+      gridDragAccY.current = 0
+      gridDragCooling.current = true
+      setTimeout(() => { gridDragCooling.current = false }, DRAG_COOLDOWN)
+    } else if (absX >= DRAG_THRESHOLD && absX > absY) {
+      if (gridDragAccX.current < 0) handleNextVideo()      // drag left → next col
+      else handlePrevVideo()                               // drag right → prev col
+      gridDragAccX.current = 0
+      gridDragAccY.current = 0
+      gridDragCooling.current = true
+      setTimeout(() => { gridDragCooling.current = false }, DRAG_COOLDOWN)
+    }
+  }, [isGridDragging, handleNextCategory, handlePrevCategory, handleNextVideo, handlePrevVideo])
+
+  const handleGridMouseUp = useCallback(() => {
+    setIsGridDragging(false)
+    gridDragLastPos.current = null
+  }, [])
+
+  useEffect(() => {
+    if (isGridDragging) {
+      window.addEventListener('mousemove', handleGridMouseMove)
+      window.addEventListener('mouseup', handleGridMouseUp)
+      return () => {
+        window.removeEventListener('mousemove', handleGridMouseMove)
+        window.removeEventListener('mouseup', handleGridMouseUp)
+      }
+    }
+  }, [isGridDragging, handleGridMouseMove, handleGridMouseUp])
 
   // Handle mouse wheel with resistance and cooldown to avoid rapid skips
   useEffect(() => {
@@ -417,6 +501,15 @@ export function CarouselGrid({
               }
             }
 
+            // A slot is locked unless: already filled, OR the accepted quest matches this slot
+            const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
+            const isLocked = !memory?.isFilled && !(
+              acceptedQuest &&
+              memory &&
+              acceptedQuest.category === memory.category &&
+              acceptedQuest.question === memory.question
+            )
+
             // Calculate sizing based on positions to create sphere perspective
             const absRow = Math.abs(rowOffset)
             const absCol = Math.abs(col)
@@ -443,8 +536,9 @@ export function CarouselGrid({
                   isSmall={isSmall}
                   isExtraSmall={isExtraSmall}
                   isDark={isDark}
+                  isLocked={isLocked}
                   onClick={() => handleBoxClick(rowOffset, col)}
-                  onInfoClick={isCentered ? () => setIsModalOpen(true) : undefined}
+                  onInfoClick={isCentered && !isLocked ? () => setIsModalOpen(true) : undefined}
                   questionLabels={questionLabels}
                 />
               </motion.div>
@@ -458,8 +552,8 @@ export function CarouselGrid({
   if (isRubixView) {
     return (
       <div
-        className="absolute flex flex-col items-center justify-center z-10 pointer-events-auto"
-        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingBottom: '30px', backgroundColor: 'var(--color-bg)' }}
+        className="absolute flex flex-col items-center justify-start z-10 pointer-events-auto"
+        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingTop: 'calc(max(8%, 80px) + 7px)', paddingBottom: '30px', backgroundColor: 'var(--color-bg)' }}
       >
         <div
           className="absolute w-full flex flex-wrap justify-center items-center px-4 z-40"
@@ -486,7 +580,7 @@ export function CarouselGrid({
           })}
         </div>
 
-        <div className="flex flex-col items-center justify-center mt-20" style={{ gap: '0.6vw', transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+        <div className="flex flex-col items-center justify-center" style={{ gap: '0.6vw', transform: 'scale(0.85)', transformOrigin: 'top center' }}>
           {categories.map((category, row) => (
             <div key={category} className="flex items-center justify-center" style={{ gap: '0.6vw' }}>
               {Array.from({ length: 10 }).map((_, col) => {
@@ -504,6 +598,14 @@ export function CarouselGrid({
                   }
                 }
 
+                const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
+                const cellIsLocked = !memory?.isFilled && !(
+                  acceptedQuest &&
+                  memory &&
+                  acceptedQuest.category === memory.category &&
+                  acceptedQuest.question === memory.question
+                )
+
                 return (
                   <motion.div
                     key={col}
@@ -511,6 +613,13 @@ export function CarouselGrid({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: (row * 10 + col) * 0.005 }}
                     className="flex justify-center items-center"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      onCategoryChange(category)
+                      setSlideDirection(col > horizontalIndex ? 'right' : 'left')
+                      setHorizontalIndex(col)
+                      if (onCloseRubix) onCloseRubix()
+                    }}
                   >
                     <MemoryBox
                       memory={memory}
@@ -520,6 +629,7 @@ export function CarouselGrid({
                       isSmall={true}
                       isExtraSmall={false}
                       isDark={isDark}
+                      isLocked={cellIsLocked}
                     />
                   </motion.div>
                 )
@@ -567,7 +677,13 @@ export function CarouselGrid({
       </div>
 
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
-      <div ref={gridRef} className="relative flex items-center justify-center pointer-events-auto">
+      <div
+        ref={gridRef}
+        className="relative flex items-center justify-center pointer-events-auto"
+        onMouseDown={handleGridMouseDown}
+        onClickCapture={(e) => { if (gridDragMoved.current) { e.stopPropagation(); gridDragMoved.current = false } }}
+        style={{ cursor: isGridDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+      >
         {/* 3x5 Grid - centered */}
         <div className="flex flex-col items-center" style={{ gap: '32px' }}>
           {/* Top Row (-1) */}
@@ -716,6 +832,7 @@ export function CarouselGrid({
         borderColor={currentColor}
         index={activeIndex * ITEMS_PER_ROW + horizontalIndex}
         onMemoryUpdate={handleMemoryUpdate}
+        onQuestComplete={acceptedQuestId && onQuestComplete ? () => onQuestComplete(acceptedQuestId) : undefined}
         questionLabels={questionLabels}
       />
     </div>

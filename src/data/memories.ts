@@ -19,16 +19,16 @@ export const WH_QUESTIONS = [
 export type WhQuestion = (typeof WH_QUESTIONS)[number]
 
 export const QUESTION_COLORS: Record<string, string> = {
-  '0': '#FF8080', // Light Red
-  '1': '#FFB880', // Light Orange-Red
-  '2': '#FFF180', // Light Yellow
-  '3': '#D5FF80', // Light Yellow-Green
-  '4': '#9CFF80', // Light Green
-  '5': '#80FF9C', // Light Green-Cyan
-  '6': '#80FFD5', // Light Cyan
-  '7': '#80F1FF', // Light Deep Sky Blue
-  '8': '#80B8FF', // Light Dodger Blue
-  '9': '#8080FF', // Light Blue
+  '0': '#DF1F24', // Red
+  '1': '#EE8712', // Orange (blend red→yellow)
+  '2': '#FDF000', // Yellow
+  '3': '#7EB71B', // Lime (blend yellow→green)
+  '4': '#007F36', // Green
+  '5': '#009691', // Teal (blend green→sky blue)
+  '6': '#00ADED', // Sky Blue
+  '7': '#186DB7', // Medium Blue (blend sky→dark blue)
+  '8': '#302E81', // Dark Blue
+  '9': '#EC028A', // Magenta
 }
 
 export const QUESTION_ORDER: WhQuestion[] = [
@@ -59,6 +59,8 @@ export interface Memory {
   videoUrl: string | null
   /** Optional custom thumbnail URL (overrides YouTube thumbnail) */
   thumbnailUrl: string | null
+  /** Optional list of source URLs for this memory */
+  sources?: string[]
   /** Whether this memory has been filled by a user */
   isFilled: boolean
 }
@@ -68,16 +70,16 @@ export interface Memory {
 // =============================================================================
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  A: '#008080', // Dark Cyan
-  B: '#0E7180',
-  C: '#1C6380',
-  D: '#2A5580',
-  E: '#384780',
-  F: '#473880',
-  G: '#552A80',
-  H: '#631C80',
-  I: '#710E80',
-  J: '#800080', // Dark Magenta
+  A: '#881FA0', // Purple
+  B: '#4C2CA2', // Purple-Blue blend
+  C: '#1139A4', // Blue
+  D: '#085C6D', // Blue-Green blend
+  E: '#007F36', // Green
+  F: '#7EB21B', // Green-Yellow blend
+  G: '#FDE500', // Yellow
+  H: '#FEA80B', // Yellow-Orange blend
+  I: '#FE6C17', // Orange
+  J: '#F60B0F', // Red
 }
 
 export const CATEGORIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as const

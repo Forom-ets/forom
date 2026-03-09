@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { LoadingScreen } from './components/LoadingScreen'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { CarouselGrid } from './components/CarouselGrid'
@@ -82,6 +83,7 @@ function ThemeToggle({
 // =============================================================================
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('E')
   const [activeModal, setActiveModal] = useState<'token' | 'support' | 'user' | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -130,6 +132,10 @@ function App() {
 
   const cornerIconStyle = "rounded-full overflow-hidden cursor-pointer shadow-lg hover:shadow-xl border-2 border-transparent transition-all flex items-center justify-center"
   const cornerIconSize = { width: '64px', height: '64px' }
+
+  if (isLoading) {
+    return <LoadingScreen onComplete={() => setIsLoading(false)} />
+  }
 
   return (
     <div 
@@ -203,6 +209,17 @@ function App() {
         onCategoryChange={setActiveCategory}
         isDark={isDarkMode}
         isRubixView={isRubixView}
+        onCloseRubix={() => setIsRubixView(false)}
+        acceptedQuestId={acceptedQuestId}
+        onQuestComplete={(id) => {
+          const quest = personalQuests.find(q => q.id === id)
+          if (quest) {
+            setPixels(p => Math.round((p + 2.07) * 100) / 100)
+            setXp(x => x + 10)
+            setPersonalQuests(prev => prev.filter(q => q.id !== id))
+            setAcceptedQuestId(null)
+          }
+        }}
         questionLabels={questionLabels}
         personalQuests={personalQuests}
       />

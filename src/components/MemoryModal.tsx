@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Modal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Play } from 'lucide-react'
+import { X, Play, Plus, ChevronRight, Image as ImageIcon } from 'lucide-react'
+import RichTextEditor, { deserializeBlocks } from './RichTextEditor'
 import { extractYouTubeId, hasVideo, updateMemory, QUESTION_COLORS, QUESTION_ORDER } from '../data/memories'
 import type { Memory, WhQuestion, CategoryType } from '../data/memories'
 
@@ -16,6 +17,7 @@ export interface MemoryModalProps {
   borderColor?: string
   index?: number
   onMemoryUpdate?: (memory: Memory) => void
+  onQuestComplete?: () => void
   questionLabels?: Record<string, string>
 }
 
@@ -90,11 +92,19 @@ export function MemoryModal({
   borderColor = '#E5E7EB',
   index: _index,
   onMemoryUpdate,
+  onQuestComplete,
   questionLabels = {},
 }: MemoryModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
-  const [inlineUrl, setInlineUrl] = useState('')
+  const [image, setImage] = useState<string | null>(null)
+  const [sources, setSources] = useState<string[]>(['', '', ''])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0)
+  const [videoDuration, setVideoDuration] = useState(0)
+  const ytPlayerRef = useRef<any>(null)
+  const ytTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const ytIframeRef = useRef<HTMLIFrameElement>(null)
   const [formData, setFormData] = useState<FormData>({
     question: null,
     title: '',
@@ -111,9 +121,10 @@ export function MemoryModal({
         videoUrl: memory.videoUrl || '',
         description: memory.isFilled ? memory.description : '',
       })
-      setInlineUrl(memory.videoUrl || '')
       setIsEditing(!memory.isFilled)
       setIsVideoPlaying(false)
+      setImage(null)
+      setSources(memory.sources && memory.sources.length ? [...memory.sources, ...Array(Math.max(0, 3 - memory.sources.length)).fill('')].slice(0, 3) : ['', '', ''])
     }
   }, [memory, isOpen])
 
@@ -125,13 +136,83 @@ export function MemoryModal({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
+  // YouTube IFrame API — tracks current time + duration in cinema mode
+  useEffect(() => {
+    const vid = memory ? extractYouTubeId(memory.videoUrl) : null
+    if (!isVideoPlaying || !vid) {
+      if (ytTimerRef.current) { clearInterval(ytTimerRef.current); ytTimerRef.current = null }
+      if (ytPlayerRef.current?.destroy) ytPlayerRef.current.destroy()
+      ytPlayerRef.current = null
+      setVideoCurrentTime(0)
+      setVideoDuration(0)
+      return
+    }
+
+    const startPlayer = () => {
+      if (!ytIframeRef.current) return
+      if (ytPlayerRef.current) return
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ytPlayerRef.current = new (window as any).YT.Player(ytIframeRef.current, {
+        events: {
+          onReady: () => {
+            ytTimerRef.current = setInterval(() => {
+              const p = ytPlayerRef.current
+              if (!p?.getDuration) return
+              setVideoCurrentTime(Math.floor(p.getCurrentTime?.() ?? 0))
+              setVideoDuration(Math.floor(p.getDuration?.() ?? 0))
+            }, 500)
+          },
+        },
+      })
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    if (w.YT?.Player) {
+      setTimeout(startPlayer, 300)
+    } else {
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script')
+        tag.src = 'https://www.youtube.com/iframe_api'
+        document.head.appendChild(tag)
+      }
+      const prev = w.onYouTubeIframeAPIReady
+      w.onYouTubeIframeAPIReady = () => {
+        if (prev) prev()
+        setTimeout(startPlayer, 300)
+      }
+    }
+
+    return () => {
+      if (ytTimerRef.current) { clearInterval(ytTimerRef.current); ytTimerRef.current = null }
+      if (ytPlayerRef.current?.destroy) ytPlayerRef.current.destroy()
+      ytPlayerRef.current = null
+    }
+  }, [isVideoPlaying, memory])
+
+  const formatTime = (secs: number) => {
+    const h = Math.floor(secs / 3600)
+    const m = Math.floor((secs % 3600) / 60)
+    const s = secs % 60
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setImage(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
   if (!memory) return null
 
   const videoId = extractYouTubeId(memory.videoUrl)
   const memoryHasVideo = hasVideo(memory)
 
   const handleSave = () => {
-    if (!formData.question || !formData.title.trim()) return
+    if (!formData.question || !formData.title.trim() || !formData.videoUrl.trim()) return
 
     const updatedMemory = updateMemory(memory.category as CategoryType, 
       parseInt(memory.id.split('-')[1]), {
@@ -139,189 +220,240 @@ export function MemoryModal({
         title: formData.title.trim(),
         description: formData.description.trim(),
         videoUrl: formData.videoUrl.trim() || null,
+        sources: sources.filter(s => s.trim()),
         isFilled: true,
       }
     )
 
     if (updatedMemory && onMemoryUpdate) onMemoryUpdate(updatedMemory)
+    if (onQuestComplete) onQuestComplete()
     setIsEditing(false)
   }
+
+  const canSave = !!(formData.question && formData.title.trim() && formData.videoUrl.trim())
 
   // ===========================================================================
   // FILLED VIEW
   // ===========================================================================
   const renderFilledView = () => {
-    return (
-      <div className="w-full h-full" style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#D9D9D9', flex: 1, height: '100%', minHeight: '100%' }}>
+    const getFaviconUrl = (url: string) => {
+      try {
+        const domain = new URL(url).hostname
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+      } catch { return null }
+    }
 
-        {/* Background layer: thumbnail at 25% opacity or iframe at 100% */}
-        {memoryHasVideo && videoId ? (
-          isVideoPlaying ? (
+    const displayBlocks = deserializeBlocks(memory.description || '')
+
+    const DescriptionContent = () => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '32px', paddingRight: '4px' }}>
+        {displayBlocks.map((block, i) => {
+          const base: React.CSSProperties = { fontFamily: "'Montserrat', sans-serif", textAlign: 'justify', color: 'rgba(0,0,0,0.88)', lineHeight: 1.7 }
+          switch (block.type) {
+            case 'h1':    return <p key={i} style={{ ...base, fontWeight: 800, fontSize: '17px' }}>{block.content}</p>
+            case 'h2':    return <p key={i} style={{ ...base, fontWeight: 700, fontSize: '14px' }}>{block.content}</p>
+            case 'h3':    return <p key={i} style={{ ...base, fontWeight: 700, fontSize: '13px', textDecoration: 'underline' }}>{block.content}</p>
+            case 'ul':    return <p key={i} style={{ ...base, fontSize: '13px' }}>• {block.content}</p>
+            case 'ol':    return <p key={i} style={{ ...base, fontSize: '13px' }}>{i + 1}. {block.content}</p>
+            case 'quote': return <p key={i} style={{ ...base, fontSize: '13px', borderLeft: '3px solid #aaa', paddingLeft: '10px', color: '#555', fontStyle: 'italic' }}>{block.content}</p>
+            default:      return <p key={i} style={{ ...base, fontSize: '13px' }}>{block.content}</p>
+          }
+        })}
+      </div>
+    )
+
+    // -------------------------------------------------------------------------
+    // CINEMA MODE
+    // -------------------------------------------------------------------------
+    if (isVideoPlaying) {
+      return (
+        <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', overflow: 'hidden', backgroundColor: '#EAEAEA' }}>
+          <style>{`.custom-scrollbar-light::-webkit-scrollbar{width:5px}.custom-scrollbar-light::-webkit-scrollbar-track{background:transparent}.custom-scrollbar-light::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.5);border-radius:20px}`}</style>
+          {/* YouTube iframe */}
+          {videoId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-              allow="autoplay; encrypted-media; fullscreen"
+              ref={ytIframeRef}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', zIndex: 0 }}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
+              allow="autoplay; encrypted-media"
               allowFullScreen
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', zIndex: 0 }}
             />
           ) : (
-            <img
-              src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-              alt={memory.title}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, opacity: 0.25 }}
-            />
-          )
-        ) : (
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#D9D9D9', zIndex: 0 }} />
-        )}
-
-        {/* Overlay content – hidden while video plays */}
-        {!isVideoPlaying && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', zIndex: 20 }}>
-
-            {/* Top Left: Modifier button */}
-            {memory.isFilled && (
-              <button
-                onClick={() => setIsEditing(true)}
-                style={{
-                  position: 'absolute',
-                  top: '6%', 
-                  left: '6%',
-                  padding: '12px 30px',
-                  borderRadius: '16px',
-                  backgroundColor: 'white',
-                  color: 'black',
-                  fontSize: '28px',
-                  fontFamily: "'Jersey 15', sans-serif",
-                  border: '4px solid black',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 0px rgba(0,0,0,1)',
-                  zIndex: 30,
-                  transition: 'transform 0.1s, box-shadow 0.1s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(2px)'
-                  e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'none'
-                  e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                }}
-                type="button"
-              >
-                MODIFIER
-              </button>
-            )}
-
-            {/* Top Center: Question badge + Title */}
-            <div style={{ position: 'absolute', top: '9%', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', pointerEvents: 'none', zIndex: 30 }}>
-              {memory.question && (
-                <span
-                  className="text-white font-bold uppercase"
-                  style={{
-                    fontFamily: "'Jersey 15', sans-serif",
-                    fontSize: '32px',
-                    padding: '8px 40px',
-                    backgroundColor: QUESTION_COLORS[memory.question] || '#888',
-                    border: '4px solid black',
-                    borderRadius: '12px',
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  {questionLabels[memory.question] || memory.question}
-                </span>
-              )}
-              <h2
-                className="text-black uppercase drop-shadow-sm"
-                style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '48px', lineHeight: 1.1, marginTop: '8px', textAlign: 'center', pointerEvents: 'auto' }}
-              >
-                {memory.title}
-              </h2>
+            <div style={{ position: 'absolute', inset: 0, background: '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 0 }}>
+              <Play size={120} color="white" opacity={0.4} />
             </div>
+          )}
 
-            {/* Center: Play button */}
-            {memoryHasVideo && (
-              <div
-                 className="cursor-pointer"
-                 style={{
-                   position: 'absolute',
-                   top: '50%',
-                   left: '50%',
-                   transform: 'translate(-50%, -50%)',
-                   zIndex: 40
-                 }}
-                onClick={() => setIsVideoPlaying(true)}
-              >
-                <Play
-                  size={100}
-                  fill="white"
-                  color="white"
-                  className="drop-shadow-2xl hover:scale-110 transition-transform"
-                />
-              </div>
-            )}
-
-            {/* Bottom Area: Fading text lines + URL row */}
-            <div style={{ position: 'absolute', bottom: '6%', left: '6%', right: '6%', display: 'flex', flexDirection: 'column', zIndex: 30 }}>
-              
-              {/* Description notepad area */}
-              <div 
-                className="w-full text-black overflow-hidden"
-                style={{ 
-                  fontFamily: "'Montserrat', sans-serif",
-                  fontWeight: 600,
-                  fontSize: '22px',
-                  lineHeight: '2.5rem',
-                  height: 'calc(4 * 2.5rem)',
-                  backgroundImage: 'linear-gradient(transparent, transparent calc(2.5rem - 1.5px), rgba(0,0,0,0.8) calc(2.5rem - 1.5px), rgba(0,0,0,0.8) 2.5rem)',
-                  backgroundSize: '100% 2.5rem',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 4,
-                  WebkitBoxOrient: 'vertical',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  // Fading out at the bottom
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-                  maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
-                }}
-              >
-                {memory.description}
-              </div>
-
-              {/* URL Row */}
-              <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: '24px' }}>
-                <span
-                  className="font-black uppercase text-black whitespace-nowrap"
-                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '24px' }}
-                >
-                  VIDEO URL:
-                </span>
-                <input
-                  type="text"
-                  value={inlineUrl}
-                  onChange={(e) => setInlineUrl(e.target.value)}
-                  onBlur={() => {
-                    const trimmed = inlineUrl.trim()
-                    const updatedMemory = updateMemory(
-                      memory.category as CategoryType,
-                      parseInt(memory.id.split('-')[1]),
-                      { videoUrl: trimmed || null }
-                    )
-                    if (updatedMemory && onMemoryUpdate) onMemoryUpdate(updatedMemory)
-                  }}
-                  className="flex-1 mx-4 bg-transparent border-none text-center text-black outline-none w-full"
-                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '20px', fontWeight: 600 }}
-                />
-                <span
-                  className="font-black uppercase text-white bg-black/30 rounded px-3 py-1 whitespace-nowrap"
-                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '20px' }}
-                >
-                  1:18:36
-                </span>
-              </div>
-            </div>
-
+          {/* Floating time */}
+          <div style={{ position: 'absolute', top: '28px', left: '36px', fontFamily: 'monospace', fontSize: '22px', fontWeight: 900, letterSpacing: '0.08em', background: 'rgba(234,234,234,0.82)', padding: '2px 10px', borderRadius: '8px', backdropFilter: 'blur(6px)', zIndex: 20 }}>
+            {formatTime(videoCurrentTime)}{videoDuration > 0 ? ` / ${formatTime(videoDuration)}` : ''}
           </div>
-        )}
+
+          {/* Floating badge + title */}
+          <div style={{ position: 'absolute', top: '24px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 20 }}>
+            {memory.question && (
+              <span style={{ background: QUESTION_COLORS[memory.question] || '#888', border: '3px solid black', borderRadius: '10px', padding: '6px 28px', fontFamily: 'monospace', fontWeight: 900, fontSize: '20px', boxShadow: '2px 2px 0 black', color: 'white' }}>
+                {questionLabels[memory.question] || memory.question}
+              </span>
+            )}
+            <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '6px', background: 'rgba(234,234,234,0.82)', padding: '2px 10px', borderRadius: '8px', backdropFilter: 'blur(6px)' }}>
+              {memory.title}
+            </span>
+          </div>
+
+          {/* Exit cinema mode */}
+          <button
+            onClick={() => setIsVideoPlaying(false)}
+            style={{ position: 'absolute', top: '24px', right: '36px', width: '40px', height: '40px', borderRadius: '50%', background: '#ff4d4d', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0 black', zIndex: 20 }}
+          >
+            <X size={18} strokeWidth={4} color="black" />
+          </button>
+
+          {/* Résumé right panel */}
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '45%', background: 'rgba(234,234,234,0.25)', padding: '32px 28px 28px 28px', display: 'flex', flexDirection: 'column', zIndex: 10, boxSizing: 'border-box' }}>
+            <h3 style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '26px', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'right', marginBottom: '24px', marginTop: '52px', color: 'white', textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}>Résumé</h3>
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '6px' }} className="custom-scrollbar-light">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '32px', paddingRight: '4px' }}>
+                {displayBlocks.map((block, i) => {
+                  const base: React.CSSProperties = { fontFamily: "'Montserrat', sans-serif", textAlign: 'justify', color: 'white', lineHeight: 1.7, textShadow: '0 1px 6px rgba(0,0,0,0.7)' }
+                  switch (block.type) {
+                    case 'h1':    return <p key={i} style={{ ...base, fontWeight: 800, fontSize: '17px' }}>{block.content}</p>
+                    case 'h2':    return <p key={i} style={{ ...base, fontWeight: 700, fontSize: '14px' }}>{block.content}</p>
+                    case 'h3':    return <p key={i} style={{ ...base, fontWeight: 700, fontSize: '13px', textDecoration: 'underline' }}>{block.content}</p>
+                    case 'ul':    return <p key={i} style={{ ...base, fontSize: '13px' }}>• {block.content}</p>
+                    case 'ol':    return <p key={i} style={{ ...base, fontSize: '13px' }}>{i + 1}. {block.content}</p>
+                    case 'quote': return <p key={i} style={{ ...base, fontSize: '13px', borderLeft: '3px solid rgba(255,255,255,0.5)', paddingLeft: '10px', color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>{block.content}</p>
+                    default:      return <p key={i} style={{ ...base, fontSize: '13px' }}>{block.content}</p>
+                  }
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // -------------------------------------------------------------------------
+    // STANDARD VIEW
+    // -------------------------------------------------------------------------
+    return (
+      <div style={{ width: '100%', height: '100%', backgroundColor: '#EAEAEA', padding: '28px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
+        <style>{`.custom-scrollbar::-webkit-scrollbar{width:6px}.custom-scrollbar::-webkit-scrollbar-track{background:transparent}.custom-scrollbar::-webkit-scrollbar-thumb{background:#000;border-radius:20px}`}</style>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          {/* MODIFIER */}
+          <button
+            onClick={() => setIsEditing(true)}
+            style={{ background: 'white', border: '3px solid black', borderRadius: '12px', padding: '8px 22px', fontFamily: 'monospace', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '2px 2px 0 black', textTransform: 'uppercase', transition: 'transform 0.1s, box-shadow 0.1s' }}
+            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(1px)'; e.currentTarget.style.boxShadow = '1px 1px 0 black' }}
+            onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '2px 2px 0 black' }}
+          >
+            Modifier
+          </button>
+
+          {/* Badge + Title */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {memory.question && (
+              <span style={{ background: QUESTION_COLORS[memory.question] || '#888', border: '3px solid black', borderRadius: '10px', padding: '6px 28px', fontFamily: 'monospace', fontWeight: 900, fontSize: '20px', boxShadow: '2px 2px 0 black', color: 'white' }}>
+                {questionLabels[memory.question] || memory.question}
+              </span>
+            )}
+            <h2 style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '18px', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '8px' }}>{memory.title}</h2>
+          </div>
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#ff4d4d', border: '3px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '2px 2px 0 black', flexShrink: 0 }}
+            onMouseOver={e => { e.currentTarget.style.background = '#ff3333'; e.currentTarget.style.transform = 'scale(1.05)' }}
+            onMouseOut={e => { e.currentTarget.style.background = '#ff4d4d'; e.currentTarget.style.transform = 'none' }}
+          >
+            <X size={18} strokeWidth={4} color="black" />
+          </button>
+        </div>
+
+        {/* Two-column body */}
+        <div style={{ flex: 1, display: 'flex', gap: '40px', minHeight: 0 }}>
+
+          {/* LEFT: Gallery + Sources + Video */}
+          <div style={{ width: '55%', display: 'flex', flexDirection: 'column', gap: '20px', minHeight: 0 }}>
+
+            {/* Gallery + Sources row */}
+            <div style={{ display: 'flex', gap: '28px', flexShrink: 0 }}>
+              {/* Gallery */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '22px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Gallery</h3>
+                <div
+                  onClick={() => {}}
+                  style={{ width: '160px', height: '160px', border: '4px solid black', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer', overflow: 'hidden', position: 'relative' }}
+                >
+                  {image ? (
+                    <img src={image} alt="Gallery" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Plus size={56} strokeWidth={2} color="black" />
+                  )}
+                </div>
+              </div>
+
+              {/* Sources */}
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <h3 style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '22px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>Sources</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(memory.sources || []).filter(s => s.trim()).map((src, i) => (
+                    <a
+                      key={i}
+                      href={src}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', height: '48px', padding: '0 16px', borderRadius: '9999px', border: '3px solid black', background: 'transparent', overflow: 'hidden', boxSizing: 'border-box', textDecoration: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.06)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {getFaviconUrl(src) && <img src={getFaviconUrl(src)!} alt="" style={{ width: '18px', height: '18px', marginRight: '10px', borderRadius: '3px', flexShrink: 0 }} />}
+                      <ChevronRight size={16} strokeWidth={4} color="black" style={{ marginRight: '6px', flexShrink: 0 }} />
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'black' }}>{src}</span>
+                    </a>
+                  ))}
+                  {(memory.sources || []).filter(s => s.trim()).length === 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', height: '48px', padding: '0 16px', borderRadius: '9999px', border: '3px solid #d1d5db', background: 'transparent', boxSizing: 'border-box' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#aaa' }}>Aucune source</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Video player */}
+            <div
+              onClick={() => memoryHasVideo && setIsVideoPlaying(true)}
+              style={{ flex: 1, border: '4px solid black', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: memoryHasVideo ? 'pointer' : 'default', background: '#d0d0d0', position: 'relative', overflow: 'hidden', minHeight: 0, transition: 'background 0.15s' }}
+              onMouseEnter={e => { if (memoryHasVideo) e.currentTarget.style.background = 'rgba(0,0,0,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#d0d0d0' }}
+            >
+              {videoId && (
+                <img src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} />
+              )}
+              <Play size={90} strokeWidth={1} fill="white" color="white" style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))', transition: 'transform 0.2s' }} />
+            </div>
+
+            {/* VIDEO URL row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
+              <span>Video URL:</span>
+              <span style={{ color: 'black', margin: '0 32px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{memory.videoUrl || 'Aucune vidéo'}</span>
+              <span style={{ color: 'black' }}>00:00:00</span>
+            </div>
+          </div>
+
+          {/* RIGHT: Résumé */}
+          <div style={{ width: '45%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <h3 style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '22px', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', marginBottom: '20px', flexShrink: 0 }}>Résumé</h3>
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px', minHeight: 0 }} className="custom-scrollbar">
+              <DescriptionContent />
+            </div>
+          </div>
+
+        </div>
       </div>
     )
   }
@@ -384,34 +516,126 @@ export function MemoryModal({
           />
         </div>
 
-        {/* Centered notepad area */}
-        <div className="absolute left-[10%] right-[10%]" style={{ top: '50%', transform: 'translateY(-50%)' }}>
-          <textarea
-            value={formData.description}
-            onChange={(e) => {
-              const words = e.target.value.split(/\s+/).filter(Boolean)
-              if (words.length <= 400) {
-                setFormData(prev => ({ ...prev, description: e.target.value }))
-              }
-            }}
-            className="w-full bg-transparent border-0 outline-none resize-none text-lg md:text-xl font-medium"
-            style={{ 
-              fontFamily: "'Montserrat', sans-serif",
-              color: '#1a1a1a',
-              lineHeight: '3rem',
-              height: 'calc(4 * 3rem)',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              display: 'block',
-              backgroundImage: 'linear-gradient(transparent, transparent calc(3rem - 1px), #888 calc(3rem - 1px), #888 3rem)',
-              backgroundSize: '100% 3rem',
-              boxSizing: 'border-box',
-            }}
-          />
+        {/* Image | Résumé | Sources area */}
+        <div className="absolute left-[5%] right-[5%]" style={{ top: '35%', bottom: '19%' }}>
+          <div style={{
+            width: '100%', height: '100%',
+            background: 'white',
+            border: '4px solid black',
+            borderRadius: '28px',
+            padding: '20px 24px',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            gap: 0,
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+          }}>
+
+            {/* IMAGE */}
+            <div style={{ flex: '0 0 22%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '4px' }}>
+              <h3 style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, marginBottom: '14px', letterSpacing: '0.05em' }}>Image</h3>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: '70%', aspectRatio: '1/1',
+                  border: '4px solid black',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                  position: 'relative', overflow: 'hidden',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                {image ? (
+                  <>
+                    <img src={image} alt="Uploadé" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                      <ImageIcon color="white" size={24} />
+                    </div>
+                  </>
+                ) : (
+                  <Plus size={40} color="black" strokeWidth={3} />
+                )}
+              </div>
+              <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
+            </div>
+
+            {/* SEPARATOR */}
+            <div style={{ width: '3px', backgroundColor: 'black', borderRadius: '99px', margin: '12px 20px', flexShrink: 0 }} />
+
+            {/* RÉSUMÉ */}
+            <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px', minWidth: 0 }}>
+              <h3 style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, marginBottom: '14px', letterSpacing: '0.05em' }}>Résumé</h3>
+              <div style={{ width: '100%', flex: 1, position: 'relative', overflow: 'hidden' }}>
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                  maxWords={400}
+                  placeholder='Tapez "/" pour les commandes…'
+                />
+              </div>
+            </div>
+
+            {/* SEPARATOR */}
+            <div style={{ width: '3px', backgroundColor: 'black', borderRadius: '99px', margin: '12px 20px', flexShrink: 0 }} />
+
+            {/* SOURCES */}
+            <div style={{ flex: '0 0 28%', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px' }}>
+              <h3 style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 700, marginBottom: '14px', letterSpacing: '0.05em' }}>Sources</h3>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {sources.map((source, index) => {
+                  const isActive = source.length > 0
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                        padding: '8px 14px',
+                        borderRadius: '9999px',
+                        border: `3px solid ${isActive ? '#000' : '#d1d5db'}`,
+                        transition: 'border-color 0.15s',
+                        boxSizing: 'border-box',
+                        backgroundColor: isActive ? 'white' : '#f9fafb',
+                      }}
+                    >
+                      {index === 0 && (
+                        <>
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: 'black', marginRight: 6, flexShrink: 0 }} />
+                          <ChevronRight size={16} strokeWidth={3} style={{ marginRight: 2, marginLeft: -4, flexShrink: 0 }} />
+                        </>
+                      )}
+                      {index > 0 && isActive && (
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: 'black', marginRight: 6, flexShrink: 0 }} />
+                      )}
+                      <input
+                        type="text"
+                        value={source}
+                        onChange={(e) => {
+                          const newSources = [...sources]
+                          newSources[index] = e.target.value
+                          setSources(newSources)
+                        }}
+                        style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Montserrat', sans-serif", fontSize: '13px' }}
+                        placeholder={`Source ${index + 1}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* VIDEO URL + word count — above buttons */}
-        <div className="absolute left-[10%] right-[10%] flex flex-row justify-between items-center" style={{ bottom: 'calc(10% + 60px)' }}>
+        <div className="absolute left-[10%] right-[10%] flex flex-row justify-between items-center" style={{ bottom: 'calc(7.5% + 56px + 10px)' }}>
           <div className="flex items-center w-full flex-1 mr-4">
             <span className="font-black uppercase text-[#FF3B30] whitespace-nowrap" style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '24px' }}>
               VIDEO URL:
@@ -464,27 +688,27 @@ export function MemoryModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!formData.question || !formData.title.trim()}
+            disabled={!canSave}
             style={{ 
               padding: '12px 40px', 
               borderRadius: '16px', 
-              backgroundColor: (!formData.question || !formData.title.trim()) ? 'rgba(255,255,255,0.4)' : 'white', 
-              color: (!formData.question || !formData.title.trim()) ? 'rgba(0,0,0,0.4)' : 'black', 
+              backgroundColor: !canSave ? 'rgba(255,255,255,0.4)' : 'white', 
+              color: !canSave ? 'rgba(0,0,0,0.4)' : 'black', 
               fontSize: '32px', 
               fontFamily: "'Jersey 15', sans-serif", 
-              border: (!formData.question || !formData.title.trim()) ? '4px solid rgba(0,0,0,0.2)' : '4px solid black', 
-              cursor: (!formData.question || !formData.title.trim()) ? 'not-allowed' : 'pointer',
-              boxShadow: (!formData.question || !formData.title.trim()) ? 'none' : '0 4px 0px rgba(0,0,0,1)',
+              border: !canSave ? '4px solid rgba(0,0,0,0.2)' : '4px solid black', 
+              cursor: !canSave ? 'not-allowed' : 'pointer',
+              boxShadow: !canSave ? 'none' : '0 4px 0px rgba(0,0,0,1)',
               transition: 'transform 0.1s, box-shadow 0.1s'
             }}
             onMouseOver={(e) => {
-              if (formData.question && formData.title.trim()) {
+              if (canSave) {
                 e.currentTarget.style.transform = 'translateY(2px)'
                 e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
               }
             }}
             onMouseOut={(e) => {
-              if (formData.question && formData.title.trim()) {
+              if (canSave) {
                 e.currentTarget.style.transform = 'none'
                 e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
               }
@@ -526,7 +750,8 @@ export function MemoryModal({
               boxSizing: 'border-box',
             }}
           >
-            {/* Close Button */}
+            {/* Close Button — only shown in edit mode; filled view has its own */}
+            {isEditing && (
             <button
               onClick={onClose}
               style={{ 
@@ -561,6 +786,7 @@ export function MemoryModal({
             >
               <X size={24} color="white" strokeWidth={3} />
             </button>
+            )}
             
             {/* Main Content Area */}
             <div className="w-full flex-1 flex flex-col overflow-y-auto" style={{ overflowX: 'hidden' }}>

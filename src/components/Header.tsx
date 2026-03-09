@@ -66,26 +66,26 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onRubixClick
       {/* ---- Left group: ETS, Search, FOROM ---- */}
       <div className="flex items-center" style={{ gap: '5%', flex: 1 }}>
         {/* Left Icons Group */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center shrink-0" style={{ gap: '2vw' }}>
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center rounded-full overflow-hidden"
-            style={{ width: '36px', height: '36px' }}
+            className="flex items-center justify-center shrink-0"
+            style={{ width: '36px', height: '36px', background: 'none', border: 'none', padding: 0 }}
             title="Roadmap"
           >
-            <img src={chromaNotesIcon} alt="Roadmap (Chroma Notes)" className="w-full h-full object-cover" />
+            <img src={chromaNotesIcon} alt="Roadmap (Chroma Notes)" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
           </motion.button>
 
           <motion.button
             onClick={onRubixClick}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center rounded-md"
-            style={{ width: '36px', height: '36px' }}
+            className="flex items-center justify-center shrink-0"
+            style={{ width: '36px', height: '36px', background: 'none', border: 'none', padding: 0 }}
             title="Rubix View"
           >
-            <img src={rubixViewIcon} alt="Rubix View" className="w-full h-full object-contain" />
+            <img src={rubixViewIcon} alt="Rubix View" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
           </motion.button>
 
           <motion.a

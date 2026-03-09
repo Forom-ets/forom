@@ -14,6 +14,7 @@ export interface MemoryBoxProps {
   isSmall?: boolean
   isExtraSmall?: boolean
   isDark?: boolean
+  isLocked?: boolean
   onClick?: () => void
   onInfoClick?: () => void
   questionLabels?: Record<string, string>
@@ -42,6 +43,7 @@ export const MemoryBox = memo(function MemoryBox({
   isSmall = false,
   isExtraSmall = false,
   isDark = false,
+  isLocked = false,
   onClick,
   onInfoClick,
   questionLabels = {},
@@ -69,6 +71,7 @@ export const MemoryBox = memo(function MemoryBox({
 
   // For centered empty boxes, clicking should open the modal to create a memory
   const handleBoxClick = () => {
+    if (isLocked) return
     if (isCentered && !isFilled && onInfoClick) {
       // Empty centered box - open modal to create memory
       onInfoClick()
@@ -88,13 +91,22 @@ export const MemoryBox = memo(function MemoryBox({
         className="relative overflow-hidden flex items-center justify-center transition-transform duration-150 hover:scale-105"
         onClick={handleBoxClick}
         style={{
-          border: `3px solid ${borderColor}`,
+          border: `3px solid ${isLocked ? (isDark ? '#444' : '#d1d5db') : borderColor}`,
           backgroundColor: isDark ? '#27272a' : '#fefefe',
           ...dimensions,
-          cursor: onClick || (isCentered && !isFilled && onInfoClick) ? 'pointer' : 'default',
+          cursor: isLocked ? 'not-allowed' : (onClick || (isCentered && !isFilled && onInfoClick) ? 'pointer' : 'default'),
           borderRadius: '16px',
+          opacity: isLocked ? 0.55 : 1,
         }}
       >
+        {isLocked && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10, borderRadius: '13px',
+          }}>
+            <span style={{ fontSize: isCentered ? '48px' : isSmall ? '22px' : isExtraSmall ? '13px' : '30px', userSelect: 'none' }}>🔒</span>
+          </div>
+        )}
         {showThumbnail || isFilled ? (
           // Thumbnail with play overlay and question text
           <div className="absolute inset-0 w-full h-full bg-black">
@@ -103,7 +115,7 @@ export const MemoryBox = memo(function MemoryBox({
                 src={thumbnail}
                 alt={title}
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ opacity: isCentered ? 0.85 : 0.5, zIndex: 1 }}
+                style={{ opacity: isCentered ? 0.85 : 0.5, zIndex: 1, filter: 'grayscale(100%)' }}
                 loading="lazy"
               />
             )}
