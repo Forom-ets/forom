@@ -488,21 +488,22 @@ export function CarouselGrid({
             let memory = getMemoryForPosition(rowOffset, col)
 
             // Determine if there is a quest assigned to this slot
-            let itemBorderColor = '#555555'; // default unassigned stroke color
+            let itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#555555';
             let customBgColor: string | undefined = undefined;
             if (memory) {
+              const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
+              const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
+              
+              const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
+
               const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
               if (matchedQuest) {
-                const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
-                const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
-                itemBorderColor = mixColors(catColor, tagColor);
-                
-                if (matchedQuest.completed) {
+                if (matchedQuest.completed || isMemoryDone) {
                   customBgColor = mixColors(catColor, tagColor);
                 }
-
-                // Override the memory title with the quest title
                 memory = { ...memory, title: matchedQuest.title };
+              } else if (isMemoryDone) {
+                customBgColor = mixColors(catColor, tagColor);
               }
             }
 
@@ -561,10 +562,10 @@ export function CarouselGrid({
         className="absolute flex flex-col items-center justify-start z-10 pointer-events-auto"
         style={{ top: 0, bottom: 0, left: 0, right: 0, paddingTop: 'calc(max(8%, 80px) + 7px)', paddingBottom: '30px', backgroundColor: 'var(--color-bg)' }}
       >
-        <div
-          className="absolute w-full flex flex-wrap justify-center items-center px-4 z-40"
-          style={{ top: 'max(9%, 80px)', gap: '1.5%' }}
-        >
+      <div
+        className="absolute w-full flex flex-wrap justify-center items-center px-4 z-40"
+        style={{ top: 'max(13%, 100px)', gap: '1.5%' }}
+      >
           {QUESTION_ORDER.map((q) => {
             const color = QUESTION_COLORS[q] || '#888888'
             return (
@@ -592,19 +593,22 @@ export function CarouselGrid({
               {Array.from({ length: 10 }).map((_, col) => {
                 const globalIndex = row * 10 + col
                 let memory = getMemory(category as CategoryType, col)
-                let itemBorderColor = '#e5e7eb'
+                let itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#e5e7eb';
                 let customBgColor: string | undefined = undefined;
                 
                 if (memory) {
+                  const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
+                  const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
+                  const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
+
                   const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
                   if (matchedQuest) {
-                    const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
-                    const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
-                    itemBorderColor = mixColors(catColor, tagColor);
-                    if (matchedQuest.completed) {
+                    if (matchedQuest.completed || isMemoryDone) {
                       customBgColor = mixColors(catColor, tagColor);
                     }
                     memory = { ...memory, title: matchedQuest.title };
+                  } else if (isMemoryDone) {
+                    customBgColor = mixColors(catColor, tagColor);
                   }
                 }
 
@@ -663,7 +667,7 @@ export function CarouselGrid({
       -------------------------------------------------------------------------- */}
       <div 
         className="absolute w-full flex flex-wrap justify-center items-center pointer-events-auto z-40 px-4" 
-        style={{ top: 'max(9%, 80px)', gap: '1.5%' }}
+        style={{ top: 'max(13%, 100px)', gap: '1.5%' }}
       >
         {QUESTION_ORDER.map((q) => {
           const color = QUESTION_COLORS[q] || '#888888'

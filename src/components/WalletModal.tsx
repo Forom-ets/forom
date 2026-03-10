@@ -1,6 +1,6 @@
 import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import coromIcon from '../assets/icons/corom.png'
 
 // =============================================================================
@@ -33,10 +33,10 @@ const modalStyles: ReactModal.Styles = {
   content: {
     position: 'relative',
     inset: 'auto',
-    width: '80vw',
+    width: '85vw',
     maxWidth: 'none',
-    height: '70vh',
-    maxHeight: '70vh',
+    height: '85vh',
+    maxHeight: '90vh',
     padding: 0,
     border: 'none',
     background: 'transparent',
@@ -118,13 +118,42 @@ function CircularProgress({ percentage, color, title, size = 180, strokeWidth = 
 
 export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
   const [activeTab, setActiveTab] = useState<'personal' | 'community'>('community')
+  const [displayPixels, setDisplayPixels] = useState(0)
+  const isRolling = displayPixels !== pixels
 
-  // Economy calculations
-  const MAX_PIXELS = 607
-  const mxPixels = 0 // Represents other users' pixels (mocked to 0 for now)
-  const miPercentage = Math.min(100, (pixels / MAX_PIXELS) * 100)
-  const mxPercentage = Math.min(100, (mxPixels / MAX_PIXELS) * 100)
-  const totalPercentage = Math.min(100, ((pixels + mxPixels) / MAX_PIXELS) * 100)
+  useEffect(() => {
+    if (isOpen && activeTab === 'personal') {
+      let startTime = Date.now();
+      const duration = 2000; // 2 seconds
+
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+
+        if (elapsed < duration) {
+           // Roll random numbers
+           setDisplayPixels(Math.floor(Math.random() * 999));
+           requestAnimationFrame(animate);
+        } else {
+           setDisplayPixels(pixels);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    } else {
+      setDisplayPixels(pixels);
+    }
+  }, [isOpen, activeTab, pixels])
+
+  // Economy calculations (Year 1)
+  const MAX_PIXELS = 5000
+  // For currently requested mockup, Bank holds all 5000 initially, community holds 0
+  const bankPixels = 5000
+  const communityPixels = 0
+  
+  const banquePercentage = Math.min(100, (bankPixels / MAX_PIXELS) * 100)
+  const communityPercentage = Math.min(100, (communityPixels / MAX_PIXELS) * 100)
+  const totalPercentage = Math.min(100, ((bankPixels + communityPixels) / MAX_PIXELS) * 100)
 
   return (
     <AnimatePresence>
@@ -152,7 +181,7 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
               flexDirection: 'column',
               boxSizing: 'border-box',
               backgroundColor: '#007F36',
-              border: '8px solid black',
+              border: '8px solid #5C4033', // Brown stroke instead of black
               borderRadius: '38px',
               color: 'white',
               overflow: 'hidden',
@@ -288,23 +317,33 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
                 {/* Content */}
                 {activeTab === 'personal' ? (
                   <div className="flex flex-col items-center justify-center font-jersey text-center h-full space-y-16 mt-4 pb-12 w-full overflow-y-auto">
-                    <h1 className="text-white text-[80px] tracking-widest drop-shadow-[4px_4px_0px_rgba(0,0,0,0.5)] uppercase m-0 leading-none font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif" }}>PIXEL WALLET</h1>
+                    <h1 className="text-[#FFD700] text-[100px] tracking-widest drop-shadow-[4px_4px_0px_rgba(0,0,0,0.5)] uppercase m-0 leading-none font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif", textShadow: '0 0 20px rgba(255, 215, 0, 0.5)' }}>PIXEL WALLET</h1>
                     
-                    <div className="flex items-center justify-center w-full max-w-4xl mx-auto h-[350px]">
-                      {/* Left: Numbers display */}
-                      <div className="flex-1 flex flex-col items-end border-r-[8px] border-white h-full justify-center" style={{ gap: '5%', paddingRight: '5%' }}>
-                        <span className="text-[#a3e635] text-[80px] leading-none opacity-60 font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif" }}>607</span>
-                        <span className="text-[#FFD700] text-[180px] leading-none drop-shadow-[4px_4px_0px_rgba(0,0,0,0.3)] font-jersey min-w-[200px]" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                          {pixels.toString().padStart(2, '0')}
-                        </span>
-                        <span className="text-[#a3e635] text-[80px] leading-none opacity-60 font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif" }}>01</span>
-                      </div>
+                    <div className="flex items-center justify-center w-full max-w-4xl mx-auto h-[350px] relative">
                       
-                      {/* Right: PX logo */}
-                      <div className="flex-1 flex items-center justify-start h-full" style={{ paddingLeft: '5%' }}>
-                        <span className="text-white text-[240px] leading-none drop-shadow-[8px_8px_0px_rgba(0,0,0,0.2)] tracking-tight font-jersey" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                          PX
-                        </span>
+                      {/* Machine Frame Background */}
+                      <div className="absolute inset-0 bg-[#3A2A20] rounded-3xl border-[6px] border-[#5C4033] shadow-[inset_0_20px_40px_rgba(0,0,0,0.8),0_10px_0px_rgba(0,0,0,0.5)] flex items-center justify-center z-0 overflow-hidden before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-b before:from-black/60 before:via-transparent before:to-black/60"></div>
+                      
+                      <div className="flex z-10 w-[90%] h-[80%] items-center justify-center gap-12">
+                        {/* Numbers Slot */}
+                        <div className="flex-[1.5] h-full bg-black/80 rounded-2xl border-4 border-[#222] flex items-center justify-center relative overflow-hidden shadow-[inset_0_15px_30px_rgba(0,0,0,1)]">
+                          {isRolling && <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(255,215,0,0.1),transparent)] animate-pulse"></div>}
+                          <motion.span 
+                            animate={{ y: isRolling ? [20, -20] : 0 }}
+                            transition={{ repeat: isRolling ? Infinity : 0, duration: 0.1, ease: 'linear' }}
+                            className="text-[#FFD700] text-[220px] leading-none drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] font-jersey min-w-[200px] tabular-nums tracking-tighter" 
+                            style={{ fontFamily: "'Jersey 15', sans-serif" }}
+                          >
+                            {Math.floor(displayPixels).toString().padStart(3, '0')}
+                          </motion.span>
+                        </div>
+                        
+                        {/* PX Logo Slot */}
+                        <div className="flex-1 h-full bg-gradient-to-br from-[#1a1a1a] to-[#333] rounded-2xl border-4 border-[#444] shadow-[0_5px_15px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                          <span className="text-white text-[160px] leading-none drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] tracking-tight font-jersey opacity-90" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                            PX
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -313,22 +352,22 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
                     {/* Header */}
                     <div className="text-center flex flex-col gap-1 w-full flex-shrink-0 z-10">
                         <h2 className="font-jersey leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 tracking-widest" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(32px, 7vh, 72px)' }}>
-                          <span className="text-[#FF4B4B]">COMMUNITY</span> <span className="text-white">WALLET</span>
+                          <span className="text-[#FF4B4B]">FOROM</span> <span className="text-white">ECONOMY</span>
                         </h2>
                         <h3 className="font-jersey leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] m-0 tracking-wider" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(24px, 5vh, 56px)' }}>
-                          <span className="text-[#FF4B4B]">607</span> <span className="text-white">PIXELS</span> <span className="text-[#FF4B4B]">MAX.</span>
+                          <span className="text-[#FF4B4B]">5000</span> <span className="text-white">PIXELS</span> <span className="text-[#FF4B4B]">MAX.</span>
                         </h3>
                     </div>
 
                     {/* Circular Graphs Row */}
                     <div className="flex justify-center flex-1 items-center w-full min-h-0" style={{ gap: '2%', transform: 'translateY(-12vh)' }}>
                       
-                      {/* MI (My Impact) Graph */}
+                      {/* BANQUE (Starting Team) Graph */}
                       <div className="flex pt-4 flex-col justify-center items-center flex-shrink-1 w-full" style={{ maxWidth: '25vw', flexBasis: '25%' }}>
                         <div style={{ width: '100%', maxWidth: '30vh' }}>
                           <CircularProgress 
-                            title="MI" 
-                            percentage={miPercentage} 
+                            title="BANQUE" 
+                            percentage={banquePercentage} 
                             color="#FFD700" 
                             size={280} 
                             strokeWidth={16} 
@@ -366,12 +405,12 @@ export function WalletModal({ isOpen, onClose, pixels }: WalletModalProps) {
                         </div>
                       </div>
 
-                      {/* MX (Others Impact) Graph */}
+                      {/* COMMUNITY Graph */}
                       <div className="flex pt-4 flex-col justify-center items-center flex-shrink-1 w-full" style={{ maxWidth: '25vw', flexBasis: '25%' }}>
                         <div style={{ width: '100%', maxWidth: '30vh' }}>
                           <CircularProgress 
-                            title="MX" 
-                            percentage={mxPercentage} 
+                            title="COMMUNITY" 
+                            percentage={communityPercentage} 
                             color="#0066FF" 
                             size={280} 
                             strokeWidth={16} 

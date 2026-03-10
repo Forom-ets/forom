@@ -102,6 +102,11 @@ function App() {
 
   // Economy & Leveling State
   const [pixels, setPixels] = useState(0)
+  const [inVault, setInVault] = useState(0) // 5000 reserved
+  // For unused warning:
+  void inVault;
+  void setInVault;
+  const [seasonPhase, setSeasonPhase] = useState<'V1' | 'V2' | 'V3'>('V1')
   const [xp, setXp] = useState(0)
   const [personalQuests, setPersonalQuests] = useState<Quest[]>([])
   const [acceptedQuestId, setAcceptedQuestId] = useState<string | null>(null)
@@ -123,6 +128,13 @@ function App() {
 
   // Detect Supermoderator
   const isSuperModerator = currentUser === 'xylo'
+
+  // Update Season Phase based on quests count
+  useEffect(() => {
+    if (seasonPhase === 'V1' && personalQuests.length >= 100) {
+      setSeasonPhase('V2')
+    }
+  }, [personalQuests.length, seasonPhase])
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -173,6 +185,12 @@ function App() {
           setIsInLobby(false); 
           setIsCreating(false);
           setIsPhantomMode(false);
+          if (currentUser === 'xylo') {
+            setPixels(500);    // 500 px for all supermods initially
+            setInVault(5000);  // 5000 reserved (not used visually yet)
+          } else {
+            setPixels(500);    // members start with 500
+          }
         }}
         onBack={() => setIsCreating(false)}
       />
@@ -306,6 +324,9 @@ function App() {
         isDarkMode={isDarkMode}
         foromColor={foromColor}
         mission={mission}
+        currentUser={currentUser}
+        isSuperModerator={isSuperModerator}
+        inVault={inVault}
       />
 
       <WalletModal
@@ -321,9 +342,15 @@ function App() {
         acceptedQuestId={acceptedQuestId}
         questionLabels={questionLabels}
         categories={CATEGORIES as unknown as string[]}
+        seasonPhase={seasonPhase}
+        pixels={pixels}
         onCreateQuest={(title, reward, question, category) => {
+          const cost = seasonPhase === 'V1' ? 2 : 1;
+          if (pixels < cost) return;
+          // Deduct
+          setPixels(p => Math.max(0, p - cost));
+          
           setPersonalQuests(prev => {
-            if (prev.length >= 100) return prev
             return [...prev, { id: Date.now().toString(), title, reward, question, category }]
           })
         }}
@@ -331,8 +358,8 @@ function App() {
         onCompleteQuest={(id) => {
           const quest = personalQuests.find(q => q.id === id)
           if (quest) {
-            // Fixed reward: 2.07 pixels + 10 XP per completed quest
-            setPixels(p => Math.round((p + 2.07) * 100) / 100)
+            // Fixed reward: 2 pixels + 10 XP per completed quest
+            setPixels(p => Math.round((p + 2.00) * 100) / 100)
             setXp(x => x + 10)
             setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q))
             if (acceptedQuestId === id) setAcceptedQuestId(null)

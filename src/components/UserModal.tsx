@@ -1,5 +1,6 @@
 import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 import userIcon from '../assets/icons/user.png'
 import { FOROM_COLOR_MAP, type ForomColor } from './ChooseColorScreen'
 
@@ -13,6 +14,9 @@ interface UserModalProps {
   isDarkMode?: boolean
   foromColor?: ForomColor | null
   mission?: string
+  currentUser?: string | null
+  isSuperModerator?: boolean
+  inVault?: number
 }
 
 const modalStyles: ReactModal.Styles = {
@@ -31,9 +35,9 @@ const modalStyles: ReactModal.Styles = {
   content: {
     position: 'relative',
     inset: 'auto',
-    width: '1100px',
-    maxWidth: '95vw',
-    height: '600px',
+    width: '80vw',
+    maxWidth: '1400px',
+    height: '80vh',
     maxHeight: '90vh',
     padding: 0,
     border: 'none',
@@ -60,12 +64,31 @@ const modalVariants = {
   },
 }
 
-export function UserModal({ isOpen, onClose, pixels, level, foromColor, mission }: UserModalProps) {
+export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColor, mission, currentUser, isSuperModerator, inVault = 0 }: UserModalProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void xp;
+  const [activeTab, setActiveTab] = useState<'smods' | 'mods' | 'creators' | 'assoc'>('smods');
+
+  // Try to use it lightly to avoid warning
+  const displayName = currentUser || 'XYLO';
+
   // Empty quest list as requested without mockup data
   const completedQuests: Array<{ tag: string, tagColor: string, title: string, px: string, active: boolean }> = []
 
-  // Mock progress calculation (e.g. 20%)
-  const progressPercentage = 20
+  // Mock progress calculation (starts at 0 when level 0)
+  const progressPercentage = level === 0 ? 0 : 20
+
+  const supermods = [
+    { name: 'xylo', px: pixels, active: true },
+    { name: 'Borom', px: 500, active: false, key: 'KEY-BOROM' },
+    { name: 'Dorom', px: 500, active: false, key: 'KEY-DOROM' },
+    { name: 'gorom', px: 500, active: false, key: 'KEY-GOROM' },
+    { name: 'horom', px: 500, active: false, key: 'KEY-HOROM' },
+    { name: 'jorom', px: 500, active: false, key: 'KEY-JOROM' },
+    { name: 'Korom', px: 500, active: false, key: 'KEY-KOROM' },
+    { name: 'Lorom', px: 500, active: false, key: 'KEY-LOROM' },
+    { name: 'Morom', px: 500, active: false, key: 'KEY-MOROM' },
+  ];
 
   return (
     <AnimatePresence>
@@ -153,25 +176,46 @@ export function UserModal({ isOpen, onClose, pixels, level, foromColor, mission 
             {/* Header Title */}
             <div className="absolute top-6 w-full flex justify-center z-10 pointer-events-none">
               <h1 className="text-[54px] m-0 drop-shadow-sm uppercase" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                <span className="text-[#333333]">XYLO</span> <span className="text-[#666666]">LOBBY</span>
+                <span className="text-[#333333]">{displayName.toUpperCase()}</span> <span className="text-[#666666]">LOBBY</span>
               </h1>
             </div>
 
             {/* Main Content Layout */}
-            <div className="flex w-full h-full pt-[110px] pb-12 px-10">
+            <div className="flex w-full h-full pt-[110px] pb-12 px-10 gap-6">
                
-               {/* LEFT COLUMN: PX */}
+               {/* LEFT COLUMN: Economy (PX & Forom Funds) */}
                <div className="flex-1 flex flex-col items-center justify-start z-20">
-                  <div className="text-[#5FCB76] text-[160px] leading-[0.85] drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                  {/* Personal PX */}
+                  <div className="text-[#5FCB76] text-[120px] leading-[0.85] drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                     PX
                   </div>
-                  <div className="text-[#FFD700] text-[100px] leading-none drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] mt-4" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                  <div className="text-[#FFD700] text-[80px] leading-none drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] mt-2" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                     {pixels.toFixed(2)}
                   </div>
+                  
+                  {isSuperModerator && (
+                    <>
+                      {/* Forom Vault */}
+                      <div className="mt-12 text-[#333333] text-[50px] leading-[0.85] drop-shadow-[2px_2px_0px_rgba(255,255,255,0.5)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                        VAULT
+                      </div>
+                      <div className="text-white text-[60px] leading-none drop-shadow-[3px_3px_0px_rgba(0,0,0,0.5)] mt-2 bg-[#8C52FF] px-6 py-2 rounded-xl border-[4px] border-black shadow-[0_4px_0px_rgba(0,0,0,1)]" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                        {inVault.toFixed(2)}
+                      </div>
+
+                      {/* Community Funds */}
+                      <div className="mt-8 text-[#333333] text-[40px] leading-[0.85] drop-shadow-[2px_2px_0px_rgba(255,255,255,0.5)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                        COMMUNAUTÉ
+                      </div>
+                      <div className="text-white text-[50px] leading-none drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)] mt-2 bg-[#FF914D] px-6 py-2 rounded-xl border-[4px] border-black shadow-[0_4px_0px_rgba(0,0,0,1)]" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                        500.00
+                      </div>
+                    </>
+                  )}
                </div>
 
                {/* CENTER COLUMN: User Profile */}
-               <div className="flex-[1.4] flex flex-col items-center justify-start z-20 relative pt-2">
+               <div className="flex-[1.2] flex flex-col items-center justify-start z-20 relative pt-2">
                   <div className="w-[160px] h-[160px] rounded-full border-[6px] border-black bg-white flex items-center justify-center overflow-hidden mb-6 shadow-[0_4px_0px_rgba(0,0,0,1)]">
                      <img src={userIcon} alt="User Profile" className="w-[60%] h-[60%] object-contain opacity-90" />
                   </div>
@@ -236,71 +280,161 @@ export function UserModal({ isOpen, onClose, pixels, level, foromColor, mission 
                   </div>
 
                   <div className="text-white text-[32px] tracking-[0.5em] drop-shadow-sm ml-4 whitespace-nowrap" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                    C I T O Y E N
+                    {level === 0 ? 'CITOYEN' : title.toUpperCase()}
                   </div>
                </div>
 
-               {/* RIGHT COLUMN: XP and Quests */}
-               <div className="flex-1 flex flex-col items-center justify-start z-20">
-                  <div className="text-[#FFB020] text-[160px] leading-[0.85] drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-                    XP
-                  </div>
+               {/* RIGHT COLUMN */}
+               <div className="flex-[1.5] flex flex-col items-center justify-start z-20 h-full">
+               
+                 {isSuperModerator ? (
+                   <>
+                    <div className="w-full flex justify-around mb-4 border-b-4 border-black pb-2 px-2">
+                      {[
+                        { id: 'smods', label: 'S-MODS (9)' },
+                        { id: 'mods', label: 'MODS (50)' },
+                        { id: 'creators', label: 'CREATEURS (150)' },
+                        { id: 'assoc', label: 'ASSOCIES (1K)' }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as 'smods' | 'mods' | 'creators' | 'assoc')}
+                          className={`text-[24px] uppercase transition-all ${activeTab === tab.id ? 'text-black drop-shadow-[2px_2px_0px_white] scale-110' : 'text-[#666666]'}`}
+                          style={{ fontFamily: "'Jersey 15', sans-serif" }}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
 
-                  {/* Scrollable list area */}
-                  <div className="w-full flex-1 overflow-y-auto quest-scroll pr-4 pt-8 pb-4 flex flex-col items-center">
-                     {completedQuests.length > 0 ? (
-                       <div className="flex flex-col gap-4 w-full">
-                          {completedQuests.map((quest, idx) => (
-                             <div 
-                               key={idx} 
-                               className="flex flex-row items-center justify-between border-[4px] border-black rounded-[16px] px-4 py-3 w-full"
-                               style={{ 
-                                 backgroundColor: quest.active ? '#FFA639' : '#ffffff',
-                                 boxShadow: '0 4px 0px rgba(0,0,0,0.8)',
-                                 transition: 'all 0.15s ease'
-                               }}
-                             >
-                                <div className="flex flex-row items-center gap-4 flex-1 overflow-hidden">
-                                  {/* Number Tag */}
-                                  <div 
-                                    className="flex items-center justify-center rounded-[8px] border-[2px] border-black px-3 py-1 flex-shrink-0"
-                                    style={{ backgroundColor: quest.tagColor, fontFamily: "'Jersey 15', sans-serif", fontSize: '20px', color: 'white', letterSpacing: '0.06em' }}
-                                  >
-                                    {quest.tag}
+                    {/* Scrollable list area */}
+                    <div className="w-full flex-1 overflow-y-auto quest-scroll pr-4 py-2 flex flex-col items-center">
+                       {activeTab === 'smods' && (
+                         <div className="flex flex-col gap-4 w-full">
+                            {supermods.map((mod, idx) => (
+                               <div 
+                                 key={idx} 
+                                 className="flex flex-row items-center justify-between border-[4px] border-black rounded-[16px] px-4 py-3 w-full"
+                                 style={{ 
+                                   backgroundColor: mod.active ? '#5FCB76' : '#ffffff',
+                                   boxShadow: '0 4px 0px rgba(0,0,0,0.8)',
+                                   transition: 'all 0.15s ease',
+                                   opacity: 1
+                                 }}
+                               >
+                                  <div className="flex flex-row items-center gap-4 flex-1 overflow-hidden">
+                                    <div className="text-black uppercase truncate" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '26px', letterSpacing: '0.04em', lineHeight: 1.1 }}>
+                                      {mod.name}
+                                    </div>
                                   </div>
-                                  <div className="text-black uppercase truncate" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '26px', letterSpacing: '0.04em', lineHeight: 1.1 }}>
-                                    {quest.title}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '20px', color: 'rgba(0,0,0,0.6)' }}>
-                                    {quest.px}
-                                  </span>
-                                  {quest.active && (
-                                    <span style={{
-                                      fontFamily: "'Jersey 15', sans-serif",
-                                      fontSize: '16px',
-                                      backgroundColor: 'black',
-                                      color: '#FFA639',
-                                      borderRadius: '6px',
-                                      padding: '2px 8px',
-                                      letterSpacing: '0.06em',
-                                    }}>
-                                      ACTIF
+                                  <div className="flex flex-col items-end gap-1 ml-4 flex-shrink-0">
+                                    <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: activeTab === 'smods' ? '24px' : '20px', color: 'black' }}>
+                                      {mod.px} PX
                                     </span>
-                                  )}
-                                </div>
-                             </div>
-                          ))}
-                       </div>
-                     ) : (
-                       <div className="flex flex-col items-center justify-center opacity-40 mt-12">
-                         <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '32px', color: 'rgba(0,0,0,0.6)', letterSpacing: '0.1em' }}>
-                            AUCUNE QUÊTE
-                         </span>
-                       </div>
-                     )}
-                  </div>
+                                    {!mod.active && (
+                                      <span style={{
+                                        fontFamily: "'Jersey 15', sans-serif",
+                                        fontSize: '14px',
+                                        backgroundColor: 'black',
+                                        color: '#FF4B4B',
+                                        borderRadius: '6px',
+                                        padding: '2px 8px',
+                                        letterSpacing: '0.06em',
+                                      }}>
+                                        CLÉ REQUISE
+                                      </span>
+                                    )}
+                                    {mod.active && (
+                                      <span style={{
+                                        fontFamily: "'Jersey 15', sans-serif",
+                                        fontSize: '14px',
+                                        backgroundColor: 'white',
+                                        color: 'black',
+                                        border: '2px solid black',
+                                        borderRadius: '6px',
+                                        padding: '2px 8px',
+                                        letterSpacing: '0.06em',
+                                      }}>
+                                        ACTIF
+                                      </span>
+                                    )}
+                                  </div>
+                               </div>
+                            ))}
+                         </div>
+                       )}
+
+                       {activeTab !== 'smods' && (
+                         <div className="flex flex-col items-center justify-center opacity-60 h-full mt-12">
+                           <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '32px', color: 'rgba(0,0,0,0.6)', letterSpacing: '0.1em' }}>
+                              BIENTÔT DISPONIBLE
+                           </span>
+                         </div>
+                       )}
+                    </div>
+                   </>
+                 ) : (
+                   <>
+                    <div className="text-[#FFB020] text-[160px] leading-[0.85] drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)] tracking-tighter" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                      XP
+                    </div>
+                    <div className="w-full flex-1 overflow-y-auto quest-scroll pr-4 pt-8 pb-4 flex flex-col items-center">
+                       {completedQuests.length > 0 ? (
+                         <div className="flex flex-col gap-4 w-full">
+                            {completedQuests.map((quest, idx) => (
+                               <div 
+                                 key={idx} 
+                                 className="flex flex-row items-center justify-between border-[4px] border-black rounded-[16px] px-4 py-3 w-full"
+                                 style={{ 
+                                   backgroundColor: quest.active ? '#FFA639' : '#ffffff',
+                                   boxShadow: '0 4px 0px rgba(0,0,0,0.8)',
+                                   transition: 'all 0.15s ease'
+                                 }}
+                               >
+                                  <div className="flex flex-row items-center gap-4 flex-1 overflow-hidden">
+                                    {/* Number Tag */}
+                                    <div 
+                                      className="flex items-center justify-center rounded-[8px] border-[2px] border-black px-3 py-1 flex-shrink-0"
+                                      style={{ backgroundColor: quest.tagColor, fontFamily: "'Jersey 15', sans-serif", fontSize: '20px', color: 'white', letterSpacing: '0.06em' }}
+                                    >
+                                      {quest.tag}
+                                    </div>
+                                    <div className="text-black uppercase truncate" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '26px', letterSpacing: '0.04em', lineHeight: 1.1 }}>
+                                      {quest.title}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                                    <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '20px', color: 'rgba(0,0,0,0.6)' }}>
+                                      {quest.px}
+                                    </span>
+                                    {quest.active && (
+                                      <span style={{
+                                        fontFamily: "'Jersey 15', sans-serif",
+                                        fontSize: '16px',
+                                        backgroundColor: 'black',
+                                        color: '#FFA639',
+                                        borderRadius: '6px',
+                                        padding: '2px 8px',
+                                        letterSpacing: '0.06em',
+                                      }}>
+                                        ACTIF
+                                      </span>
+                                    )}
+                                  </div>
+                               </div>
+                            ))}
+                         </div>
+                       ) : (
+                         <div className="flex flex-col items-center justify-center opacity-40 mt-12">
+                           <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '32px', color: 'rgba(0,0,0,0.6)', letterSpacing: '0.1em' }}>
+                              AUCUNE QUÊTE
+                           </span>
+                         </div>
+                       )}
+                    </div>
+                   </>
+                 )}
+
                </div>
 
             </div>

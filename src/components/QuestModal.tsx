@@ -58,6 +58,8 @@ export interface QuestModalProps {
   acceptedQuestId: string | null
   questionLabels: Record<string, string>
   categories?: string[]
+  seasonPhase?: 'V1' | 'V2' | 'V3'
+  pixels?: number
   onCreateQuest: (title: string, reward: number, question: string | null, category: string) => void
   onAcceptQuest: (id: string) => void
   onCompleteQuest: (id: string) => void
@@ -84,10 +86,10 @@ const modalStyles: ReactModal.Styles = {
   content: {
     position: 'relative',
     inset: 'auto',
-    width: '80vw',
+    width: '85vw',
     maxWidth: 'none',
-    height: '70vh',
-    maxHeight: '70vh',
+    height: '85vh',
+    maxHeight: '90vh',
     padding: 0,
     border: 'none',
     background: 'transparent',
@@ -127,6 +129,8 @@ export function QuestModal({
   onAcceptQuest,
   onCompleteQuest,
   onCancelQuest,
+  seasonPhase = 'V1',
+  pixels = 0,
   categories = ['A', 'B', 'C', 'D', 'E']
 }: QuestModalProps) {
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
@@ -139,16 +143,14 @@ export function QuestModal({
 
   const wheelQuests = useMemo(() => {
     const arr = Array(100).fill(null)
-    const counts: Record<string, number> = {}
     personalQuests.forEach(q => {
       const cat = q.category || categories[0]
       const catIdx = categories.indexOf(cat)
       if (catIdx === -1) return
       
-      const count = counts[cat] || 0
-      if (count < 10) {
-        arr[catIdx * 10 + count] = q
-        counts[cat] = count + 1
+      const tagIndex = parseInt(q.question || '0', 10)
+      if (!isNaN(tagIndex) && tagIndex >= 0 && tagIndex < 10) {
+        arr[catIdx * 10 + tagIndex] = q
       }
     })
     return arr
@@ -173,14 +175,22 @@ export function QuestModal({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newTitle.trim() || !selectedQuestion) return // Require tag/question
-    if (personalQuests.length >= 100) return
+    
+    // In V1, limit is 100. In V2+, we allow "iterations"
+    const cost = seasonPhase === 'V1' ? 2 : 1;
+    if (pixels < cost) {
+      alert(`Vous n'avez pas assez de pixels. (Coût: ${cost}px)`);
+      return;
+    }
+
+    if (seasonPhase === 'V1' && personalQuests.length >= 100) return
 
     // Calculate where this new quest will land so we can scroll to it immediately
     const catIdx = categories.indexOf(selectedCategory)
-    const countInCat = personalQuests.filter(q => (q.category || categories[0]) === selectedCategory).length
-    const targetIdx = Math.min(catIdx * 10 + countInCat, catIdx * 10 + 9) // 10 per category now
+    const tagIndex = parseInt(selectedQuestion || '0', 10)
+    const targetIdx = catIdx * 10 + (isNaN(tagIndex) ? 0 : tagIndex)
 
-    onCreateQuest(newTitle, 2.07, selectedQuestion, selectedCategory)
+    onCreateQuest(newTitle, cost, selectedQuestion, selectedCategory)
     setNewTitle('')
     setSelectedQuestion(null)
     
@@ -673,12 +683,12 @@ export function QuestModal({
 
                 </div>
               ) : (
-                <div className="flex-1 flex w-full max-w-6xl mx-auto h-full overflow-hidden mt-6 pb-2" style={{ gap: '3%' }}>
+                <div className="flex-1 flex w-full max-w-7xl mx-auto h-full overflow-hidden mt-2 pb-2 px-4" style={{ gap: '2vw' }}>
                   
                   {/* LEFTSIDE: CREATION (Idées) */}
                   <div className="flex flex-col relative w-1/2 h-full">
-                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] p-8 flex flex-col items-center justify-start gap-8 relative flex-1">
-                      <h3 className="text-center text-[50px] text-white uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] p-6 flex flex-col items-center justify-start gap-4 lg:gap-8 relative flex-1 min-h-0">
+                      <h3 className="text-center text-[clamp(24px,3vw,50px)] text-white uppercase tracking-widest drop-shadow-sm font-bold mt-2" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                         IDÉES
                       </h3>
                       
@@ -780,7 +790,7 @@ export function QuestModal({
                         <button
                           form="quest-form"
                           type="submit"
-                          disabled={!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100}
+                          disabled={!newTitle.trim() || !selectedQuestion || (seasonPhase === 'V1' && personalQuests.length >= 100) || pixels < (seasonPhase === 'V1' ? 2 : 1)}
                           style={{
                             padding: '12px 40px',
                             borderRadius: '16px',
@@ -795,19 +805,28 @@ export function QuestModal({
                             whiteSpace: 'nowrap',
                           }}
                           onMouseOver={(e) => {
-                            if (newTitle.trim() && selectedQuestion && personalQuests.length < 100) {
+                            if (newTitle.trim() && selectedQuestion && (seasonPhase !== 'V1' || personalQuests.length < 100)) {
                               e.currentTarget.style.transform = 'translateY(2px)'
                               e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
                             }
                           }}
                           onMouseOut={(e) => {
-                            if (newTitle.trim() && selectedQuestion && personalQuests.length < 100) {
+                            if (newTitle.trim() && selectedQuestion && (seasonPhase !== 'V1' || personalQuests.length < 100)) {
                               e.currentTarget.style.transform = 'none'
                               e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
                             }
                           }}
                         >
-                          {personalQuests.length >= 100 ? 'GRILLE PLEINE' : 'ENVOYER'}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>
+                              {seasonPhase === 'V1' ? (personalQuests.length >= 100 ? 'GRILLE PLEINE' : 'ENVOYER') : 'ITÉRER'}
+                            </span>
+                            {personalQuests.length < 100 && (
+                              <span style={{ color: '#FF4B4B' }}>
+                                (-{seasonPhase === 'V1' ? 2 : 1}px)
+                              </span>
+                            )}
+                          </div>
                         </button>
                       </div>
                     </div>
@@ -816,7 +835,7 @@ export function QuestModal({
                   {/* RIGHTSIDE: Infinite vertical scroll wheel */}
                   <div className="flex flex-col relative w-1/2 h-full">
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
-                      <h3 className="text-center text-[50px] text-white uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-3 pb-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+                      <h3 className="text-center text-[clamp(24px,3vw,50px)] text-white uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-3 pb-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                         MISSIONS
                       </h3>
 
@@ -841,15 +860,15 @@ export function QuestModal({
 
                         {/* Items — absolutely positioned, center slot exactly matches highlight strip */}
                         {(() => {
-                          const ITEM_H = 80
-                          const GAP = 14
+                          const ITEM_H = 65
+                          const GAP = 10
                           const slots = [-2, -1, 0, 1, 2]
 
                           return slots.map((offset) => {
                             const isCenter = offset === 0
                             const dist = Math.abs(offset)
                             const opacity = dist === 0 ? 1 : dist === 1 ? 0.6 : 0.4
-                            const topPct = 44
+                            const topPct = 50
                             const topPx = offset * (ITEM_H + GAP)
                             const inset = isCenter ? '8%' : dist === 1 ? '12%' : '18%'
 
@@ -925,7 +944,7 @@ export function QuestModal({
                                 {!q ? (
                                   <span style={{
                                     fontFamily: "'Jersey 15', sans-serif",
-                                    fontSize: isCenter ? '42px' : '34px',
+                                    fontSize: isCenter ? '36px' : '28px',
                                     color: 'white',
                                     textShadow: '0px 2px 4px rgba(0,0,0,0.4)',
                                     letterSpacing: '0.05em',
@@ -951,7 +970,7 @@ export function QuestModal({
                                     <span
                                       style={{
                                         fontFamily: "'Jersey 15', sans-serif",
-                                        fontSize: isCenter ? '32px' : '26px',
+                                        fontSize: isCenter ? '26px' : '22px',
                                         color: 'white',
                                         textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                                         letterSpacing: '0.05em',

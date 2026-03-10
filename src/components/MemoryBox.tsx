@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { getMemoryThumbnail, hasVideo, QUESTION_COLORS } from '../data/memories'
+import { QUESTION_COLORS } from '../data/memories'
 import type { Memory } from '../data/memories'
 
 // =============================================================================
@@ -26,10 +26,10 @@ export interface MemoryBoxProps {
 // =============================================================================
 
 const DIMENSIONS = {
-  centered: { width: '560px', height: '315px', minWidth: '560px', minHeight: '315px' },
-  default: { width: '240px', height: '135px', minWidth: '240px', minHeight: '135px' },
-  small: { width: '160px', height: '90px', minWidth: '160px', minHeight: '90px' },
-  extraSmall: { width: '80px', height: '45px', minWidth: '80px', minHeight: '45px' },
+  centered: { width: '400px', height: '400px', minWidth: '400px', minHeight: '400px' },
+  default: { width: '180px', height: '180px', minWidth: '180px', minHeight: '180px' },
+  small: { width: '120px', height: '120px', minWidth: '120px', minHeight: '120px' },
+  extraSmall: { width: '80px', height: '80px', minWidth: '80px', minHeight: '80px' },
 } as const
 
 // =============================================================================
@@ -64,12 +64,9 @@ export const MemoryBox = memo(function MemoryBox({
     return <div style={{ ...dimensions, visibility: 'hidden' }} />
   }
 
-  const memoryHasVideo = memory ? hasVideo(memory) : false
-  const thumbnail = memory ? getMemoryThumbnail(memory) : null
   const title = memory?.title ?? 'Sans titre'
   const question = memory?.question ?? null
   const isFilled = memory?.isFilled ?? false
-  const showThumbnail = memoryHasVideo && thumbnail
 
   // For centered empty boxes, clicking should open the modal to create a memory
   const handleBoxClick = () => {
@@ -109,77 +106,49 @@ export const MemoryBox = memo(function MemoryBox({
             <span style={{ fontSize: isCentered ? '48px' : isSmall ? '22px' : isExtraSmall ? '13px' : '30px', userSelect: 'none' }}>🔒</span>
           </div>
         )}
-        {showThumbnail || isFilled ? (
-          // Thumbnail with play overlay and question text
-          <div className="absolute inset-0 w-full h-full bg-black">
-            {showThumbnail && (
-              <img
-                src={thumbnail}
-                alt={title}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ opacity: isCentered ? 0.85 : 0.5, zIndex: 1, filter: 'grayscale(100%)' }}
-                loading="lazy"
-              />
+        {isFilled ? (
+          // Filled memory display (no thumbnail)
+          <div className="absolute inset-0 w-full h-full flex flex-col pt-3" style={{ zIndex: 3 }}>
+            {/* Dark overlay only for non-centered items (if not using custom background) */}
+            {!isCentered && !customBgColor && (
+              <div className="absolute inset-0 bg-black/10" style={{ zIndex: -1 }} />
             )}
-            {/* Dark overlay only for non-centered items */}
-            {!isCentered && (
-              <div className="absolute inset-0 bg-black/40" style={{ zIndex: 2 }} />
-            )}
-            {/* Centered layout: badge top, title middle */}
-            <div className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }}>
-              {/* Badge — pinned to top center */}
-              {isFilled && question && (
-                <div style={{ position: 'absolute', top: isCentered ? '10%' : '5%', left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-                  <span
-                    className="flex items-center justify-center font-bold text-white uppercase shadow-lg"
-                    style={{
-                      fontFamily: "'Jersey 15', sans-serif",
-                      fontSize: isCentered ? '22px' : isSmall ? '12px' : isExtraSmall ? '8px' : '16px',
-                      backgroundColor: question ? (QUESTION_COLORS[question] || borderColor) : borderColor,
-                      padding: isCentered ? '8px 36px' : '2px 10px',
-                      borderRadius: isCentered ? '12px' : '4px',
-                      border: isCentered ? '3px solid #111' : `2px solid ${borderColor}`,
-                      letterSpacing: isCentered ? '1px' : 'normal',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {questionLabels[question] || question}
-                  </span>
-                </div>
-              )}
-              {/* Title — pinned to absolute center of the box */}
-              {isFilled && isCentered && (
-                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', justifyContent: 'center', padding: '0 24px' }}>
-                  <span
-                    className="text-white text-center font-bold uppercase w-full"
-                    style={{
-                      fontFamily: "'Jersey 15', sans-serif",
-                      fontSize: '52px',
-                      lineHeight: 1.1,
-                      textShadow: '2px 2px 8px rgba(0,0,0,0.95)',
-                    }}
-                  >
-                    {title}
-                  </span>
-                </div>
-              )}
-              {/* Title for non-centered items */}
-              {isFilled && !isCentered && (
-                <div style={{ position: 'absolute', bottom: '8px', left: 0, right: 0, display: 'flex', justifyContent: 'center', padding: '0 8px' }}>
-                  <span
-                    className="text-white text-center font-bold uppercase w-full"
-                    style={{
-                      fontFamily: "'Jersey 15', sans-serif",
-                      fontSize: isSmall ? '24px' : isExtraSmall ? '14px' : '32px',
-                      lineHeight: 1.1,
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    {title}
-                  </span>
-                </div>
-              )}
+            
+            {/* Title — centered in the box */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', marginTop: '15px' }}>
+              <span
+                className={`text-center font-bold uppercase w-full ${customBgColor ? 'text-white' : (isDark ? 'text-white' : 'text-black')}`}
+                style={{
+                  fontFamily: "'Jersey 15', sans-serif",
+                  fontSize: isCentered ? '40px' : isSmall ? '18px' : isExtraSmall ? '10px' : '24px',
+                  lineHeight: 1.1,
+                  textShadow: customBgColor ? '2px 2px 4px rgba(0,0,0,0.5)' : 'none',
+                }}
+              >
+                {title}
+              </span>
             </div>
+
+            {/* Badge — pinned to bottom center */}
+            {question && (
+              <div style={{ paddingBottom: '10px', display: 'flex', justifyContent: 'center' }}>
+                <span
+                  className="flex items-center justify-center font-bold text-white uppercase shadow-sm"
+                  style={{
+                    fontFamily: "'Jersey 15', sans-serif",
+                    fontSize: isCentered ? '22px' : isSmall ? '12px' : isExtraSmall ? '8px' : '16px',
+                    backgroundColor: question ? (QUESTION_COLORS[question] || borderColor) : borderColor,
+                    padding: isCentered ? '6px 24px' : '2px 10px',
+                    borderRadius: isCentered ? '12px' : '4px',
+                    border: isCentered ? '3px solid #111' : `2px solid ${borderColor}`,
+                    letterSpacing: isCentered ? '1px' : 'normal',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {questionLabels[question] || question}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           // Empty slot with frame number
