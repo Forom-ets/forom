@@ -2,7 +2,8 @@ import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { X } from 'lucide-react'
-import { QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS } from '../data/memories'
+import { QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS, getMemory } from '../data/memories'
+import type { CategoryType } from '../data/memories'
 
 // Category band colors removed because we now use mixColors
 
@@ -47,6 +48,7 @@ export interface Quest {
   reward: number
   question: string | null
   category: string
+  completed?: boolean
 }
 
 export interface QuestModalProps {
@@ -475,32 +477,53 @@ export function QuestModal({
                             >
                               ANNULER
                             </button>
-                            <button
-                              onClick={() => onCompleteQuest(acceptedQuestId)}
-                              style={{
-                                padding: '12px 40px',
-                                borderRadius: '16px',
-                                backgroundColor: 'white',
-                                color: 'black',
-                                fontSize: '32px',
-                                fontFamily: "'Jersey 15', sans-serif",
-                                border: '4px solid black',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 0px rgba(0,0,0,1)',
-                                transition: 'transform 0.1s, box-shadow 0.1s',
-                                whiteSpace: 'nowrap',
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'translateY(2px)'
-                                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'none'
-                                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                              }}
-                            >
-                              COMPLÉTER
-                            </button>
+                            {(() => {
+                              let canComplete = false;
+                              if (acceptedQuestId) {
+                                const qObj = personalQuests.find(q => q.id === acceptedQuestId);
+                                if (qObj && qObj.question) {
+                                  const index = QUESTION_ORDER.indexOf(qObj.question as any);
+                                  const mem = getMemory(qObj.category as CategoryType, index);
+                                  // Requires youtube video, resume (description) and a source
+                                  if (mem?.isFilled && mem.videoUrl && mem.description.trim().length > 0 && Array.isArray(mem.sources) && mem.sources.length > 0) {
+                                    canComplete = true;
+                                  }
+                                }
+                              }
+                              return (
+                                <button
+                                  onClick={() => canComplete && onCompleteQuest(acceptedQuestId)}
+                                  disabled={!canComplete}
+                                  style={{
+                                    padding: '12px 40px',
+                                    borderRadius: '16px',
+                                    backgroundColor: canComplete ? 'white' : 'rgba(255,255,255,0.4)',
+                                    color: canComplete ? 'black' : 'rgba(0,0,0,0.4)',
+                                    fontSize: '32px',
+                                    fontFamily: "'Jersey 15', sans-serif",
+                                    border: canComplete ? '4px solid black' : '4px solid rgba(0,0,0,0.2)',
+                                    cursor: canComplete ? 'pointer' : 'not-allowed',
+                                    boxShadow: canComplete ? '0 4px 0px rgba(0,0,0,1)' : 'none',
+                                    transition: 'transform 0.1s, box-shadow 0.1s',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                  onMouseOver={(e) => {
+                                    if (canComplete) {
+                                      e.currentTarget.style.transform = 'translateY(2px)'
+                                      e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
+                                    }
+                                  }}
+                                  onMouseOut={(e) => {
+                                    if (canComplete) {
+                                      e.currentTarget.style.transform = 'none'
+                                      e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
+                                    }
+                                  }}
+                                >
+                                  COMPLÉTER
+                                </button>
+                              )
+                            })()}
                           </>
                         ) : (
                           <button
@@ -571,15 +594,18 @@ export function QuestModal({
                               const isActive = q.id === acceptedQuestId
                               const isSelected = q.id === boardSelectedId
                               const tagColor = q.question ? (QUESTION_COLORS[q.question] || '#888') : null
+                              const catColor = CATEGORY_COLORS[q.category] || null
+                              const mixBg = (q.completed && tagColor && catColor) ? mixColors(tagColor, catColor) : null
                               const tagLabel = q.question ? (questionLabels[q.question] || q.question) : null
+                              
                               return (
                                 <div
                                   key={q.id}
                                   onClick={() => setBoardSelectedId(isSelected ? null : q.id)}
                                   style={{
                                     borderRadius: '16px',
-                                    backgroundColor: isActive ? '#FFA639' : isSelected ? '#fff' : '#fff',
-                                    border: isSelected || isActive ? '4px solid black' : '4px solid rgba(0,0,0,0.25)',
+                                    backgroundColor: mixBg || (isActive ? '#FFA639' : '#fff'),
+                                    border: isActive ? '4px solid black' : isSelected ? '4px solid #FE6C17' : '4px solid rgba(0,0,0,0.25)',
                                     boxShadow: isSelected || isActive ? '0 4px 0px rgba(0,0,0,0.8)' : '0 2px 0px rgba(0,0,0,0.2)',
                                     padding: '10px 14px',
                                     cursor: 'pointer',
@@ -754,28 +780,28 @@ export function QuestModal({
                         <button
                           form="quest-form"
                           type="submit"
-                          disabled={!newTitle.trim() || personalQuests.length >= 100}
+                          disabled={!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100}
                           style={{
                             padding: '12px 40px',
                             borderRadius: '16px',
-                            backgroundColor: (!newTitle.trim() || personalQuests.length >= 100) ? 'rgba(255,255,255,0.4)' : 'white',
-                            color: (!newTitle.trim() || personalQuests.length >= 100) ? 'rgba(0,0,0,0.4)' : 'black',
+                            backgroundColor: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'rgba(255,255,255,0.4)' : 'white',
+                            color: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'rgba(0,0,0,0.4)' : 'black',
                             fontSize: '32px',
                             fontFamily: "'Jersey 15', sans-serif",
-                            border: (!newTitle.trim() || personalQuests.length >= 100) ? '4px solid rgba(0,0,0,0.2)' : '4px solid black',
-                            cursor: (!newTitle.trim() || personalQuests.length >= 100) ? 'not-allowed' : 'pointer',
-                            boxShadow: (!newTitle.trim() || personalQuests.length >= 100) ? 'none' : '0 4px 0px rgba(0,0,0,1)',
+                            border: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? '4px solid rgba(0,0,0,0.2)' : '4px solid black',
+                            cursor: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'not-allowed' : 'pointer',
+                            boxShadow: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'none' : '0 4px 0px rgba(0,0,0,1)',
                             transition: 'transform 0.1s, box-shadow 0.1s',
                             whiteSpace: 'nowrap',
                           }}
                           onMouseOver={(e) => {
-                            if (newTitle.trim() && personalQuests.length < 100) {
+                            if (newTitle.trim() && selectedQuestion && personalQuests.length < 100) {
                               e.currentTarget.style.transform = 'translateY(2px)'
                               e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
                             }
                           }}
                           onMouseOut={(e) => {
-                            if (newTitle.trim() && personalQuests.length < 100) {
+                            if (newTitle.trim() && selectedQuestion && personalQuests.length < 100) {
                               e.currentTarget.style.transform = 'none'
                               e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
                             }
@@ -847,6 +873,9 @@ export function QuestModal({
                               
                               if (tagColor && catColor) {
                                 borderColor = mixColors(tagColor, catColor)
+                                if (q.completed) {
+                                  bgColor = mixColors(tagColor, catColor)
+                                }
                               } else {
                                 borderColor = tagColor || catColor || 'black'
                               }
@@ -987,32 +1016,6 @@ export function QuestModal({
                               }}
                             >
                               ANNULER
-                            </button>
-                            <button
-                              onClick={() => onCompleteQuest(acceptedQuestId!)}
-                              style={{
-                                padding: '12px 40px',
-                                borderRadius: '16px',
-                                backgroundColor: 'white',
-                                color: 'black',
-                                fontSize: '32px',
-                                fontFamily: "'Jersey 15', sans-serif",
-                                border: '4px solid black',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 0px rgba(0,0,0,1)',
-                                transition: 'transform 0.1s, box-shadow 0.1s',
-                                whiteSpace: 'nowrap',
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'translateY(2px)'
-                                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'none'
-                                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                              }}
-                            >
-                              COMPLÉTER
                             </button>
                           </>
                         ) : (

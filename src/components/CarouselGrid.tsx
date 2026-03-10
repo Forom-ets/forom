@@ -19,7 +19,7 @@ interface CarouselGridProps {
   acceptedQuestId?: string | null
   onQuestComplete?: (questId: string) => void
   questionLabels?: Record<string, string>
-  personalQuests?: Array<{ id: string; category: string; question: string | null; title: string }>
+  personalQuests?: Array<{ id: string; category: string; question: string | null; title: string; completed?: boolean }>
 }
 
 // =============================================================================
@@ -489,6 +489,7 @@ export function CarouselGrid({
 
             // Determine if there is a quest assigned to this slot
             let itemBorderColor = '#555555'; // default unassigned stroke color
+            let customBgColor: string | undefined = undefined;
             if (memory) {
               const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
               if (matchedQuest) {
@@ -496,6 +497,10 @@ export function CarouselGrid({
                 const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
                 itemBorderColor = mixColors(catColor, tagColor);
                 
+                if (matchedQuest.completed) {
+                  customBgColor = mixColors(catColor, tagColor);
+                }
+
                 // Override the memory title with the quest title
                 memory = { ...memory, title: matchedQuest.title };
               }
@@ -531,6 +536,7 @@ export function CarouselGrid({
                 <MemoryBox
                   memory={memory}
                   borderColor={itemBorderColor}
+                  customBgColor={customBgColor}
                   displayNumber={globalIndex}
                   isCentered={isCentered}
                   isSmall={isSmall}
@@ -587,6 +593,7 @@ export function CarouselGrid({
                 const globalIndex = row * 10 + col
                 let memory = getMemory(category as CategoryType, col)
                 let itemBorderColor = '#e5e7eb'
+                let customBgColor: string | undefined = undefined;
                 
                 if (memory) {
                   const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
@@ -594,6 +601,9 @@ export function CarouselGrid({
                     const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
                     const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
                     itemBorderColor = mixColors(catColor, tagColor);
+                    if (matchedQuest.completed) {
+                      customBgColor = mixColors(catColor, tagColor);
+                    }
                     memory = { ...memory, title: matchedQuest.title };
                   }
                 }
@@ -624,6 +634,7 @@ export function CarouselGrid({
                     <MemoryBox
                       memory={memory}
                       borderColor={itemBorderColor}
+                      customBgColor={customBgColor}
                       displayNumber={globalIndex}
                       isCentered={false}
                       isSmall={true}

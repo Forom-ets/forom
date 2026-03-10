@@ -15,9 +15,10 @@ import { HeartFAB } from './components/HeartFAB'
 
 // Import Icons
 import wikiIcon from './assets/icons/wiki.png'
-import { Settings } from 'lucide-react'
+import rubixViewIcon from './assets/icons/rubix_view.svg'
 
 import { SettingsModal } from './components/SettingsModal'
+import { SettingsFAB } from './components/SettingsFAB'
 import { QUESTION_ORDER, QUESTION_COLORS } from './data/memories'
 
 // Leveling helper — 10 XP per quest, 10 quests = lvl 1 (100 XP per level)
@@ -89,6 +90,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isInLobby, setIsInLobby] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [isPhantomMode, setIsPhantomMode] = useState(false)
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [mission, setMission] = useState('')
   const [foromColor, setForomColor] = useState<ForomColor | null>(null)
   const [activeCategory, setActiveCategory] = useState('E')
@@ -118,8 +121,8 @@ function App() {
     return labels
   })
 
-  // Detect Supermoderator (localhost)
-  const isSuperModerator = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  // Detect Supermoderator
+  const isSuperModerator = currentUser === 'xylo'
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -145,13 +148,32 @@ function App() {
   }
 
   if (isInLobby && !isCreating) {
-    return <ForomLobby onConfirm={() => setIsCreating(true)} />
+    return (
+      <ForomLobby 
+        onConfirm={() => setIsCreating(true)} 
+        onSkip={() => {
+          setIsPhantomMode(true)
+          setIsInLobby(false)
+        }}
+        onSignIn={(username) => {
+          setCurrentUser(username)
+          setIsPhantomMode(false)
+        }}
+        currentUser={currentUser}
+      />
+    )
   }
 
   if (isInLobby && isCreating) {
     return (
       <ForomCreationFlow
-        onComplete={(m, color) => { setMission(m); setForomColor(color); setIsInLobby(false); setIsCreating(false) }}
+        onComplete={(m, color) => { 
+          setMission(m); 
+          setForomColor(color); 
+          setIsInLobby(false); 
+          setIsCreating(false);
+          setIsPhantomMode(false);
+        }}
         onBack={() => setIsCreating(false)}
       />
     )
@@ -162,38 +184,31 @@ function App() {
       className="h-screen overflow-hidden relative transition-colors duration-300"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {/* Theme Toggle & Supermoderator Settings - Bottom Right */}
+      {/* Right Column Stack: Theme, Heart, Settings */}
       <div 
-        className="fixed z-50 flex items-center gap-4"
-        style={{ bottom: '48px', right: '3%' }}
+        className="fixed z-50 flex flex-col items-center"
+        style={{ bottom: '48px', right: '3%', gap: '3vh' }}
       >
-        {isSuperModerator && (
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 45 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center justify-center p-2 rounded-full cursor-pointer shadow-md bg-white border-2 border-transparent transition-colors"
-            style={{ 
-              color: isDarkMode ? '#1a1a1a' : '#1a1a1a',
-              backgroundColor: isDarkMode ? '#e5e7eb' : '#ffffff' 
-            }}
-            aria-label="Supermoderator Settings"
-          >
-            <Settings size={28} />
-          </motion.button>
-        )}
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
+        <HeartFAB fixed={false} />
+        {isSuperModerator && (
+          <SettingsFAB onClick={() => setIsSettingsOpen(true)} />
+        )}
       </div>
 
-      {/* Heart counter FAB - Support System */}
-      <HeartFAB />
       <Header 
         onTokenClick={() => setActiveModal('token')}
         onSupportClick={() => setActiveModal('support')}
         onUserClick={() => setActiveModal('user')}
-        onRubixClick={() => setIsRubixView(prev => !prev)}
+        onLobbyClick={() => {
+          setIsInLobby(true)
+          if (isPhantomMode) {
+            setIsPhantomMode(false)
+          }
+        }}
         isDark={isDarkMode}
         mission={mission}
+        isPhantom={isPhantomMode}
       />
 
       {/* --------------------------------------------------------------------------
@@ -212,6 +227,24 @@ function App() {
       >
         <img src={wikiIcon} alt="Wiki" className="w-3/4 h-3/4 object-contain" />
       </motion.a>
+
+      {/* Bottom Center - Rubix View Toggle */}
+      <div 
+        className="fixed z-50 flex justify-center items-center pointer-events-none"
+        style={{ bottom: '60px', left: '0', right: '0' }}
+      >
+        <motion.button
+          onClick={() => setIsRubixView(prev => !prev)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center justify-center shrink-0 pointer-events-auto shadow-lg bg-black/20 dark:bg-white/10 backdrop-blur-sm rounded-full p-2"
+          style={{ width: '56px', height: '56px', border: '1px solid rgba(255,255,255,0.1)' }}
+          title="Toggle Rubix View"
+          aria-label="Toggle Rubix View"
+        >
+          <img src={rubixViewIcon} alt="Rubix View" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+        </motion.button>
+      </div>
 
       {/* --------------------------------------------------------------------------
           Main Layout
@@ -301,7 +334,7 @@ function App() {
             // Fixed reward: 2.07 pixels + 10 XP per completed quest
             setPixels(p => Math.round((p + 2.07) * 100) / 100)
             setXp(x => x + 10)
-            setPersonalQuests(prev => prev.filter(q => q.id !== id))
+            setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q))
             if (acceptedQuestId === id) setAcceptedQuestId(null)
           }
         }}

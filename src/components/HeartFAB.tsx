@@ -104,7 +104,7 @@ interface HeartFABProps {
 // COMPONENT
 // =============================================================================
 
-export function HeartFAB() {
+export function HeartFAB({ fixed = true }: HeartFABProps) {
   const [heartCount,    setHeartCount]    = useState(0)
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([])
 
@@ -188,8 +188,8 @@ export function HeartFAB() {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed z-50"
-      style={{ bottom: '60px', left: '50%', transform: 'translateX(-50%)' }}
+      className={fixed ? "fixed z-50" : "relative z-50"}
+      style={fixed ? { bottom: '60px', left: '50%', transform: 'translateX(-50%)' } : {}}
       aria-label={`Heart counter: ${heartCount}`}
     >
       {/* Floating voxel heart particles */}

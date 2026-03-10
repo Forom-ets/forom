@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import romWht from '../assets/icons/rom_wht.png'
 import githubIcon from '../assets/icons/github.png'
+import chromaNotesIcon from '../assets/icons/chroma_notes.svg'
+
+import userIcon from '../assets/icons/user.png'
 
 const LANGUAGES = [
   { id: 'ar', label: 'مرحبا' },
@@ -113,9 +116,21 @@ function LanguageCarousel({
   )
 }
 
-export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
-  const [selectedLanguage, setSelectedLanguage] = useState('fr')
+export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onConfirm: () => void; onSkip?: () => void; onSignIn?: (username: string) => void; currentUser?: string | null }) {
   const [isCreateSelected, setIsCreateSelected] = useState(false)
+  const [isSignInOpen, setIsSignInOpen] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+
+  const handleSignIn = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (username === 'xylo' && password === 'colors') {
+      onSignIn?.(username)
+      setIsSignInOpen(false)
+    } else {
+      alert('Invalid credentials')
+    }
+  }
 
   return (
     <motion.div
@@ -133,8 +148,99 @@ export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
         color: 'white',
         boxSizing: 'border-box',
         padding: 'clamp(16px, 4vh, 48px) clamp(16px, 3vw, 48px) clamp(16px, 3vh, 36px)',
+        position: 'relative',
       }}
     >
+      {/* SKIP TO FOROM AS PHANTOM */}
+      {onSkip && !isSignInOpen && (
+        <button
+          onClick={onSkip}
+          className="absolute z-50 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+          style={{
+            top: '32px',
+            left: '32px',
+            width: '48px',
+            height: '48px',
+            background: 'none',
+            border: 'none',
+            padding: 0
+          }}
+          title="Consulter le FOROM (Fantôme)"
+        >
+          <img src={chromaNotesIcon} alt="Return to Forom" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </button>
+      )}
+
+      {/* SIGN IN TOGGLE */}
+      {!isSignInOpen && !currentUser && (
+        <button
+          onClick={() => setIsSignInOpen(true)}
+          className="absolute z-50 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+          style={{
+            top: '32px',
+            right: '32px',
+            width: '48px',
+            height: '48px',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            filter: 'brightness(0) invert(1)'
+          }}
+          title="Sign In"
+        >
+          <img src={userIcon} alt="Sign In" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </button>
+      )}
+
+      {/* SIGN IN MODAL */}
+      {isSignInOpen && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <form 
+            onSubmit={handleSignIn}
+            style={{
+              backgroundColor: '#1a1a1a', padding: '40px', borderRadius: '16px',
+              display: 'flex', flexDirection: 'column', gap: '20px', width: '300px',
+              border: '1px solid #333'
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: '24px', textAlign: 'center', fontWeight: 'bold' }}>Sign In</h2>
+            <input 
+              type="text" 
+              placeholder="Username" 
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white' }}
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white' }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                type="button" 
+                onClick={() => setIsSignInOpen(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#444', color: 'white', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: 'white', cursor: 'pointer' }}
+              >
+                Login
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Three columns — fills all available vertical space */}
       <div style={{
         display: 'flex',
@@ -214,7 +320,7 @@ export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
               flexShrink: 0,
             }}
           />
-          <LanguageCarousel onChange={setSelectedLanguage} />
+          <LanguageCarousel onChange={(lang) => console.log('Language changed:', lang)} />
 
           {/* GitHub icon — same gap as between logo and carousel */}
           <a
@@ -252,7 +358,13 @@ export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
             whiteSpace: 'nowrap',
           }}>CRÉER</div>
           <div
-            onClick={() => setIsCreateSelected(true)}
+            onClick={() => {
+              if (currentUser) {
+                setIsCreateSelected(true)
+              } else {
+                setIsSignInOpen(true)
+              }
+            }}
             style={{
               backgroundColor: isCreateSelected ? '#0d2b5e' : '#1A1A1A',
               borderRadius: 'clamp(12px, 1.5vw, 24px)',
@@ -267,7 +379,11 @@ export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
               transition: 'border-color 0.25s, background-color 0.25s',
             }}
           >
-            <span style={{ color: 'white', fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 300, lineHeight: 1 }}>+</span>
+            {currentUser ? (
+              <span style={{ color: 'white', fontSize: 'clamp(28px, 4vw, 64px)', fontWeight: 300, lineHeight: 1 }}>+</span>
+            ) : (
+              <span style={{ fontSize: 'clamp(32px, 5vw, 72px)', opacity: 0.5, userSelect: 'none' }}>🔒</span>
+            )}
           </div>
         </div>
 
@@ -276,7 +392,7 @@ export function ForomLobby({ onConfirm }: { onConfirm: () => void }) {
       {/* CONFIRMER BUTTON */}
       <div style={{ marginTop: 'clamp(14px, 2.5vh, 36px)', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
         <button
-          onClick={() => { if (isCreateSelected) onConfirm() }}
+          onClick={() => { if (isCreateSelected && currentUser) onConfirm() }}
           disabled={!isCreateSelected}
           style={{
             padding: 'clamp(10px, 1.5vh, 18px) clamp(40px, 5vw, 80px)',

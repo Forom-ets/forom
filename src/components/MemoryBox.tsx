@@ -18,6 +18,7 @@ export interface MemoryBoxProps {
   onClick?: () => void
   onInfoClick?: () => void
   questionLabels?: Record<string, string>
+  customBgColor?: string
 }
 
 // =============================================================================
@@ -47,6 +48,7 @@ export const MemoryBox = memo(function MemoryBox({
   onClick,
   onInfoClick,
   questionLabels = {},
+  customBgColor,
 }: MemoryBoxProps) {
   // Get dimensions from presets
   const dimensions = isCentered 
@@ -92,7 +94,7 @@ export const MemoryBox = memo(function MemoryBox({
         onClick={handleBoxClick}
         style={{
           border: `3px solid ${isLocked ? (isDark ? '#444' : '#d1d5db') : borderColor}`,
-          backgroundColor: isDark ? '#27272a' : '#fefefe',
+          backgroundColor: customBgColor ? customBgColor : (isDark ? '#27272a' : '#fefefe'),
           ...dimensions,
           cursor: isLocked ? 'not-allowed' : (onClick || (isCentered && !isFilled && onInfoClick) ? 'pointer' : 'default'),
           borderRadius: '16px',
