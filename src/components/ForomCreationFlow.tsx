@@ -1,7 +1,6 @@
 ﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import romWht from '../assets/icons/rom_wht.png'
-import foromLogoWht from '../assets/icons/forom_logo_wht.png'
 import foromLogoBlk from '../assets/icons/forom_logo_blk.png'
 import type { ForomColor } from './ChooseColorScreen'
 
@@ -9,8 +8,8 @@ type Step = 'mission' | 'color' | 'friends' | 'rules' | 'welcome'
 
 const COLOR_DEFS: { id: ForomColor; label: string; circleLabel: string; bg: string; border: string }[] = [
   { id: 'social',   label: 'SOCIAL',    circleLabel: 'SOCIAL',    bg: '#3333DD', border: '#3333DD' },
+  { id: 'creation', label: 'CRÉATION',  circleLabel: 'CRÉATION',  bg: '#FFD700', border: '#FFD700' },
   { id: 'guardien', label: 'GUARDIEN',  circleLabel: 'GUARDIENS', bg: '#EE2222', border: '#EE2222' },
-  { id: 'creation', label: 'CRÉATION',  circleLabel: 'CRÉATION',  bg: '#DDFF55', border: '#DDFF55' },
 ]
 
 const ROM_TEXT = `Mais qui est ROM ? Ou plutôt, qui deviendra-t-il ? Car c'est à vous d'en décider dès maintenant et au fil du temps. Ces 10 règles fondamentales constitueront la base logique de votre robot communautaire ; elles sont donc primordiales. Je dirais même que c'est la décision la plus importante de votre aventure, mais ne paniquez pas : en tant que créateurs, vous aurez toujours le pouvoir de les modifier.
@@ -25,11 +24,6 @@ FOROM est un projet open-source où chaque utilisateur reste propriétaire de se
 
 C'est précisément avec cette philosophie en tête que la plateforme a été conçue : offrir un espace collaboratif sain, pensé notamment pour faciliter le partage de connaissances entre étudiants. Pour contrer la passivité du doom scrolling générée par les fils d'actualité traditionnels, FOROM s'appuie sur une grille interactive. Cette architecture redonne le contrôle à l'utilisateur ; elle encourage une exploration active et ciblée de l'information, transformant la consommation de contenu en une véritable démarche d'apprentissage communautaire.`
 
-/** The user's category gets 2 friend slots (they fill the 3rd); others get 3 */
-function slotCount(categoryId: ForomColor, userColor: ForomColor) {
-  return categoryId === userColor ? 2 : 3
-}
-
 interface ForomCreationFlowProps {
   onComplete: (mission: string, color: ForomColor) => void
   onBack: () => void
@@ -40,13 +34,13 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
   const [mission, setMission]               = useState('')
   const [selected, setSelected]             = useState<ForomColor | null>(null)
   const [confirmedColor, setConfirmedColor] = useState<ForomColor | null>(null)
-  const [friends, setFriends]               = useState<Record<ForomColor, string[]>>({
-    social:   ['', '', ''],
-    guardien: ['', '', ''],
-    creation: ['', '', ''],
-  })
+  const [friends, setFriends]               = useState<string[]>(Array(8).fill(''))
   const [rules, setRules] = useState<string[]>(Array(10).fill(''))
   const [isExiting, setIsExiting] = useState(false)
+
+  const [friendKeys] = useState(() => 
+    Array.from({ length: 8 }, () => 'FRM-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase())
+  )
 
   const isMission = step === 'mission'
   const isColor   = step === 'color'
@@ -54,16 +48,14 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
   const isRules   = step === 'rules'
   const isWelcome = step === 'welcome'
 
-  const allFriendsFilled = confirmedColor !== null && COLOR_DEFS.every(({ id }) =>
-    friends[id].slice(0, slotCount(id, confirmedColor)).every(s => s.trim().length > 0)
-  )
+  const NPC_NAMES = ['Borom', 'Dorom', 'Gorom', 'Horom', 'Jorom', 'Korom', 'Lorom', 'Morom']
 
-  const allRulesFilled = rules.every(r => r.trim().length > 0)
+  const allRulesFilled = rules[0].trim().length > 0 && rules[9].trim().length > 0
 
   const canConfirm =
     isMission ? mission.trim().length > 0 :
     isColor   ? selected !== null :
-    isFriends ? allFriendsFilled :
+    isFriends ? true : // Anyone can skip/continue with partially filled friends
     allRulesFilled
 
   const handleConfirm = () => {
@@ -72,7 +64,7 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
     } else if (isColor && selected) {
       setConfirmedColor(selected)
       setStep('friends')
-    } else if (isFriends && confirmedColor && allFriendsFilled) {
+    } else if (isFriends && confirmedColor) {
       setStep('rules')
     } else if (isRules && allRulesFilled && confirmedColor) {
       setStep('welcome')
@@ -90,29 +82,21 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
   const handleErase = () => {
     if (isMission)      setMission('')
     else if (isColor)   setSelected(null)
-    else if (isFriends) setFriends({ social: ['','',''], guardien: ['','',''], creation: ['','',''] })
+    else if (isFriends) setFriends(Array(8).fill(''))
     else if (isRules)   setRules(Array(10).fill(''))
   }
 
-  const setFriendName = (color: ForomColor, idx: number, val: string) => {
+  const setFriendName = (idx: number, val: string) => {
     setFriends(prev => {
-      const arr = [...prev[color]]
+      const arr = [...prev]
       arr[idx] = val
-      return { ...prev, [color]: arr }
+      return arr
     })
   }
 
-  const PAD       = isRules
-    ? 'clamp(24px, 4vh, 56px) clamp(200px, 36vw, 560px)'
-    : isWelcome
-    ? '0px'
-    : isFriends
-    ? 'clamp(24px, 4vh, 56px) clamp(20px, 4vw, 80px)'
-    : 'clamp(32px, 6vh, 72px) clamp(24px, 6vw, 120px)'
-  const LOGO_W    = isRules ? 'clamp(160px, 22vw, 340px)' : 'clamp(120px, 16vw, 240px)'
+  const PAD = isWelcome ? '0px' : 'clamp(24px, 4vh, 56px) clamp(20px, 4vw, 80px)'
   const BTN_SIZE  = 'clamp(52px, 6vw, 76px)'
   const BTN_FS    = 'clamp(18px, 2vw, 28px)'
-  const LETTER_FS = 'clamp(20px, 2.6vw, 40px)'
 
   const confirmActiveBg   = isMission ? '#8E579C' : isRules ? '#111111'  : '#F97316'
   const confirmInactiveBg = isMission ? 'rgba(142,87,156,0.35)' : isRules ? 'rgba(17,17,17,0.4)' : 'rgba(249,115,22,0.35)'
@@ -120,7 +104,6 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
 
   const letterStyle = (visible: boolean, extra: React.CSSProperties): React.CSSProperties => ({
     position: 'absolute',
-    fontSize: LETTER_FS,
     fontWeight: 900,
     fontFamily: 'Montserrat, sans-serif',
     pointerEvents: 'none',
@@ -128,7 +111,7 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',
     opacity: visible ? 1 : 0,
-    transition: 'opacity 0.3s',
+    transition: 'opacity 0.5s ease',
     ...extra,
   })
 
@@ -147,27 +130,17 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
       }}
     >
       {/* ── LOGO ── */}
-      <div style={{ position: 'relative', width: LOGO_W, flexShrink: 0, aspectRatio: isRules ? 'auto' : '3240 / 4050', overflow: 'visible' }}>
+      <div style={{ position: 'relative', width: 'clamp(160px, 22vw, 340px)', flexShrink: 0, aspectRatio: '3240 / 4050', overflow: 'visible', display: 'flex', justifyContent: 'center' }}>
         <img
-          src={isRules ? foromLogoWht : romWht}
+          src={romWht}
           alt="Forom Logo"
-          style={{ width: '100%', height: isRules ? 'auto' : '100%', objectFit: 'contain', display: 'block' }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
         />
 
-        {/* Center M — mission only */}
-        <span style={letterStyle(isMission, { left: '50%', top: '49%', transform: 'translate(-50%,-50%)', color: '#0066FF' })}>M</span>
-
-        {/* Center F — color only */}
-        <span style={letterStyle(isColor, { left: '50%', top: '49%', transform: 'translate(-50%,-50%)', color: '#FF0000' })}>F</span>
-
-        {/* Right-ear M — color only */}
-        <span style={letterStyle(isColor, { left: '77%', top: '49%', transform: 'translateY(-50%)', color: '#0066FF' })}>M</span>
-
-        {/* Outside-left F — friends only */}
-        <span style={letterStyle(isFriends, { left: '-18%', top: '42%', transform: 'translate(-100%,-50%)', color: '#FF0000' })}>F</span>
-
-        {/* Outside-right M — friends only */}
-        <span style={letterStyle(isFriends, { left: '118%', top: '42%', transform: 'translateY(-50%)', color: '#0066FF' })}>M</span>
+        {/* Anchoring F by right edge, and M by left edge guarantees perfect symmetry regardless of character width */}
+        <span style={letterStyle(!isWelcome, { right: '78%', top: '48%', transform: 'translateY(-50%)', color: '#E00000', fontSize: 'clamp(35px, 4.5vw, 75px)' })}>F</span>
+        <span style={letterStyle(!isWelcome, { left: '50%', top: '48%', transform: 'translate(-50%, -50%)', color: '#FFD700', fontSize: 'clamp(35px, 4.5vw, 75px)' })}>R</span>
+        <span style={letterStyle(!isWelcome, { left: '78%', top: '48%', transform: 'translateY(-50%)', color: '#0033CC', fontSize: 'clamp(35px, 4.5vw, 75px)' })}>M</span>
       </div>      {/* Rules step: mission name shown under logo */}
       {isRules && (
         <p style={{ margin: 0, fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(13px, 1.4vw, 22px)', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textAlign: 'center' }}>
@@ -190,7 +163,7 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
         </h2>
       )}
       {/* ── MIDDLE ── */}
-      <div style={{ width: '100%', position: 'relative', flex: 1, display: 'flex', alignItems: 'center', minHeight: 0 }}>
+      <div style={{ width: '100%', position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, marginTop: (!isWelcome && !isRules) ? '-18vh' : '0' }}>
         <AnimatePresence mode="wait">
 
           {isMission && (
@@ -199,12 +172,12 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
               <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(20px, 2.8vw, 42px)', letterSpacing: '0.02em', textAlign: 'center' }}>
                 Quel est ta mission?
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 20px)', width: 'min(86vw, 820px)' }}>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 'clamp(22px, 2.8vw, 42px)', fontWeight: 700, flexShrink: 0, lineHeight: 1 }}>{'>'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.2vw, 20px)', width: 'min(86vw, 820px)', position: 'relative' }}>
+                
                 <input autoFocus type="text" value={mission} maxLength={64}
                   onChange={(e) => setMission(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && canConfirm && handleConfirm()}
-                  style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,0.55)', outline: 'none', color: '#fff', fontSize: 'clamp(18px, 2.2vw, 34px)', fontFamily: "'JetBrains Mono', monospace", fontWeight: 400, padding: 'clamp(4px,0.8vh,10px) 0', caretColor: '#fff' }}
+                  style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,0.55)', outline: 'none', color: '#fff', fontSize: 'clamp(18px, 2.2vw, 34px)', fontFamily: "'JetBrains Mono', monospace", fontWeight: 400, padding: 'clamp(4px,0.8vh,10px) 0', caretColor: '#fff', textAlign: 'center' }}
                 />
               </div>
             </motion.div>
@@ -237,45 +210,31 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
 
           {isFriends && confirmedColor && (
             <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-              style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(14px, 2vh, 26px)' }}>
-              <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(16px, 2vw, 32px)', letterSpacing: '0.04em', textAlign: 'center' }}>
+              style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(20px, 4vh, 40px)' }}>
+              <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(18px, 2.4vw, 36px)', letterSpacing: '0.04em', textAlign: 'center' }}>
                 Qui sont tes 8 amies?
               </h2>
-              <div style={{ display: 'flex', gap: 'clamp(16px, 3.5vw, 60px)', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
-                {COLOR_DEFS.map(({ id, circleLabel, border }) => {
-                  const slots = slotCount(id, confirmedColor)
-                  const isUserColor = id === confirmedColor
-                  return (
-                    <div key={id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.2vh, 16px)', flexShrink: 0 }}>
-                      <span style={{ fontWeight: 900, fontFamily: 'Montserrat, sans-serif', fontSize: 'clamp(11px, 1.3vw, 20px)', letterSpacing: '0.12em', color: '#fff', textAlign: 'center' }}>
-                        {circleLabel}
-                      </span>
-                      <div style={{
-                        width: 'clamp(150px, 19vw, 280px)', height: 'clamp(150px, 19vw, 280px)',
-                        borderRadius: '50%',
-                        border: `clamp(4px, 0.5vw, 7px) solid ${border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0, boxSizing: 'border-box',
-                        opacity: isUserColor ? 0.7 : 1,
-                      }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1vh, 14px)', width: '70%' }}>
-                          {Array.from({ length: slots }).map((_, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                              <span style={{ fontWeight: 700, fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(13px, 1.5vw, 22px)', color: '#fff', flexShrink: 0, lineHeight: 1 }}>
-                                {i + 1}.
-                              </span>
-                              <input type="text" maxLength={32}
-                                value={friends[id][i]}
-                                onChange={(e) => setFriendName(id, i, e.target.value)}
-                                style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,0.4)', outline: 'none', color: '#fff', fontSize: 'clamp(12px, 1.3vw, 20px)', fontFamily: 'Montserrat, sans-serif', fontWeight: 500, padding: '1px 0', caretColor: '#fff', width: 0, minWidth: 0 }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(12px, 2.5vh, 24px) clamp(30px, 5vw, 80px)', width: 'min(90vw, 700px)' }}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div
+                      onClick={() => navigator.clipboard.writeText(friendKeys[i])}
+                      style={{ cursor: 'pointer', fontSize: 'clamp(18px, 2.2vw, 26px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', width: 'clamp(32px, 4vw, 44px)', height: 'clamp(32px, 4vw, 44px)', borderRadius: '50%', flexShrink: 0, transition: 'transform 0.1s, background 0.2s' }}
+                      title={`Copier la clé: ${friendKeys[i]}`}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.5)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.3)'; e.currentTarget.style.transform = 'scale(1)' }}
+                      onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                      onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    >
+                      🔑
                     </div>
-                  )
-                })}
+                    <input type="email" placeholder={`Ami ${i+1} email...`} maxLength={64}
+                      value={friends[i]}
+                      onChange={(e) => setFriendName(i, e.target.value)}
+                      style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,0.4)', outline: 'none', color: '#fff', fontSize: 'clamp(14px, 1.8vw, 24px)', fontFamily: "'JetBrains Mono', monospace", fontWeight: 400, padding: '6px 0', caretColor: '#fff', width: 0 }}
+                    />
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
@@ -285,16 +244,26 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
               style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(12px, 2vh, 24px)' }}>
               {/* 2-column grid: left col rules 1-5, right col rules 6-10 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(10px, 1.5vh, 20px) clamp(32px, 6vw, 100px)', width: 'min(92vw, 860px)' }}>
-                {rules.map((val, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                {rules.map((val, i) => {
+                  const isCreatorRule = i === 0 || i === 9;
+                  const friendIdx = i - 1;
+                  const assigneeName = friendIdx >= 0 && friendIdx < 8 
+                    ? (friends[friendIdx].trim() || NPC_NAMES[friendIdx])
+                    : '';
+
+                  return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '6px', opacity: isCreatorRule ? 1 : 0.5 }}>
                     <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(13px, 1.4vw, 22px)', color: '#fff', flexShrink: 0, lineHeight: 1 }}>
                       {i + 1}.
                     </span>
                     <input
                       type="text"
                       maxLength={80}
-                      value={val}
+                      value={isCreatorRule ? val : ''}
+                      placeholder={isCreatorRule ? '' : `Attribué à ${assigneeName}`}
+                      disabled={!isCreatorRule}
                       onChange={(e) => {
+                        if (!isCreatorRule) return;
                         const next = [...rules]
                         next[i] = e.target.value
                         setRules(next)
@@ -310,7 +279,7 @@ export function ForomCreationFlow({ onComplete, onBack }: ForomCreationFlowProps
                       }}
                     />
                   </div>
-                ))}
+                )})}
               </div>
             </motion.div>
           )}

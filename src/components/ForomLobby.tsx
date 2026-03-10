@@ -122,6 +122,11 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  const [joinKey, setJoinKey] = useState('')
+  const [joinStep, setJoinStep] = useState<'idle' | 'color' | 'rule'>('idle')
+  const [joinColor, setJoinColor] = useState<string | null>(null)
+  const [joinRule, setJoinRule] = useState('')
+
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault()
     if (username === 'xylo' && password === 'colors') {
@@ -241,6 +246,84 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
         </div>
       )}
 
+      {/* KEY JOIN MODAL */}
+      {joinStep !== 'idle' && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.92)',
+          zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: '40px'
+        }}>
+          {joinStep === 'color' && (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px' }}>
+              <h2 style={{ margin: 0, fontWeight: 400, fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(24px, 3vw, 42px)', letterSpacing: '0.06em', textAlign: 'center', color: 'white' }}>
+                Choisi ta couleur Forom
+              </h2>
+              <div style={{ display: 'flex', gap: '30px' }}>
+                {[
+                  { id: 'social', label: 'SOCIAL', bg: '#3333DD' },
+                  { id: 'creation', label: 'CRÉATION', bg: '#FFD700' },
+                  { id: 'guardien', label: 'GUARDIEN', bg: '#EE2222' }
+                ].map(c => (
+                  <div
+                    key={c.id}
+                    onClick={() => { setJoinColor(c.id); setJoinStep('rule'); }}
+                    style={{ width: 'clamp(100px, 12vw, 160px)', height: 'clamp(100px, 12vw, 160px)', borderRadius: '50%', backgroundColor: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', border: joinColor === c.id ? `4px solid white` : 'none' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 0 0 4px white, 0 0 0 6px ${c.bg}` }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    <span style={{ color: '#fff', fontWeight: 400, fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(14px, 1.8vw, 22px)', letterSpacing: '0.12em', textAlign: 'center' }}>
+                      {c.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {joinStep === 'rule' && (
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: 'min(90vw, 800px)' }}>
+              <h2 style={{ margin: 0, fontWeight: 400, fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(20px, 2.5vw, 36px)', letterSpacing: '0.04em', textAlign: 'center', color: 'white' }}>
+                Quelle est ta règle fondamentale pour ce FOROM ?
+              </h2>
+              <input
+                autoFocus
+                type="text"
+                value={joinRule}
+                onChange={e => setJoinRule(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && joinRule.trim()) {
+                    console.log('Friend joined Forom with rule:', joinRule, 'and color:', joinColor)
+                    setJoinStep('idle')
+                    // Proceed to transition to lobby
+                  }
+                }}
+                style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,0.6)', outline: 'none', color: '#fff', fontSize: 'clamp(16px, 2vw, 28px)', fontFamily: "'JetBrains Mono', monospace", fontWeight: 400, padding: '10px 0', textAlign: 'center', caretColor: '#fff' }}
+                placeholder="Règle..."
+              />
+              <button
+                onClick={() => {
+                  if (joinRule.trim()) {
+                    console.log('Friend joined Forom with rule:', joinRule, 'and color:', joinColor)
+                    setJoinStep('idle')
+                  }
+                }}
+                style={{ padding: '12px 36px', borderRadius: '999px', backgroundColor: '#555555', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 'clamp(16px, 1.8vw, 24px)', fontWeight: 'bold' }}
+              >
+                Rejoindre le FOROM
+              </button>
+            </motion.div>
+          )}
+          
+          <button 
+            onClick={() => setJoinStep('idle')} 
+            style={{ position: 'absolute', top: '30px', right: '30px', background: 'transparent', border: 'none', color: 'white', fontSize: '40px', cursor: 'pointer' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Three columns — fills all available vertical space */}
       <div style={{
         display: 'flex',
@@ -344,6 +427,25 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
               onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
             />
           </a>
+
+          {/* CONNECT WITH A KEY */}
+          <div style={{ marginTop: 'clamp(16px, 3vh, 32px)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: 'clamp(10px, 1.1vw, 15px)', fontFamily: 'Montserrat, sans-serif', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Connect with a Key</span>
+            <input 
+              type="text" 
+              value={joinKey}
+              onChange={e => setJoinKey(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && joinKey.trim().length > 0) {
+                  setJoinStep('color')
+                }
+              }}
+              placeholder="FRM-XXXX-XXXX"
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '6px 12px', color: '#fff', fontSize: 'clamp(12px, 1.4vw, 18px)', fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', width: 'clamp(140px, 16vw, 200px)', outline: 'none', transition: 'border-color 0.2s' }}
+              onFocus={(e) => e.target.style.borderColor = '#FFD700'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.2)'}
+            />
+          </div>
         </div>
 
         {/* RIGHT: CRÉER */}
