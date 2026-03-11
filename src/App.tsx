@@ -20,6 +20,7 @@ import rubixViewIcon from './assets/icons/rubix_view.svg'
 import { SettingsModal } from './components/SettingsModal'
 import { SettingsFAB } from './components/SettingsFAB'
 import { QUESTION_ORDER, QUESTION_COLORS } from './data/memories'
+import { DEFAULT_CATEGORY_LABELS, DEFAULT_QUESTION_LABELS } from './data/forom-config'
 
 // Leveling helper — 10 XP per quest, 10 quests = lvl 1 (100 XP per level)
 export function getLevelAndTitle(xp: number) {
@@ -92,8 +93,12 @@ function App() {
   const [isCreating, setIsCreating] = useState(false)
   const [isPhantomMode, setIsPhantomMode] = useState(false)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [mission, setMission] = useState('')
-  const [foromColor, setForomColor] = useState<ForomColor | null>(null)
+  const [mission, setMission] = useState('Sauver les communautés')
+  const [foromColor, setForomColor] = useState<ForomColor | null>('creation')
+  const [foromRules] = useState<string[]>(['Honnêteté', '', '', '', '', '', '', '', '', 'Curiosité'])
+  const [foromFriendKeys] = useState<string[]>(() =>
+    Array.from({ length: 8 }, () => 'FRM-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase())
+  )
   const [activeCategory, setActiveCategory] = useState('E')
   const [activeModal, setActiveModal] = useState<'token' | 'support' | 'user' | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -103,9 +108,6 @@ function App() {
   // Economy & Leveling State
   const [pixels, setPixels] = useState(0)
   const [inVault, setInVault] = useState(0) // 5000 reserved
-  // For unused warning:
-  void inVault;
-  void setInVault;
   const [seasonPhase, setSeasonPhase] = useState<'V1' | 'V2' | 'V3'>('V1')
   const [xp, setXp] = useState(0)
   const [personalQuests, setPersonalQuests] = useState<Quest[]>([])
@@ -113,18 +115,15 @@ function App() {
 
   const { level, title } = getLevelAndTitle(xp)
 
-  // Initialize customizable labels
-  const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(() => {
-    const labels: Record<string, string> = {}
-    CATEGORIES.forEach(c => labels[c] = c)
-    return labels
-  })
-  
-  const [questionLabels, setQuestionLabels] = useState<Record<string, string>>(() => {
-    const labels: Record<string, string> = {}
-    QUESTION_ORDER.forEach(q => labels[q] = q)
-    return labels
-  })
+  // Initialize customizable labels from the supermoderator's saved config.
+  // To change these permanently, run the dev server as 'xylo' and save in Settings.
+  const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(
+    () => ({ ...DEFAULT_CATEGORY_LABELS }),
+  )
+
+  const [questionLabels, setQuestionLabels] = useState<Record<string, string>>(
+    () => ({ ...DEFAULT_QUESTION_LABELS }),
+  )
 
   // Detect Supermoderator
   const isSuperModerator = currentUser === 'xylo'
@@ -164,12 +163,16 @@ function App() {
       <ForomLobby 
         onConfirm={() => setIsCreating(true)} 
         onSkip={() => {
-          setIsPhantomMode(true)
+          setIsPhantomMode(!currentUser)
           setIsInLobby(false)
         }}
         onSignIn={(username) => {
           setCurrentUser(username)
           setIsPhantomMode(false)
+          if (username === 'xylo') {
+            setPixels(500)
+            setInVault(5000)
+          }
         }}
         currentUser={currentUser}
       />
@@ -179,12 +182,16 @@ function App() {
   if (isInLobby && isCreating) {
     return (
       <ForomCreationFlow
-        onComplete={(m, color) => { 
-          setMission(m); 
-          setForomColor(color); 
-          setIsInLobby(false); 
-          setIsCreating(false);
-          setIsPhantomMode(false);
+        onComplete={(m, color) => {
+          setMission(m)
+          setForomColor(color)
+          setIsInLobby(false)
+          setIsCreating(false)
+          setIsPhantomMode(false)
+          // A user-created forom always starts with the base A–J / 0–9 format.
+          // Only the main public forom uses the supermoderator's saved config.
+          setCategoryLabels(Object.fromEntries(CATEGORIES.map(c => [c, c])))
+          setQuestionLabels(Object.fromEntries(QUESTION_ORDER.map(q => [q, q])))
           if (currentUser === 'xylo') {
             setPixels(500);    // 500 px for all supermods initially
             setInVault(5000);  // 5000 reserved (not used visually yet)
@@ -220,6 +227,10 @@ function App() {
         onUserClick={() => setActiveModal('user')}
         onLobbyClick={() => {
           setIsInLobby(true)
+          // Restore the main forom's supermoderator-configured labels when
+          // returning to lobby so the user can re-enter the main forom correctly.
+          setCategoryLabels({ ...DEFAULT_CATEGORY_LABELS })
+          setQuestionLabels({ ...DEFAULT_QUESTION_LABELS })
           if (isPhantomMode) {
             setIsPhantomMode(false)
           }
@@ -249,7 +260,7 @@ function App() {
       {/* Bottom Center - Rubix View Toggle */}
       <div 
         className="fixed z-50 flex justify-center items-center pointer-events-none"
-        style={{ bottom: '60px', left: '0', right: '0' }}
+        style={{ bottom: '48px', left: '0', right: '0' }}
       >
         <motion.button
           onClick={() => setIsRubixView(prev => !prev)}
@@ -305,7 +316,15 @@ function App() {
         onSave={(newCats, newTags) => {
           setCategoryLabels(newCats)
           setQuestionLabels(newTags)
-          console.log('Saved settings:', newCats, newTags)
+          // Persist to source file via dev-server plugin so the config is
+          // permanently baked in for every future build and download.
+          fetch('/api/config/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryLabels: newCats, questionLabels: newTags }),
+          }).catch(() => {
+            // Silently ignore in production (endpoint not available)
+          })
         }}
         currentCategoryLabels={categoryLabels}
         currentQuestionLabels={questionLabels}
@@ -327,6 +346,8 @@ function App() {
         currentUser={currentUser}
         isSuperModerator={isSuperModerator}
         inVault={inVault}
+        foromRules={foromRules}
+        foromFriendKeys={foromFriendKeys}
       />
 
       <WalletModal
@@ -344,6 +365,7 @@ function App() {
         categories={CATEGORIES as unknown as string[]}
         seasonPhase={seasonPhase}
         pixels={pixels}
+        canCreateQuest={isSuperModerator}
         onCreateQuest={(title, reward, question, category) => {
           const cost = seasonPhase === 'V1' ? 2 : 1;
           if (pixels < cost) return;
@@ -354,18 +376,22 @@ function App() {
             return [...prev, { id: Date.now().toString(), title, reward, question, category }]
           })
         }}
-        onAcceptQuest={(id) => setAcceptedQuestId(id)}
+        onAcceptQuest={(id) => {
+          setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, taken: true } : q))
+          setAcceptedQuestId(id)
+        }}
         onCompleteQuest={(id) => {
           const quest = personalQuests.find(q => q.id === id)
           if (quest) {
             // Fixed reward: 2 pixels + 10 XP per completed quest
             setPixels(p => Math.round((p + 2.00) * 100) / 100)
             setXp(x => x + 10)
-            setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q))
+            setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true, taken: false, completedBy: currentUser || undefined } : q))
             if (acceptedQuestId === id) setAcceptedQuestId(null)
           }
         }}
         onCancelQuest={(id) => {
+          setPersonalQuests(prev => prev.map(q => q.id === id ? { ...q, taken: false } : q))
           if (acceptedQuestId === id) setAcceptedQuestId(null)
         }}
       />

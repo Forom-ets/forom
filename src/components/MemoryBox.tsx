@@ -26,10 +26,10 @@ export interface MemoryBoxProps {
 // =============================================================================
 
 const DIMENSIONS = {
-  centered: { width: '400px', height: '400px', minWidth: '400px', minHeight: '400px' },
-  default: { width: '180px', height: '180px', minWidth: '180px', minHeight: '180px' },
-  small: { width: '120px', height: '120px', minWidth: '120px', minHeight: '120px' },
-  extraSmall: { width: '80px', height: '80px', minWidth: '80px', minHeight: '80px' },
+  centered: { width: 'clamp(100px, min(35vw, 35vh), 400px)', height: 'clamp(100px, min(35vw, 35vh), 400px)', minWidth: '100px', minHeight: '100px' },
+  default: { width: 'clamp(60px, min(15vw, 15vh), 180px)', height: 'clamp(60px, min(15vw, 15vh), 180px)', minWidth: '60px', minHeight: '60px' },
+  small: { width: 'clamp(20px, min(5.5vw, 6vh), 120px)', height: 'clamp(20px, min(5.5vw, 6vh), 120px)', minWidth: '20px', minHeight: '20px' },
+  extraSmall: { width: 'clamp(15px, min(4vw, 4vh), 80px)', height: 'clamp(15px, min(4vw, 4vh), 80px)', minWidth: '15px', minHeight: '15px' },
 } as const
 
 // =============================================================================
@@ -103,7 +103,7 @@ export const MemoryBox = memo(function MemoryBox({
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 10, borderRadius: '13px',
           }}>
-            <span style={{ fontSize: isCentered ? '48px' : isSmall ? '22px' : isExtraSmall ? '13px' : '30px', userSelect: 'none' }}>🔒</span>
+            <span style={{ fontSize: isCentered ? 'clamp(24px, 4vw, 48px)' : isSmall ? 'clamp(12px, 2vw, 22px)' : isExtraSmall ? 'clamp(10px, 1.5vw, 13px)' : 'clamp(16px, 3vw, 30px)', userSelect: 'none' }}>🔒</span>
           </div>
         )}
         {isFilled ? (
@@ -120,7 +120,7 @@ export const MemoryBox = memo(function MemoryBox({
                 className={`text-center font-bold uppercase w-full ${customBgColor ? 'text-white' : (isDark ? 'text-white' : 'text-black')}`}
                 style={{
                   fontFamily: "'Jersey 15', sans-serif",
-                  fontSize: isCentered ? '40px' : isSmall ? '18px' : isExtraSmall ? '10px' : '24px',
+                  fontSize: isCentered ? 'clamp(20px, 3.5vw, 40px)' : isSmall ? 'clamp(10px, 1.5vw, 18px)' : isExtraSmall ? 'clamp(8px, 1vw, 10px)' : 'clamp(14px, 2vw, 24px)',
                   lineHeight: 1.1,
                   textShadow: customBgColor ? '2px 2px 4px rgba(0,0,0,0.5)' : 'none',
                 }}
@@ -136,7 +136,7 @@ export const MemoryBox = memo(function MemoryBox({
                   className="flex items-center justify-center font-bold text-white uppercase shadow-sm"
                   style={{
                     fontFamily: "'Jersey 15', sans-serif",
-                    fontSize: isCentered ? '22px' : isSmall ? '12px' : isExtraSmall ? '8px' : '16px',
+                    fontSize: isCentered ? 'clamp(12px, 2vw, 22px)' : isSmall ? 'clamp(8px, 1vw, 12px)' : isExtraSmall ? '8px' : 'clamp(10px, 1.5vw, 16px)',
                     backgroundColor: question ? (QUESTION_COLORS[question] || borderColor) : borderColor,
                     padding: isCentered ? '6px 24px' : '2px 10px',
                     borderRadius: isCentered ? '12px' : '4px',
@@ -163,7 +163,7 @@ export const MemoryBox = memo(function MemoryBox({
             <span
               style={{
                 fontFamily: "'Jersey 15', sans-serif",
-                fontSize: isCentered ? '120px' : isSmall ? '48px' : isExtraSmall ? '24px' : '72px',
+                fontSize: isCentered ? 'clamp(60px, 12vw, 120px)' : isSmall ? 'clamp(24px, 4vw, 48px)' : isExtraSmall ? 'clamp(12px, 2vw, 24px)' : 'clamp(36px, 6vw, 72px)',
                 color: borderColor,
                 opacity: isCentered ? 0.6 : 0.4,
                 lineHeight: 1

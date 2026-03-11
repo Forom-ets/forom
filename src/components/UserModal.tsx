@@ -2,6 +2,7 @@ import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import userIcon from '../assets/icons/user.png'
+import foromLogoWht from '../assets/icons/forom_logo_wht.png'
 import { FOROM_COLOR_MAP, type ForomColor } from './ChooseColorScreen'
 
 interface UserModalProps {
@@ -17,6 +18,8 @@ interface UserModalProps {
   currentUser?: string | null
   isSuperModerator?: boolean
   inVault?: number
+  foromRules?: string[]
+  foromFriendKeys?: string[]
 }
 
 const modalStyles: ReactModal.Styles = {
@@ -64,7 +67,7 @@ const modalVariants = {
   },
 }
 
-export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColor, mission, currentUser, isSuperModerator, inVault = 0 }: UserModalProps) {
+export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColor, mission, currentUser, isSuperModerator, inVault = 0, foromRules = [], foromFriendKeys = [] }: UserModalProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   void xp;
   const [activeTab, setActiveTab] = useState<'smods' | 'mods' | 'creators' | 'assoc'>('smods');
@@ -78,17 +81,12 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
   // Mock progress calculation (starts at 0 when level 0)
   const progressPercentage = level === 0 ? 0 : 20
 
+  const NPC_NAMES = ['Borom', 'Dorom', 'Gorom', 'Horom', 'Jorom', 'Korom', 'Lorom', 'Morom']
+
   const supermods = [
-    { name: 'xylo', px: pixels, active: true },
-    { name: 'Borom', px: 500, active: false, key: 'KEY-BOROM' },
-    { name: 'Dorom', px: 500, active: false, key: 'KEY-DOROM' },
-    { name: 'gorom', px: 500, active: false, key: 'KEY-GOROM' },
-    { name: 'horom', px: 500, active: false, key: 'KEY-HOROM' },
-    { name: 'jorom', px: 500, active: false, key: 'KEY-JOROM' },
-    { name: 'Korom', px: 500, active: false, key: 'KEY-KOROM' },
-    { name: 'Lorom', px: 500, active: false, key: 'KEY-LOROM' },
-    { name: 'Morom', px: 500, active: false, key: 'KEY-MOROM' },
-  ];
+    { name: 'xylo', px: pixels, active: true, key: null },
+    ...NPC_NAMES.map((name, i) => ({ name, px: 500, active: false, key: foromFriendKeys[i] || null }))
+  ]
 
   return (
     <AnimatePresence>
@@ -216,8 +214,12 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
 
                {/* CENTER COLUMN: User Profile */}
                <div className="flex-[1.2] flex flex-col items-center justify-start z-20 relative pt-2">
-                  <div className="w-[160px] h-[160px] rounded-full border-[6px] border-black bg-white flex items-center justify-center overflow-hidden mb-6 shadow-[0_4px_0px_rgba(0,0,0,1)]">
-                     <img src={userIcon} alt="User Profile" className="w-[60%] h-[60%] object-contain opacity-90" />
+                  <div className="w-[160px] h-[160px] rounded-full border-[6px] border-black flex items-center justify-center overflow-hidden mb-6 shadow-[0_4px_0px_rgba(0,0,0,1)]"
+                    style={{ backgroundColor: isSuperModerator ? '#000000' : '#ffffff' }}>
+                     {isSuperModerator
+                       ? <img src={foromLogoWht} alt="FOROM" className="w-[70%] h-[70%] object-contain" />
+                       : <img src={userIcon} alt="User Profile" className="w-[60%] h-[60%] object-contain opacity-90" />
+                     }
                   </div>
 
                   {/* Forom color badge */}
@@ -283,8 +285,6 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
                     {level === 0 ? 'CITOYEN' : title.toUpperCase()}
                   </div>
                </div>
-
-               {/* RIGHT COLUMN */}
                <div className="flex-[1.5] flex flex-col items-center justify-start z-20 h-full">
                
                  {isSuperModerator ? (
@@ -310,7 +310,7 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
                     {/* Scrollable list area */}
                     <div className="w-full flex-1 overflow-y-auto quest-scroll pr-4 py-2 flex flex-col items-center">
                        {activeTab === 'smods' && (
-                         <div className="flex flex-col gap-4 w-full">
+                         <div className="flex flex-col gap-3 w-full">
                             {supermods.map((mod, idx) => (
                                <div 
                                  key={idx} 
@@ -331,18 +331,25 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
                                     <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: activeTab === 'smods' ? '24px' : '20px', color: 'black' }}>
                                       {mod.px} PX
                                     </span>
-                                    {!mod.active && (
-                                      <span style={{
-                                        fontFamily: "'Jersey 15', sans-serif",
-                                        fontSize: '14px',
-                                        backgroundColor: 'black',
-                                        color: '#FF4B4B',
-                                        borderRadius: '6px',
-                                        padding: '2px 8px',
-                                        letterSpacing: '0.06em',
-                                      }}>
-                                        CLÉ REQUISE
-                                      </span>
+                                    {!mod.active && mod.key && (
+                                      <button
+                                        onClick={() => navigator.clipboard.writeText(mod.key!)}
+                                        title={`Copier: ${mod.key}`}
+                                        style={{
+                                          fontFamily: "'Jersey 15', sans-serif",
+                                          fontSize: '13px',
+                                          backgroundColor: '#111',
+                                          color: '#FFD700',
+                                          borderRadius: '6px',
+                                          padding: '2px 10px',
+                                          letterSpacing: '0.06em',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        🔑 {mod.key}
+                                      </button>
                                     )}
                                     {mod.active && (
                                       <span style={{
@@ -361,6 +368,20 @@ export function UserModal({ isOpen, onClose, pixels, level, title, xp, foromColo
                                   </div>
                                </div>
                             ))}
+                            {/* Rules section below keys */}
+                            {foromRules.length > 0 && (
+                              <div className="mt-4 w-full border-t-[3px] border-black pt-3 flex flex-col gap-2">
+                                <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '18px', color: 'rgba(0,0,0,0.5)', letterSpacing: '0.1em' }}>RÈGLES ROM</span>
+                                {foromRules.map((rule, i) => (
+                                  rule.trim() ? (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                      <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '16px', color: '#888', flexShrink: 0 }}>{i + 1}.</span>
+                                      <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '18px', color: '#111', letterSpacing: '0.04em' }}>{rule}</span>
+                                    </div>
+                                  ) : null
+                                ))}
+                              </div>
+                            )}
                          </div>
                        )}
 

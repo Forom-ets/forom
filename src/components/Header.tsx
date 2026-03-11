@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Ghost, Lock } from 'lucide-react'
 import cedilleIcon from '../assets/icons/cedille.png'
 import etsIcon from '../assets/icons/ets.jpg'
@@ -20,11 +20,6 @@ const LOGO_LETTERS = [
   { text: 'M', color: '#0066FF', darkColor: '#0066FF' },
 ]
 
-/** Animation settings for staggered letter entrance */
-const letterAnimation = {
-  initial: { opacity: 0, scale: 0.5 },
-  animate: { opacity: 1, scale: 1 },
-}
 
 /** Inline SVG for the colored Romap Logo */
 function RomapLogo({ size = 36 }: { size?: number }) {
@@ -63,14 +58,27 @@ interface HeaderProps {
 
 export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick, isDark = false, mission, isPhantom = false }: HeaderProps) {
   const [isSearchActive, setIsSearchActive] = useState(false)
+  const [isCloseIcon, setIsCloseIcon] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const closeIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Auto-focus search input when opened
+  // Auto-focus search input when it appears (after letters have exited)
   useEffect(() => {
-    if (isSearchActive && searchInputRef.current) {
+    if (isCloseIcon && searchInputRef.current) {
       searchInputRef.current.focus()
     }
+  }, [isCloseIcon])
+
+  // Delay switching to X until letters have all flown out (~0.5s)
+  useEffect(() => {
+    if (closeIconTimerRef.current) clearTimeout(closeIconTimerRef.current)
+    if (isSearchActive) {
+      closeIconTimerRef.current = setTimeout(() => setIsCloseIcon(true), 500)
+    } else {
+      setIsCloseIcon(false)
+    }
+    return () => { if (closeIconTimerRef.current) clearTimeout(closeIconTimerRef.current) }
   }, [isSearchActive])
 
   const handleCloseSearch = () => {
@@ -151,90 +159,144 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick
           </motion.a>
         </div>
 
-        {/* Search – circle expand animation */}
-        <form
-          className="forom-search-form"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <input
-            ref={searchInputRef}
-            type="text"
-            className={`forom-search-input${isSearchActive ? ' forom-search-square' : ''}`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Escape' && handleCloseSearch()}
-            placeholder={isSearchActive ? 'Search FOROM...' : ''}
-            readOnly={!isSearchActive}
-            aria-label="Search"
-          />
-          <button
-            type="button"
-            className={`forom-search-btn${isSearchActive ? ' forom-search-close' : ''}`}
-            onClick={() => {
-              if (isSearchActive) {
-                handleCloseSearch()
-              } else {
-                setIsSearchActive(true)
-              }
-            }}
-            aria-label={isSearchActive ? 'Close search' : 'Open search'}
-          />
-        </form>
       </div>
 
-      {/* ---- Center: FOROM Logo ---- */}
-      <div className="flex flex-col items-center justify-center shrink-0 mx-[5%]">
-        <div className="relative flex items-center justify-center gap-3">
-        {LOGO_LETTERS.map((letter, index) => (
-          <motion.span
-            key={index}
-            initial={letterAnimation.initial}
-            animate={letterAnimation.animate}
-            transition={{
-              delay: index * 0.1,
-              type: 'spring',
-              damping: 12,
-              stiffness: 100,
-            }}
-            className="transition-colors duration-300"
-            style={{
-              fontSize: '44px',
-              fontFamily: 'Montserrat, sans-serif',
-              fontWeight: 900,
-              color: isDark ? letter.darkColor : letter.color,
-              lineHeight: 1,
-              letterSpacing: '0.04em',
-            }}
-          >
-            {letter.text}
-          </motion.span>
-        ))}
-        {/* Tiny cedille easter-egg dot */}
-        <a
-          href="https://cedille.etsmtl.ca/"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Cedille"
-          style={{
-            position: 'absolute',
-            right: '-18px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '14px',
-            height: '14px',
-            display: 'block',
-            borderRadius: '9999px',
-            overflow: 'visible',
-            cursor: 'pointer',
-          }}
-        >
-          <img
-            src={cedilleIcon}
-            alt="Cedille"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+      {/* ---- Center ---- */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 49,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+
+          {/* Magnifying glass / X — sole flex item, never moves */}
+          <button
+            type="button"
+            className={`forom-search-btn${isCloseIcon ? ' forom-search-close' : ''}`}
+            onClick={() => isSearchActive ? handleCloseSearch() : setIsSearchActive(true)}
+            style={{ flexShrink: 0, position: 'relative', zIndex: 1 }}
+            aria-label={isSearchActive ? 'Close search' : 'Open search'}
           />
-        </a>
+
+          {/* Fixed-width content box — FOROM letters or search input share this space */}
+          <div style={{ width: '280px', height: '52px', position: 'relative', marginLeft: '8px' }}>
+
+            {/* FOROM letters — absolutely laid out so they don't resize the box */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: 0,
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                pointerEvents: isSearchActive ? 'none' : 'auto',
+              }}
+            >
+              {LOGO_LETTERS.map((letter, index) => (
+                <AnimatePresence key={index}>
+                  {!isSearchActive && (
+                    <motion.span
+                      key={`l-${index}`}
+                      initial={{ y: 0, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1, transition: { delay: index * 0.1, type: 'spring', damping: 12, stiffness: 100 } }}
+                      exit={{ y: -80, opacity: 0, transition: { delay: index * 0.06, duration: 0.22, ease: 'easeIn' } }}
+                      className="transition-colors duration-300"
+                      style={{
+                        fontSize: '44px',
+                        fontFamily: 'Montserrat, sans-serif',
+                        fontWeight: 900,
+                        color: isDark ? letter.darkColor : letter.color,
+                        lineHeight: 1,
+                        letterSpacing: '0.04em',
+                        display: 'inline-block',
+                      }}
+                    >
+                      {letter.text}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              ))}
+              {/* Cedille dot */}
+              <AnimatePresence>
+                {!isSearchActive && (
+                  <motion.a
+                    key="cedille"
+                    href="https://cedille.etsmtl.ca/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Cedille"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ y: -80, opacity: 0, transition: { delay: 0.3, duration: 0.22, ease: 'easeIn' } }}
+                    style={{
+                      position: 'absolute',
+                      right: '-18px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '14px',
+                      height: '14px',
+                      display: 'block',
+                      borderRadius: '9999px',
+                      overflow: 'visible',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <img
+                      src={cedilleIcon}
+                      alt="Cedille"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                    />
+                  </motion.a>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Search input — fades in after letters have gone */}
+            <AnimatePresence>
+              {isCloseIcon && (
+                <motion.input
+                  ref={searchInputRef}
+                  key="search-inp"
+                  type="text"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && handleCloseSearch()}
+                  placeholder="Search FOROM..."
+                  aria-label="Search"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: 0,
+                    transform: 'translateY(-50%)',
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '22px',
+                    fontWeight: 600,
+                    fontFamily: 'Montserrat, sans-serif',
+                    color: 'var(--color-text)',
+                    caretColor: 'var(--color-text)',
+                  }}
+                />
+              )}
+            </AnimatePresence>
+
+          </div>
         </div>
+
         {/* Mission tagline */}
         {mission && (
           <div style={{

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import romWht from '../assets/icons/rom_wht.png'
+import foromLogoWht from '../assets/icons/forom_logo_wht.png'
 import githubIcon from '../assets/icons/github.png'
 import chromaNotesIcon from '../assets/icons/chroma_notes.svg'
 
@@ -121,6 +122,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
   const [isSignInOpen, setIsSignInOpen] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showDevLogin, setShowDevLogin] = useState(false)
 
   const [joinKey, setJoinKey] = useState('')
   const [joinStep, setJoinStep] = useState<'idle' | 'color' | 'rule'>('idle')
@@ -156,7 +158,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
         position: 'relative',
       }}
     >
-      {/* SKIP TO FOROM AS PHANTOM */}
+      {/* SKIP TO FOROM */}
       {onSkip && !isSignInOpen && (
         <button
           onClick={onSkip}
@@ -170,7 +172,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
             border: 'none',
             padding: 0
           }}
-          title="Consulter le FOROM (Fantôme)"
+          title={currentUser ? "Consulter le FOROM" : "Consulter le FOROM (Fantôme)"}
         >
           <img src={chromaNotesIcon} alt="Return to Forom" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </button>
@@ -201,48 +203,99 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
       {isSignInOpen && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)',
-          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center'
+          backgroundColor: 'rgba(0,0,0,0.92)',
+          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <form 
-            onSubmit={handleSignIn}
-            style={{
-              backgroundColor: '#1a1a1a', padding: '40px', borderRadius: '16px',
-              display: 'flex', flexDirection: 'column', gap: '20px', width: '300px',
-              border: '1px solid #333'
-            }}
-          >
-            <h2 style={{ margin: 0, fontSize: '24px', textAlign: 'center', fontWeight: 'bold' }}>Sign In</h2>
-            <input 
-              type="text" 
-              placeholder="Username" 
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white' }}
-            />
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white' }}
-            />
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                type="button" 
-                onClick={() => setIsSignInOpen(false)}
-                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#444', color: 'white', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit"
-                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: 'white', cursor: 'pointer' }}
-              >
-                Login
-              </button>
-            </div>
-          </form>
+          <div style={{
+            backgroundColor: '#111', padding: '40px 36px 32px', borderRadius: '20px',
+            display: 'flex', flexDirection: 'column', gap: '14px', width: 'min(90vw, 360px)',
+            border: '1px solid rgba(255,255,255,0.12)', position: 'relative',
+          }}>
+            {/* Close */}
+            <button
+              onClick={() => { setIsSignInOpen(false); setShowDevLogin(false) }}
+              style={{ position: 'absolute', top: '14px', right: '18px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '24px', cursor: 'pointer', lineHeight: 1 }}
+            >×</button>
+
+            <h2 style={{ margin: '0 0 6px', fontSize: '20px', textAlign: 'center', fontWeight: 700, color: 'white', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'Jersey 15', sans-serif" }}>Se connecter</h2>
+
+            {!showDevLogin ? (
+              <>
+                {/* OAuth provider buttons */}
+                {([
+                  { id: 'google',    label: 'Google',         bg: '#fff',    fg: '#111',    border: '#ddd',  soon: false },
+                  { id: 'discord',   label: 'Discord',        bg: '#5865F2', fg: '#fff',    border: '#5865F2', soon: false },
+                  { id: 'microsoft', label: 'Microsoft',      bg: '#00A4EF', fg: '#fff',    border: '#00A4EF', soon: false },
+                  { id: 'meta',      label: 'Meta',           bg: '#0467DF', fg: '#fff',    border: '#0467DF', soon: false },
+                  { id: 'x',         label: 'X',              bg: '#000',    fg: '#fff',    border: '#555',  soon: false },
+                  { id: 'apple',     label: 'Apple',          bg: '#000',    fg: '#fff',    border: '#555',  soon: false },
+                  { id: 'ets',       label: 'ETS — Authentik',bg: '#1a1a1a', fg: '#6CB4E4', border: '#6CB4E4', soon: true  },
+                ] as const).map(p => (
+                  <button
+                    key={p.id}
+                    disabled
+                    title={p.soon ? 'Bientôt disponible' : 'Bientôt disponible — OAuth2 / JWT à venir'}
+                    style={{
+                      position: 'relative',
+                      padding: '11px 18px',
+                      borderRadius: '10px',
+                      border: `1px solid ${p.border}`,
+                      backgroundColor: p.bg,
+                      color: p.fg,
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      fontFamily: 'Montserrat, sans-serif',
+                      cursor: 'not-allowed',
+                      opacity: 0.6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    {p.label}
+                    <span style={{ marginLeft: 'auto', fontSize: '10px', opacity: 0.7, fontStyle: 'italic', fontWeight: 400 }}>
+                      {p.soon ? '✦ bientôt' : 'bientôt'}
+                    </span>
+                  </button>
+                ))}
+
+                {/* Dev login toggle */}
+                <button
+                  onClick={() => setShowDevLogin(true)}
+                  style={{ marginTop: '4px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: 'pointer', fontFamily: 'monospace', letterSpacing: '0.05em' }}
+                >dev</button>
+              </>
+            ) : (
+              /* Developer login (xylo only) */
+              <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.35)', textAlign: 'center', fontFamily: 'monospace' }}>accès développeur</p>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#222', color: 'white', outline: 'none', fontSize: '14px' }}
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#222', color: 'white', outline: 'none', fontSize: '14px' }}
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setShowDevLogin(false)}
+                    style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white', cursor: 'pointer', fontSize: '14px' }}
+                  >Retour</button>
+                  <button type="submit"
+                    style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 700 }}
+                  >Connexion</button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
 
@@ -352,26 +405,60 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
             borderRadius: 'clamp(12px, 1.5vw, 24px)',
             padding: 'clamp(10px, 1.8vw, 28px)',
             width: '100%',
-            aspectRatio: '1 / 1',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 'clamp(6px, 1vh, 14px)',
             boxSizing: 'border-box',
           }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: 'clamp(5px, 0.8vw, 12px)',
-              width: '100%',
-            }}>
-              {Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} style={{
+
+            {/*
+              PUBLICIZATION RULES (future enforcement):
+              A forom can only become public when ALL of the following are true:
+                1. It has its 8 supermoderators assigned
+                2. All 3 season phases (V1 → V2 → V3) are completed
+                3. It has existed for at least 1 year
+                4. NOT all supermoderators are currently active
+                   (at least one must have departed — ensures the community
+                    has proven it can survive supermod turnover before going public)
+            */}
+
+            {/* ── PUBLIC ───────────────────────────────────────── */}
+            {/* The main FOROM is the only public forom at launch. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: 'clamp(8px, 0.8vw, 11px)', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>Public</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'clamp(5px, 0.8vw, 12px)' }}>
+              {/* Slot 0 — the main FOROM (public, hardcoded) */}
+              <div
+                onClick={() => onSkip?.()}
+                title="FOROM — Sauver les communautés"
+                style={{
+                  backgroundColor: '#000000',
+                  borderRadius: 'clamp(6px, 0.7vw, 12px)',
+                  aspectRatio: '1 / 1',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid rgba(255,255,255,0.25)',
+                  transition: 'border-color 0.2s, transform 0.15s',
+                  overflow: 'hidden',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#FFD700'; e.currentTarget.style.transform = 'scale(1.06)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.transform = 'scale(1)' }}
+              >
+                <img src={foromLogoWht} alt="FOROM" style={{ width: '70%', height: '70%', objectFit: 'contain' }} />
+              </div>
+              {/* Public slots 1–9 — locked until other foroms qualify */}
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i + 1} style={{
                   backgroundColor: '#3A3A3A',
                   borderRadius: 'clamp(6px, 0.7vw, 12px)',
                   aspectRatio: '1 / 1',
                   opacity: 0.7,
                   cursor: 'not-allowed',
-                  position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -380,6 +467,36 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
                 </div>
               ))}
             </div>
+
+            {/* ── DIVIDER ──────────────────────────────────────── */}
+            <div style={{ margin: 'clamp(2px, 0.5vh, 8px) 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.18)' }} />
+            </div>
+
+            {/* ── PRIVÉ ─────────────────────────────────────── */}
+            {/* Private foroms — only visible once logged in */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: 'clamp(8px, 0.8vw, 11px)', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>Privé</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'clamp(5px, 0.8vw, 12px)' }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} style={{
+                  backgroundColor: '#3A3A3A',
+                  borderRadius: 'clamp(6px, 0.7vw, 12px)',
+                  aspectRatio: '1 / 1',
+                  opacity: 0.7,
+                  cursor: 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: 'clamp(10px, 1.1vw, 18px)', opacity: 0.5, userSelect: 'none' }}>🔒</span>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
 

@@ -92,7 +92,6 @@ export function MemoryModal({
   borderColor = '#E5E7EB',
   index: _index,
   onMemoryUpdate,
-  onQuestComplete,
   questionLabels = {},
 }: MemoryModalProps) {
   const [isEditing, setIsEditing] = useState(false)
@@ -212,7 +211,7 @@ export function MemoryModal({
   const memoryHasVideo = hasVideo(memory)
 
   const handleSave = () => {
-    if (!formData.question || !formData.title.trim() || !formData.videoUrl.trim()) return
+    if (!formData.title.trim()) return
 
     const updatedMemory = updateMemory(memory.category as CategoryType, 
       parseInt(memory.id.split('-')[1]), {
@@ -226,11 +225,10 @@ export function MemoryModal({
     )
 
     if (updatedMemory && onMemoryUpdate) onMemoryUpdate(updatedMemory)
-    if (onQuestComplete) onQuestComplete()
     setIsEditing(false)
   }
 
-  const canSave = !!(formData.question && formData.title.trim() && formData.videoUrl.trim())
+  const canSave = !!(formData.title.trim())
 
   // ===========================================================================
   // FILLED VIEW
@@ -714,7 +712,7 @@ export function MemoryModal({
               }
             }}
           >
-            CONFIRMER
+            SAUVEGARDER
           </button>
         </div>
       </div>

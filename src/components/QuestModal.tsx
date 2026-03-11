@@ -49,6 +49,8 @@ export interface Quest {
   question: string | null
   category: string
   completed?: boolean
+  taken?: boolean
+  completedBy?: string
 }
 
 export interface QuestModalProps {
@@ -60,6 +62,7 @@ export interface QuestModalProps {
   categories?: string[]
   seasonPhase?: 'V1' | 'V2' | 'V3'
   pixels?: number
+  canCreateQuest?: boolean
   onCreateQuest: (title: string, reward: number, question: string | null, category: string) => void
   onAcceptQuest: (id: string) => void
   onCompleteQuest: (id: string) => void
@@ -131,6 +134,7 @@ export function QuestModal({
   onCancelQuest,
   seasonPhase = 'V1',
   pixels = 0,
+  canCreateQuest = true,
   categories = ['A', 'B', 'C', 'D', 'E']
 }: QuestModalProps) {
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
@@ -171,6 +175,14 @@ export function QuestModal({
     el.addEventListener('wheel', handleNativeWheel, { passive: false })
     return () => el.removeEventListener('wheel', handleNativeWheel)
   }, [handleNativeWheel, activeTab])
+
+  // Auto-switch to quest log and highlight the accepted quest
+  useEffect(() => {
+    if (acceptedQuestId) {
+      setBoardSelectedId(acceptedQuestId)
+      setActiveTab('community')
+    }
+  }, [acceptedQuestId])
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
@@ -369,18 +381,18 @@ export function QuestModal({
 
                   {/* LEFT: Active quest spotlight */}
                   <div className="flex flex-col relative w-1/2 h-full">
-                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] p-8 flex flex-col items-center justify-start gap-6 relative flex-1 overflow-hidden">
+                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] p-6 flex flex-col items-center justify-start gap-4 relative flex-1 overflow-hidden">
                       <h3 className="text-center text-[50px] text-white uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                         ACTIF
                       </h3>
 
-                      {/* Active quest card */}
-                      <div className="flex-1 flex flex-col items-center justify-center w-full">
+                      {/* WoW-style quest detail */}
+                      <div className="flex-1 flex flex-col items-center justify-start w-full overflow-y-auto pt-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.2) transparent' }}>
                         {(() => {
-                          const active = personalQuests.find(q => q.id === acceptedQuestId)
+                          const active = personalQuests.find(q => q.id === boardSelectedId)
                           if (!active) {
                             return (
-                              <div className="flex flex-col items-center justify-center gap-4 opacity-50">
+                              <div className="flex flex-col items-center justify-center gap-4 opacity-50 h-full">
                                 <div style={{
                                   width: '80%',
                                   borderRadius: '20px',
@@ -394,63 +406,111 @@ export function QuestModal({
                                   </span>
                                 </div>
                                 <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '18px', color: 'rgba(0,0,0,0.4)', textAlign: 'center' }}>
-                                  Sélectionne une quête depuis ton tableau
+                                  Sélectionne une quête dans le tableau →
                                 </span>
                               </div>
                             )
                           }
                           const tagColor = active.question ? (QUESTION_COLORS[active.question] || '#888') : null
                           const tagLabel = active.question ? (questionLabels[active.question] || active.question) : null
+                          const qIdx = active.question ? QUESTION_ORDER.indexOf(active.question as any) : -1
+                          const mem = qIdx >= 0 ? getMemory(active.category as CategoryType, qIdx) : null
+                          const descWordCount = (mem?.isFilled && mem?.description) ? mem.description.trim().split(/\s+/).filter(Boolean).length : 0
+                          const objectives = [
+                            { id: 'video', label: 'Vidéo YouTube', done: !!(mem?.videoUrl) },
+                            { id: 'desc', label: `Résumé (${descWordCount}/100 mots)`, done: descWordCount >= 100 },
+                            { id: 'src', label: 'Source(s)', done: !!(mem?.sources && mem.sources.length > 0) },
+                          ]
+                          // Note: objectives are informational only — allDone gates the COMPLÉTER button
+                          const allDone = objectives.every(o => o.done)
                           return (
-                            <div style={{
-                              width: '85%',
-                              borderRadius: '20px',
-                              backgroundColor: '#FFA639',
-                              border: '5px solid black',
-                              boxShadow: '0 6px 0px rgba(0,0,0,0.9)',
-                              padding: '28px 24px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: '14px',
-                            }}>
-                              {tagLabel && (
-                                <div style={{
-                                  backgroundColor: tagColor!,
-                                  borderRadius: '10px',
-                                  border: '3px solid black',
-                                  padding: '4px 20px',
-                                  fontFamily: "'Jersey 15', sans-serif",
-                                  fontSize: '22px',
-                                  color: 'white',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.08em',
-                                }}>
-                                  {tagLabel}
-                                </div>
-                              )}
-                              <span style={{
-                                fontFamily: "'Jersey 15', sans-serif",
-                                fontSize: '32px',
-                                color: 'black',
-                                textAlign: 'center',
-                                lineHeight: 1.2,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                              }}>
-                                {active.title}
-                              </span>
+                            <div style={{ width: '90%', display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '8px' }}>
+                              {/* Quest header card */}
                               <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                backgroundColor: 'rgba(0,0,0,0.12)',
-                                borderRadius: '10px',
-                                padding: '4px 16px',
+                                backgroundColor: '#FFA639',
+                                border: '5px solid black',
+                                boxShadow: '0 6px 0px rgba(0,0,0,0.9)',
+                                borderRadius: '20px',
+                                padding: '20px 24px',
+                                display: 'flex', flexDirection: 'column', gap: '10px',
                               }}>
-                                <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '22px', color: 'black' }}>
-                                  +{active.reward} PX
+                                {tagLabel && tagColor && (
+                                  <div style={{
+                                    display: 'inline-flex', alignSelf: 'flex-start',
+                                    backgroundColor: tagColor,
+                                    borderRadius: '10px', border: '3px solid black',
+                                    padding: '4px 20px',
+                                    fontFamily: "'Jersey 15', sans-serif", fontSize: '22px',
+                                    color: 'white', textTransform: 'uppercase', letterSpacing: '0.08em',
+                                  }}>
+                                    {tagLabel}
+                                  </div>
+                                )}
+                                <span style={{
+                                  fontFamily: "'Jersey 15', sans-serif", fontSize: '32px',
+                                  color: 'black', textTransform: 'uppercase',
+                                  letterSpacing: '0.05em', lineHeight: 1.2,
+                                }}>
+                                  {active.title}
                                 </span>
+                                <div style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                  backgroundColor: 'rgba(0,0,0,0.12)',
+                                  borderRadius: '10px', padding: '4px 16px', alignSelf: 'flex-start',
+                                }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '22px', color: 'black' }}>
+                                    +{active.reward} PX
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* WoW-style objectives checklist */}
+                              <div style={{
+                                backgroundColor: 'rgba(0,0,0,0.12)',
+                                borderRadius: '16px', border: '3px solid rgba(0,0,0,0.25)',
+                                padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px',
+                              }}>
+                                <span style={{
+                                  fontFamily: "'Jersey 15', sans-serif", fontSize: '20px',
+                                  color: 'rgba(0,0,0,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em',
+                                }}>
+                                  OBJECTIFS DE LA QUÊTE:
+                                </span>
+                                {objectives.map(obj => (
+                                  <div key={obj.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                      width: '30px', height: '30px', flexShrink: 0,
+                                      borderRadius: '8px',
+                                      border: `3px solid ${obj.done ? '#22c55e' : 'rgba(0,0,0,0.3)'}`,
+                                      backgroundColor: obj.done ? '#22c55e' : 'rgba(255,255,255,0.5)',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      transition: 'all 0.2s',
+                                    }}>
+                                      {obj.done && (
+                                        <span style={{ color: 'white', fontSize: '18px', lineHeight: 1, fontWeight: 'bold' }}>✓</span>
+                                      )}
+                                    </div>
+                                    <span style={{
+                                      fontFamily: "'Jersey 15', sans-serif", fontSize: '24px',
+                                      color: obj.done ? '#166534' : 'rgba(0,0,0,0.5)',
+                                      textDecoration: obj.done ? 'line-through' : 'none',
+                                      letterSpacing: '0.05em',
+                                    }}>
+                                      {obj.label}
+                                    </span>
+                                  </div>
+                                ))}
+                                {allDone && (
+                                  <div style={{
+                                    marginTop: '4px', padding: '8px 0',
+                                    borderTop: '2px solid rgba(22, 163, 74, 0.4)',
+                                    fontFamily: "'Jersey 15', sans-serif", fontSize: '22px',
+                                    color: '#16a34a', textTransform: 'uppercase',
+                                    letterSpacing: '0.1em', textAlign: 'center',
+                                  }}>
+                                    ✓ PRÊT À COMPLÉTER!
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
@@ -459,10 +519,10 @@ export function QuestModal({
 
                       {/* Action buttons */}
                       <div className="flex flex-shrink-0 justify-center items-center" style={{ gap: '20px', paddingBottom: 'max(3%, 24px)' }}>
-                        {acceptedQuestId ? (
+                        {boardSelectedId ? (
                           <>
                             <button
-                              onClick={() => onCancelQuest(acceptedQuestId)}
+                              onClick={() => { onCancelQuest(boardSelectedId); setBoardSelectedId(null) }}
                               style={{
                                 padding: '12px 40px',
                                 borderRadius: '16px',
@@ -488,21 +548,26 @@ export function QuestModal({
                               ANNULER
                             </button>
                             {(() => {
-                              let canComplete = false;
-                              if (acceptedQuestId) {
-                                const qObj = personalQuests.find(q => q.id === acceptedQuestId);
-                                if (qObj && qObj.question) {
-                                  const index = QUESTION_ORDER.indexOf(qObj.question as any);
-                                  const mem = getMemory(qObj.category as CategoryType, index);
-                                  // Requires youtube video, resume (description) and a source
-                                  if (mem?.isFilled && mem.videoUrl && mem.description.trim().length > 0 && Array.isArray(mem.sources) && mem.sources.length > 0) {
-                                    canComplete = true;
-                                  }
-                                }
-                              }
+                              const qObj = personalQuests.find(q => q.id === boardSelectedId);
+                              const qIdx2 = qObj?.question ? QUESTION_ORDER.indexOf(qObj.question as any) : -1;
+                              const mem2 = qIdx2 >= 0 ? getMemory(qObj!.category as CategoryType, qIdx2) : null;
+                              const descWords2 = (mem2?.isFilled && mem2?.description) ? mem2.description.trim().split(/\s+/).filter(Boolean).length : 0;
+                              const canComplete = !!boardSelectedId && !!(mem2?.videoUrl) && descWords2 >= 100 && !!(mem2?.sources && mem2.sources.length > 0);
                               return (
                                 <button
-                                  onClick={() => canComplete && onCompleteQuest(acceptedQuestId)}
+                                  onClick={() => {
+                                  if (!canComplete) return;
+                                  onCompleteQuest(boardSelectedId);
+                                  // Auto-scroll wheel to the just-completed quest
+                                  const completedQ = personalQuests.find(q => q.id === boardSelectedId);
+                                  if (completedQ) {
+                                    const catIdx = categories.indexOf(completedQ.category);
+                                    const tagIdx = parseInt(completedQ.question || '0', 10);
+                                    if (catIdx >= 0 && !isNaN(tagIdx)) setWheelIndex(catIdx * 10 + tagIdx);
+                                  }
+                                  setBoardSelectedId(null);
+                                  setActiveTab('personal');
+                                  }}
                                   disabled={!canComplete}
                                   style={{
                                     padding: '12px 40px',
@@ -536,147 +601,210 @@ export function QuestModal({
                             })()}
                           </>
                         ) : (
-                          <button
-                            onClick={() => { if (boardSelectedId) onAcceptQuest(boardSelectedId) }}
-                            style={{
-                              padding: '12px 40px',
-                              borderRadius: '16px',
-                              backgroundColor: boardSelectedId ? 'white' : 'rgba(255,255,255,0.4)',
-                              color: boardSelectedId ? 'black' : 'rgba(0,0,0,0.4)',
-                              fontSize: '32px',
-                              fontFamily: "'Jersey 15', sans-serif",
-                              border: boardSelectedId ? '4px solid black' : '4px solid rgba(0,0,0,0.2)',
-                              cursor: boardSelectedId ? 'pointer' : 'not-allowed',
-                              boxShadow: boardSelectedId ? '0 4px 0px rgba(0,0,0,1)' : 'none',
-                              transition: 'transform 0.1s, box-shadow 0.1s',
-                              whiteSpace: 'nowrap',
-                            }}
-                            onMouseOver={(e) => {
-                              if (boardSelectedId) {
-                                e.currentTarget.style.transform = 'translateY(2px)'
-                                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              if (boardSelectedId) {
-                                e.currentTarget.style.transform = 'none'
-                                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                              }
-                            }}
-                          >
-                            SÉLECTIONNER
-                          </button>
+                          <span style={{
+                            fontFamily: "'Jersey 15', sans-serif",
+                            fontSize: '20px',
+                            color: 'rgba(0,0,0,0.4)',
+                            textAlign: 'center',
+                          }}>
+                            Clique sur une quête dans le tableau
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* RIGHT: All quests board */}
+                  {/* RIGHT: Taken quests board */}
                   <div className="flex flex-col relative w-1/2 h-full">
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] flex flex-col relative flex-1 overflow-hidden">
                       <h3 className="text-center text-[50px] text-white uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-3 pb-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                         TABLEAU
                       </h3>
 
-                      {/* Quest list */}
+                      {/* Quest list — only taken quests + completed history */}
                       <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.2) transparent' }}>
-                        {personalQuests.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center h-full gap-4 opacity-50">
-                            <div style={{
-                              borderRadius: '20px',
-                              backgroundColor: '#E5B58E',
-                              border: '5px dashed rgba(0,0,0,0.3)',
-                              padding: '32px 24px',
-                              textAlign: 'center',
-                              width: '80%',
-                            }}>
-                              <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '26px', color: 'rgba(0,0,0,0.5)' }}>
-                                AUCUNE QUÊTE
-                              </span>
-                            </div>
-                            <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '16px', color: 'rgba(0,0,0,0.4)', textAlign: 'center' }}>
-                              Crée des quêtes depuis l'onglet Q
-                            </span>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            {personalQuests.map((q) => {
-                              const isActive = q.id === acceptedQuestId
-                              const isSelected = q.id === boardSelectedId
-                              const tagColor = q.question ? (QUESTION_COLORS[q.question] || '#888') : null
-                              const catColor = CATEGORY_COLORS[q.category] || null
-                              const mixBg = (q.completed && tagColor && catColor) ? mixColors(tagColor, catColor) : null
-                              const tagLabel = q.question ? (questionLabels[q.question] || q.question) : null
-                              
-                              return (
-                                <div
-                                  key={q.id}
-                                  onClick={() => setBoardSelectedId(isSelected ? null : q.id)}
-                                  style={{
-                                    borderRadius: '16px',
-                                    backgroundColor: mixBg || (isActive ? '#FFA639' : '#fff'),
-                                    border: isActive ? '4px solid black' : isSelected ? '4px solid #FE6C17' : '4px solid rgba(0,0,0,0.25)',
-                                    boxShadow: isSelected || isActive ? '0 4px 0px rgba(0,0,0,0.8)' : '0 2px 0px rgba(0,0,0,0.2)',
-                                    padding: '10px 14px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '6px',
-                                    transition: 'all 0.15s cubic-bezier(0.34,1.2,0.64,1)',
-                                    transform: isSelected ? 'translateY(-2px)' : 'none',
-                                    opacity: isActive || isSelected ? 1 : 0.85,
-                                  }}
-                                >
-                                  {tagLabel && tagColor && (
-                                    <div style={{
-                                      display: 'inline-flex',
-                                      alignSelf: 'flex-start',
-                                      backgroundColor: tagColor,
-                                      borderRadius: '8px',
-                                      border: '2px solid black',
-                                      padding: '1px 10px',
+                        {(() => {
+                          const takenQuests = personalQuests.filter(q => q.taken && !q.completed)
+                          const completedQuests = personalQuests.filter(q => q.completed)
+                          if (takenQuests.length === 0 && completedQuests.length === 0) {
+                            return (
+                              <div className="flex flex-col items-center justify-center h-full gap-4 opacity-50">
+                                <div style={{
+                                  borderRadius: '20px',
+                                  backgroundColor: '#E5B58E',
+                                  border: '5px dashed rgba(0,0,0,0.3)',
+                                  padding: '32px 24px',
+                                  textAlign: 'center',
+                                  width: '80%',
+                                }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '26px', color: 'rgba(0,0,0,0.5)' }}>
+                                    AUCUNE QUÊTE
+                                  </span>
+                                </div>
+                                <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '16px', color: 'rgba(0,0,0,0.4)', textAlign: 'center' }}>
+                                  Accepte une quête depuis la roue
+                                </span>
+                              </div>
+                            )
+                          }
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                              {/* Active taken quests */}
+                              {takenQuests.map((q) => {
+                                const isSelected = q.id === boardSelectedId
+                                const tagColor = q.question ? (QUESTION_COLORS[q.question] || '#888') : null
+                                const tagLabel = q.question ? (questionLabels[q.question] || q.question) : null
+                                return (
+                                  <div
+                                    key={q.id}
+                                    onClick={() => setBoardSelectedId(isSelected ? null : q.id)}
+                                    style={{
+                                      borderRadius: '16px',
+                                      backgroundColor: isSelected ? '#FFA639' : '#fff',
+                                      border: isSelected ? '4px solid black' : '4px solid rgba(0,0,0,0.25)',
+                                      boxShadow: isSelected ? '0 4px 0px rgba(0,0,0,0.8)' : '0 2px 0px rgba(0,0,0,0.2)',
+                                      padding: '12px 16px',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                      gap: '12px',
+                                      transition: 'all 0.15s cubic-bezier(0.34,1.2,0.64,1)',
+                                      transform: isSelected ? 'translateY(-2px)' : 'none',
+                                    }}
+                                  >
+                                    {tagLabel && tagColor && (
+                                      <div style={{
+                                        backgroundColor: tagColor,
+                                        borderRadius: '8px',
+                                        border: '2px solid black',
+                                        padding: '2px 12px',
+                                        fontFamily: "'Jersey 15', sans-serif",
+                                        fontSize: '18px',
+                                        color: 'white',
+                                        textTransform: 'uppercase',
+                                        flexShrink: 0,
+                                      }}>
+                                        {tagLabel}
+                                      </div>
+                                    )}
+                                    <span style={{
                                       fontFamily: "'Jersey 15', sans-serif",
-                                      fontSize: '16px',
-                                      color: 'white',
+                                      fontSize: '22px',
+                                      color: 'black',
                                       textTransform: 'uppercase',
-                                      letterSpacing: '0.06em',
+                                      letterSpacing: '0.04em',
+                                      lineHeight: 1.15,
+                                      flex: 1,
                                     }}>
-                                      {tagLabel}
-                                    </div>
+                                      {q.title}
+                                    </span>
+                                    <span style={{
+                                      fontFamily: "'Jersey 15', sans-serif",
+                                      fontSize: '17px',
+                                      color: 'rgba(0,0,0,0.5)',
+                                      flexShrink: 0,
+                                    }}>
+                                      +{q.reward} PX
+                                    </span>
+                                  </div>
+                                )
+                              })}
+
+                              {/* Completed history divider */}
+                              {completedQuests.length > 0 && (
+                                <>
+                                  {takenQuests.length > 0 && (
+                                    <div style={{
+                                      borderTop: '2px dashed rgba(0,0,0,0.2)',
+                                      margin: '4px 0',
+                                    }} />
                                   )}
                                   <span style={{
                                     fontFamily: "'Jersey 15', sans-serif",
-                                    fontSize: '22px',
-                                    color: 'black',
+                                    fontSize: '16px',
+                                    color: 'rgba(0,0,0,0.4)',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '0.04em',
-                                    lineHeight: 1.15,
+                                    letterSpacing: '0.12em',
+                                    paddingLeft: '4px',
                                   }}>
-                                    {q.title}
+                                    HISTORIQUE
                                   </span>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '17px', color: 'rgba(0,0,0,0.5)' }}>
-                                      +{q.reward} PX
-                                    </span>
-                                    {isActive && (
-                                      <span style={{
-                                        fontFamily: "'Jersey 15', sans-serif",
-                                        fontSize: '15px',
-                                        backgroundColor: 'black',
-                                        color: '#FFA639',
-                                        borderRadius: '6px',
-                                        padding: '1px 8px',
-                                        letterSpacing: '0.06em',
-                                      }}>
-                                        ACTIF
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
+                                  {completedQuests.map((q) => {
+                                    const isSelected = q.id === boardSelectedId
+                                    const tagLabel = q.question ? (questionLabels[q.question] || q.question) : null
+                                    return (
+                                      <div
+                                        key={q.id}
+                                        onClick={() => setBoardSelectedId(isSelected ? null : q.id)}
+                                        style={{
+                                          borderRadius: '16px',
+                                          backgroundColor: isSelected ? '#e0e0e0' : '#f2f2f2',
+                                          border: isSelected ? '4px solid #888' : '4px solid rgba(0,0,0,0.12)',
+                                          boxShadow: isSelected ? '0 3px 0px rgba(0,0,0,0.3)' : '0 1px 0px rgba(0,0,0,0.1)',
+                                          padding: '12px 16px',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          flexDirection: 'row',
+                                          alignItems: 'center',
+                                          gap: '12px',
+                                          opacity: 0.7,
+                                          transition: 'all 0.15s',
+                                        }}
+                                      >
+                                        {/* COMPLETED badge */}
+                                        <div style={{
+                                          backgroundColor: '#888',
+                                          borderRadius: '8px',
+                                          border: '2px solid rgba(0,0,0,0.2)',
+                                          padding: '2px 10px',
+                                          fontFamily: "'Jersey 15', sans-serif",
+                                          fontSize: '16px',
+                                          color: 'white',
+                                          textTransform: 'uppercase',
+                                          flexShrink: 0,
+                                          letterSpacing: '0.05em',
+                                        }}>
+                                          ✓ FAIT
+                                        </div>
+                                        {tagLabel && (
+                                          <span style={{
+                                            fontFamily: "'Jersey 15', sans-serif",
+                                            fontSize: '16px',
+                                            color: 'rgba(0,0,0,0.4)',
+                                            textTransform: 'uppercase',
+                                            flexShrink: 0,
+                                          }}>
+                                            [{tagLabel}]
+                                          </span>
+                                        )}
+                                        <span style={{
+                                          fontFamily: "'Jersey 15', sans-serif",
+                                          fontSize: '20px',
+                                          color: '#666',
+                                          textTransform: 'uppercase',
+                                          textDecoration: 'line-through',
+                                          letterSpacing: '0.04em',
+                                          flex: 1,
+                                        }}>
+                                          {q.title}
+                                        </span>
+                                        <span style={{
+                                          fontFamily: "'Jersey 15', sans-serif",
+                                          fontSize: '15px',
+                                          color: 'rgba(0,0,0,0.3)',
+                                          flexShrink: 0,
+                                        }}>
+                                          +{q.reward} PX
+                                        </span>
+                                      </div>
+                                    )
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -685,7 +813,8 @@ export function QuestModal({
               ) : (
                 <div className="flex-1 flex w-full max-w-7xl mx-auto h-full overflow-hidden mt-2 pb-2 px-4" style={{ gap: '2vw' }}>
                   
-                  {/* LEFTSIDE: CREATION (Idées) */}
+                  {/* LEFTSIDE: CREATION (Idées) — only for creators/mods/supermods */}
+                  {canCreateQuest && (
                   <div className="flex flex-col relative w-1/2 h-full">
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] p-6 flex flex-col items-center justify-start gap-4 lg:gap-8 relative flex-1 min-h-0">
                       <h3 className="text-center text-[clamp(24px,3vw,50px)] text-white uppercase tracking-widest drop-shadow-sm font-bold mt-2" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
@@ -831,9 +960,10 @@ export function QuestModal({
                       </div>
                     </div>
                   </div>
+                  )} {/* end canCreateQuest */}
 
                   {/* RIGHTSIDE: Infinite vertical scroll wheel */}
-                  <div className="flex flex-col relative w-1/2 h-full">
+                  <div className={`flex flex-col relative h-full ${canCreateQuest ? 'w-1/2' : 'w-full'}`}>
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
                       <h3 className="text-center text-[clamp(24px,3vw,50px)] text-white uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-3 pb-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
                         MISSIONS
@@ -891,12 +1021,16 @@ export function QuestModal({
                               const catColor = CATEGORY_COLORS[q.category] || null
                               
                               if (tagColor && catColor) {
-                                borderColor = mixColors(tagColor, catColor)
+                                const mixed = mixColors(tagColor, catColor)
+                                borderColor = mixed
                                 if (q.completed) {
-                                  bgColor = mixColors(tagColor, catColor)
+                                  bgColor = mixed
+                                } else {
+                                  bgColor = '#f5f5f5'
                                 }
                               } else {
                                 borderColor = tagColor || catColor || 'black'
+                                bgColor = q.completed ? (tagColor || catColor || '#888') : '#f5f5f5'
                               }
                               borderSize = isCenter ? '6px' : '4px'
                             }
@@ -971,8 +1105,8 @@ export function QuestModal({
                                       style={{
                                         fontFamily: "'Jersey 15', sans-serif",
                                         fontSize: isCenter ? '26px' : '22px',
-                                        color: 'white',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                        color: q.completed ? 'white' : '#333',
+                                        textShadow: q.completed ? '0 2px 4px rgba(0,0,0,0.5)' : 'none',
                                         letterSpacing: '0.05em',
                                         fontWeight: 'bold',
                                         lineHeight: 1.1,
@@ -986,18 +1120,22 @@ export function QuestModal({
                                     >
                                       {q.title}
                                     </span>
-                                    {isCenter && (
-                                      <span style={{
+                                    <span style={{
                                         fontFamily: "'Jersey 15', sans-serif",
-                                        fontSize: '18px',
-                                        color: 'rgba(255,255,255,0.9)',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                                        fontSize: isCenter ? '16px' : '13px',
+                                        color: q.completed ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.45)',
+                                        textShadow: q.completed ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
                                         letterSpacing: '0.05em',
-                                        marginTop: '2px'
+                                        marginTop: '2px',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        maxWidth: '100%',
                                       }}>
-                                        #{questNum} • {q.category}
+                                        {q.completed
+                                          ? `✓ ${q.completedBy || 'COMPLÉTÉ'}`
+                                          : (isCenter ? `#${questNum} • ${q.category}` : q.category)}
                                       </span>
-                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1008,35 +1146,19 @@ export function QuestModal({
 
                       {/* Action buttons — flex child so wheel 50% is truly centered between title and button */}
                       <div className="flex flex-shrink-0 justify-center items-center pt-4" style={{ gap: '30px', zIndex: 20, paddingBottom: 'max(3%, 24px)' }}>
-                        {centeredQuestId === acceptedQuestId && acceptedQuestId !== null ? (
-                          <>
-                            <button
-                              onClick={() => onCancelQuest(acceptedQuestId!)}
-                              style={{
-                                padding: '12px 40px',
-                                borderRadius: '16px',
-                                backgroundColor: '#444',
-                                color: 'white',
-                                fontSize: '32px',
-                                fontFamily: "'Jersey 15', sans-serif",
-                                border: '4px solid black',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 0px rgba(0,0,0,1)',
-                                transition: 'transform 0.1s, box-shadow 0.1s',
-                                whiteSpace: 'nowrap',
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.transform = 'translateY(2px)'
-                                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.transform = 'none'
-                                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                              }}
-                            >
-                              ANNULER
-                            </button>
-                          </>
+                        {wheelQuests[wheelIndex]?.completed ? (
+                          <div style={{
+                            padding: '12px 40px',
+                            borderRadius: '16px',
+                            backgroundColor: 'rgba(34, 197, 94, 0.25)',
+                            color: '#166534',
+                            fontSize: '32px',
+                            fontFamily: "'Jersey 15', sans-serif",
+                            border: '4px solid #22c55e',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            COMPLET ✓
+                          </div>
                         ) : (
                           <button
                             onClick={() => { if (centeredQuestId) onAcceptQuest(centeredQuestId) }}

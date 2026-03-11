@@ -560,11 +560,11 @@ export function CarouselGrid({
     return (
       <div
         className="absolute flex flex-col items-center justify-start z-10 pointer-events-auto"
-        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingTop: 'calc(max(8%, 80px) + 7px)', paddingBottom: '30px', backgroundColor: 'var(--color-bg)' }}
+        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingTop: 'calc(max(9vh, 80px))', paddingBottom: 'calc(116px + 2vh)', backgroundColor: 'var(--color-bg)' }}
       >
       <div
-        className="absolute w-full flex flex-wrap justify-center items-center px-4 z-40"
-        style={{ top: 'max(13%, 100px)', gap: '1.5%' }}
+        className="w-full flex flex-wrap justify-center items-center px-4 z-40 shrink-0"
+        style={{ gap: '1.5%', marginBottom: '1.5vh' }}
       >
           {QUESTION_ORDER.map((q) => {
             const color = QUESTION_COLORS[q] || '#888888'
@@ -587,7 +587,7 @@ export function CarouselGrid({
           })}
         </div>
 
-        <div className="flex flex-col items-center justify-center" style={{ gap: '0.6vw', transform: 'scale(0.85)', transformOrigin: 'top center' }}>
+        <div className="flex flex-col items-center justify-center flex-1 w-full" style={{ gap: '0.6vw', minHeight: 0 }}>
           {categories.map((category, row) => (
             <div key={category} className="flex items-center justify-center" style={{ gap: '0.6vw' }}>
               {Array.from({ length: 10 }).map((_, col) => {
@@ -667,7 +667,7 @@ export function CarouselGrid({
       -------------------------------------------------------------------------- */}
       <div 
         className="absolute w-full flex flex-wrap justify-center items-center pointer-events-auto z-40 px-4" 
-        style={{ top: 'max(13%, 100px)', gap: '1.5%' }}
+        style={{ top: 'max(9%, 80px)', gap: '1.5%' }}
       >
         {QUESTION_ORDER.map((q) => {
           const color = QUESTION_COLORS[q] || '#888888'
