@@ -12,6 +12,7 @@ import { QuestModal } from './components/QuestModal'
 import { UserModal } from './components/UserModal'
 import type { Quest } from './components/QuestModal'
 import { HeartFAB } from './components/HeartFAB'
+import { RomapModal } from './components/RomapModal'
 
 // Import Icons
 import wikiIcon from './assets/icons/wiki.png'
@@ -101,6 +102,7 @@ function App() {
   )
   const [activeCategory, setActiveCategory] = useState('E')
   const [activeModal, setActiveModal] = useState<'token' | 'support' | 'user' | null>(null)
+  const [isRomapOpen, setIsRomapOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isRubixView, setIsRubixView] = useState(false)
@@ -115,8 +117,7 @@ function App() {
 
   const { level, title } = getLevelAndTitle(xp)
 
-  // Initialize customizable labels from the supermoderator's saved config.
-  // To change these permanently, run the dev server as 'xylo' and save in Settings.
+  // Initialize customizable labels from the default config.
   const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(
     () => ({ ...DEFAULT_CATEGORY_LABELS }),
   )
@@ -209,13 +210,12 @@ function App() {
       className="h-screen overflow-hidden relative transition-colors duration-300"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      {/* Right Column Stack: Theme, Heart, Settings */}
+      {/* Right Column Stack: Theme, Settings */}
       <div 
         className="fixed z-50 flex flex-col items-center"
         style={{ bottom: '48px', right: '3%', gap: '3vh' }}
       >
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-        <HeartFAB fixed={false} />
         {isSuperModerator && (
           <SettingsFAB onClick={() => setIsSettingsOpen(true)} />
         )}
@@ -225,6 +225,8 @@ function App() {
         onTokenClick={() => setActiveModal('token')}
         onSupportClick={() => setActiveModal('support')}
         onUserClick={() => setActiveModal('user')}
+        onRomapClick={() => setIsRomapOpen(true)}
+        seasonPhase={seasonPhase}
         onLobbyClick={() => {
           setIsInLobby(true)
           // Restore the main forom's supermoderator-configured labels when
@@ -244,18 +246,24 @@ function App() {
           Corner Icons
       -------------------------------------------------------------------------- */}
 
-      {/* Bottom Left - Wiki */}
-      <motion.a
-        href="https://wiki.etsmtl.club/share/8cnz7bzxf3/p/services-offerts-j8LxYBFxrs"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`absolute z-50 ${cornerIconStyle}`}
-        style={{ ...cornerIconSize, bottom: '48px', left: '3%', backgroundColor: 'transparent', borderColor: 'transparent' }}
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        whileTap={{ scale: 0.95 }}
+      {/* Bottom Left - Heart + Wiki stacked */}
+      <div
+        className="fixed z-50 flex flex-col items-center"
+        style={{ bottom: '48px', left: '3%', gap: '3vh' }}
       >
-        <img src={wikiIcon} alt="Wiki" className="w-3/4 h-3/4 object-contain" />
-      </motion.a>
+        <HeartFAB fixed={false} />
+        <motion.a
+          href="https://wiki.etsmtl.club/share/8cnz7bzxf3/p/services-offerts-j8LxYBFxrs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${cornerIconStyle}`}
+          style={{ ...cornerIconSize, backgroundColor: 'transparent', borderColor: 'transparent' }}
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <img src={wikiIcon} alt="Wiki" className="w-3/4 h-3/4 object-contain" />
+        </motion.a>
+      </div>
 
       {/* Bottom Center - Rubix View Toggle */}
       <div 
@@ -316,15 +324,6 @@ function App() {
         onSave={(newCats, newTags) => {
           setCategoryLabels(newCats)
           setQuestionLabels(newTags)
-          // Persist to source file via dev-server plugin so the config is
-          // permanently baked in for every future build and download.
-          fetch('/api/config/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ categoryLabels: newCats, questionLabels: newTags }),
-          }).catch(() => {
-            // Silently ignore in production (endpoint not available)
-          })
         }}
         currentCategoryLabels={categoryLabels}
         currentQuestionLabels={questionLabels}
@@ -356,12 +355,19 @@ function App() {
         pixels={pixels}
       />
 
+      <RomapModal
+        isOpen={isRomapOpen}
+        onClose={() => setIsRomapOpen(false)}
+        currentPhase={seasonPhase === 'V1' ? 1 : seasonPhase === 'V2' ? 2 : 3}
+      />
+
       <QuestModal
         isOpen={activeModal === 'support'}
         onClose={() => setActiveModal(null)}
         personalQuests={personalQuests}
         acceptedQuestId={acceptedQuestId}
         questionLabels={questionLabels}
+        categoryLabels={categoryLabels}
         categories={CATEGORIES as unknown as string[]}
         seasonPhase={seasonPhase}
         pixels={pixels}

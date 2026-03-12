@@ -51,12 +51,14 @@ interface HeaderProps {
   onSupportClick: () => void
   onUserClick: () => void
   onLobbyClick?: () => void
+  onRomapClick?: () => void
   isDark?: boolean
   mission?: string
   isPhantom?: boolean
+  seasonPhase?: 'V1' | 'V2' | 'V3'
 }
 
-export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick, isDark = false, mission, isPhantom = false }: HeaderProps) {
+export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick, onRomapClick, isDark = false, mission, isPhantom = false, seasonPhase = 'V1' }: HeaderProps) {
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [isCloseIcon, setIsCloseIcon] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -110,12 +112,12 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick
           </motion.button>
 
           <motion.button
-            onClick={() => {}} // Placeholder for Romap
+            onClick={onRomapClick}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center justify-center shrink-0 cursor-pointer"
             style={{ width: '36px', height: '36px', background: 'none', border: 'none', padding: 0 }}
-            title="Romap"
+            title="ROMAP — Roadmap ROM"
           >
             <RomapLogo size={36} />
           </motion.button>
@@ -162,139 +164,172 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick
       </div>
 
       {/* ---- Center ---- */}
+      {/*
+        Full-bleed overlay covering the whole header height, flex-centers its
+        content. The inner wrapper is inline-flex so it sizes to the actual
+        FOROM text width — no hard-coded pixel guesses.
+        Search icon and V1 badge are absolute off that wrapper's edges.
+      */}
       <div
         style={{
           position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          inset: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 49,
+          pointerEvents: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* ── FOROM row: auto-width, search left, badge right ── */}
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', pointerEvents: 'auto' }}>
 
-          {/* Magnifying glass / X — sole flex item, never moves */}
+          {/* Search icon — absolute, left of the letters */}
           <button
             type="button"
             className={`forom-search-btn${isCloseIcon ? ' forom-search-close' : ''}`}
             onClick={() => isSearchActive ? handleCloseSearch() : setIsSearchActive(true)}
-            style={{ flexShrink: 0, position: 'relative', zIndex: 1 }}
+            style={{
+              position: 'absolute',
+              right: 'calc(100% + 14px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 1,
+              pointerEvents: 'auto',
+            }}
             aria-label={isSearchActive ? 'Close search' : 'Open search'}
           />
 
-          {/* Fixed-width content box — FOROM letters or search input share this space */}
-          <div style={{ width: '280px', height: '52px', position: 'relative', marginLeft: '8px' }}>
+          {/* V1 badge — absolute, right of the letters */}
+          <motion.button
+            onClick={onRomapClick}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.92 }}
+            title="Open ROMAP"
+            style={{
+              position: 'absolute',
+              left: 'calc(100% + 18px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '2px 6px', borderRadius: 6,
+              pointerEvents: 'auto',
+            }}
+          >
+            <span style={{
+              fontFamily: "'Jersey 15', sans-serif",
+              fontSize: 18, fontWeight: 900, letterSpacing: '0.06em', lineHeight: 1,
+              color: seasonPhase === 'V1' ? '#EF4444' : seasonPhase === 'V2' ? '#22C55E' : '#3B82F6',
+            }}>
+              {seasonPhase}
+            </span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <polygon
+                points="2,1 9,5 2,9"
+                fill={seasonPhase === 'V1' ? '#EF4444' : seasonPhase === 'V2' ? '#22C55E' : '#3B82F6'}
+              />
+            </svg>
+          </motion.button>
 
-            {/* FOROM letters — absolutely laid out so they don't resize the box */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: 0,
-                transform: 'translateY(-50%)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                pointerEvents: isSearchActive ? 'none' : 'auto',
-              }}
-            >
-              {LOGO_LETTERS.map((letter, index) => (
-                <AnimatePresence key={index}>
-                  {!isSearchActive && (
-                    <motion.span
-                      key={`l-${index}`}
-                      initial={{ y: 0, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1, transition: { delay: index * 0.1, type: 'spring', damping: 12, stiffness: 100 } }}
-                      exit={{ y: -80, opacity: 0, transition: { delay: index * 0.06, duration: 0.22, ease: 'easeIn' } }}
-                      className="transition-colors duration-300"
-                      style={{
-                        fontSize: '44px',
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontWeight: 900,
-                        color: isDark ? letter.darkColor : letter.color,
-                        lineHeight: 1,
-                        letterSpacing: '0.04em',
-                        display: 'inline-block',
-                      }}
-                    >
-                      {letter.text}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              ))}
-              {/* Cedille dot */}
-              <AnimatePresence>
-                {!isSearchActive && (
-                  <motion.a
-                    key="cedille"
-                    href="https://cedille.etsmtl.ca/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Cedille"
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ y: -80, opacity: 0, transition: { delay: 0.3, duration: 0.22, ease: 'easeIn' } }}
+          {/* Cedille easter egg — always visible */}
+          <a
+            href="https://cedille.etsmtl.ca/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Cedille"
+            style={{
+              position: 'absolute',
+              left: 'calc(100% + 4px)',
+              top: '22%',
+              width: '14px',
+              height: '14px',
+              display: 'block',
+              zIndex: 2,
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+            }}
+          >
+            <img
+              src={cedilleIcon}
+              alt="Cedille"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            />
+          </a>
+
+          {/* FOROM letters — single AnimatePresence, exits straight up */}
+          <AnimatePresence>
+            {!isSearchActive && (
+              <motion.div
+                key="forom-letters"
+                initial={{ y: 16, opacity: 0 }}
+                animate={{ y: 0, opacity: 1, transition: { duration: 0.28, ease: 'easeOut' } }}
+                exit={{ y: -72, opacity: 0, transition: { duration: 0.22, ease: 'easeIn' } }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                {LOGO_LETTERS.map((letter, index) => (
+                  <motion.span
+                    key={`l-${index}`}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{
+                      y: 0,
+                      opacity: 1,
+                      transition: { delay: index * 0.08, type: 'spring', damping: 14, stiffness: 120 },
+                    }}
+                    className="transition-colors duration-300"
                     style={{
-                      position: 'absolute',
-                      right: '-18px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '14px',
-                      height: '14px',
-                      display: 'block',
-                      borderRadius: '9999px',
-                      overflow: 'visible',
-                      cursor: 'pointer',
+                      fontSize: '44px',
+                      fontFamily: 'Montserrat, sans-serif',
+                      fontWeight: 900,
+                      color: isDark ? letter.darkColor : letter.color,
+                      lineHeight: 1,
+                      letterSpacing: '0.04em',
+                      display: 'inline-block',
                     }}
                   >
-                    <img
-                      src={cedilleIcon}
-                      alt="Cedille"
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                    />
-                  </motion.a>
-                )}
-              </AnimatePresence>
-            </div>
+                    {letter.text}
+                  </motion.span>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* Search input — fades in after letters have gone */}
-            <AnimatePresence>
-              {isCloseIcon && (
-                <motion.input
-                  ref={searchInputRef}
-                  key="search-inp"
-                  type="text"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.35, ease: 'easeOut' }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Escape' && handleCloseSearch()}
-                  placeholder="Search FOROM..."
-                  aria-label="Search"
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: 0,
-                    transform: 'translateY(-50%)',
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '22px',
-                    fontWeight: 600,
-                    fontFamily: 'Montserrat, sans-serif',
-                    color: 'var(--color-text)',
-                    caretColor: 'var(--color-text)',
-                  }}
-                />
-              )}
-            </AnimatePresence>
+          {/* Search input — fills the space where letters were */}
+          <AnimatePresence>
+            {isCloseIcon && (
+              <motion.input
+                ref={searchInputRef}
+                key="search-inp"
+                type="text"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Escape' && handleCloseSearch()}
+                placeholder="Search FOROM..."
+                aria-label="Search"
+                style={{
+                  width: '240px',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '22px',
+                  fontWeight: 600,
+                  fontFamily: 'Montserrat, sans-serif',
+                  color: 'var(--color-text)',
+                  caretColor: 'var(--color-text)',
+                }}
+              />
+            )}
+          </AnimatePresence>
 
-          </div>
         </div>
 
         {/* Mission tagline */}
@@ -307,10 +342,7 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick
             color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)',
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
-            maxWidth: '340px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            textAlign: 'center',
+            pointerEvents: 'none',
           }}>
             {mission}
           </div>

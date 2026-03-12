@@ -59,6 +59,7 @@ export interface QuestModalProps {
   personalQuests: Quest[]
   acceptedQuestId: string | null
   questionLabels: Record<string, string>
+  categoryLabels?: Record<string, string>
   categories?: string[]
   seasonPhase?: 'V1' | 'V2' | 'V3'
   pixels?: number
@@ -128,6 +129,7 @@ export function QuestModal({
   personalQuests,
   acceptedQuestId,
   questionLabels,
+  categoryLabels = {},
   onCreateQuest,
   onAcceptQuest,
   onCompleteQuest,
@@ -844,7 +846,7 @@ export function QuestModal({
                                 transform: isSelected ? 'translateY(-2px)' : 'none',
                               }}
                             >
-                              {cat}
+                              {categoryLabels[cat] || cat}
                             </button>
                           )
                         })}

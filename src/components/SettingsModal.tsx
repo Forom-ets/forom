@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Modal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { CATEGORY_COLORS } from '../data/memories'
 
 // =============================================================================
 // TYPES
@@ -38,10 +39,8 @@ const customStyles: Modal.Styles = {
   content: {
     position: 'relative',
     inset: 'auto',
-    width: '80vw',
-    maxWidth: '1200px',
-    maxHeight: '85vh',
-    height: '85vh',
+    width: 'min(90vw, 1100px)',
+    height: 'min(94vh, 880px)',
     padding: 0,
     border: 'none',
     background: 'transparent',
@@ -70,14 +69,6 @@ const modalVariants = {
 // =============================================================================
 // COMPONENT
 // =============================================================================
-
-const CATEGORY_COLORS: Record<string, string> = {
-  A: '#86B89E',
-  B: '#C084FC',
-  C: '#E85C5C',
-  D: '#F4C98E',
-  E: '#60A5FA',
-}
 
 export function SettingsModal({
   isOpen,
@@ -137,170 +128,193 @@ export function SettingsModal({
               display: 'flex',
               flexDirection: 'column',
               position: 'relative',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              overflow: 'hidden',
             }}
           >
-            {/* Close Button - Red Circle X */}
+            {/* Close Button */}
             <button
               onClick={onClose}
               style={{ 
                 position: 'absolute', 
-                top: '24px', 
-                right: '24px', 
+                top: '16px', 
+                right: '16px', 
                 zIndex: 100,
-                width: '48px',
-                height: '48px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: '#FF4B4B',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0,
               }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ff3333'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#FF4B4B'}
             >
-              <X size={28} color="white" strokeWidth={3} />
+              <X size={22} color="white" strokeWidth={3} />
             </button>
 
             {/* Header */}
             <h2 style={{ 
-              fontSize: '56px', 
+              fontSize: 'clamp(24px, 3.5vw, 44px)', 
               color: 'black', 
               textAlign: 'center', 
-              marginTop: '40px',
-              marginBottom: '20px',
+              margin: '0',
+              padding: 'clamp(10px, 1.5vh, 20px) 60px clamp(6px, 1vh, 14px)',
               textTransform: 'uppercase', 
-              letterSpacing: '4px' 
+              letterSpacing: '4px',
+              flexShrink: 0,
             }}>
               PARAMÈTRES
             </h2>
 
-            {/* Content Body */}
-            <div style={{ flex: 1, display: 'flex', gap: '60px', padding: '0 60px', overflowY: 'auto' }}>
+            {/* Column Headers */}
+            <div style={{
+              display: 'flex',
+              gap: 'clamp(16px, 3vw, 48px)',
+              padding: '0 clamp(16px, 3vw, 48px)',
+              flexShrink: 0,
+            }}>
+              {(['CATÉGORIES', 'QUESTIONS & TAGS'] as const).map(title => (
+                <div key={title} style={{ flex: 1 }}>
+                  <h3 style={{ 
+                    fontSize: 'clamp(14px, 2vw, 28px)', 
+                    textAlign: 'center', 
+                    color: 'black',
+                    margin: '0',
+                    paddingBottom: 'clamp(4px, 0.6vh, 10px)',
+                    borderBottom: '3px dashed rgba(0,0,0,0.2)', 
+                  }}>
+                    {title}
+                  </h3>
+                </div>
+              ))}
+            </div>
+
+            {/* Content Body — no scroll, rows fill available height evenly */}
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              gap: 'clamp(16px, 3vw, 48px)',
+              padding: 'clamp(6px, 1vh, 16px) clamp(16px, 3vw, 48px)',
+              overflow: 'hidden',
+            }}>
               
               {/* Left Column: Categories */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ 
-                  fontSize: '36px', 
-                  textAlign: 'center', 
-                  color: 'black',
-                  marginBottom: '20px', 
-                  borderBottom: '3px dashed rgba(0,0,0,0.2)', 
-                  paddingBottom: '10px' 
-                }}>
-                  CATÉGORIES
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {categories.map(cat => (
-                    <div key={cat} style={{ 
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'clamp(3px, 0.6vh, 8px)', minHeight: 0 }}>
+                {categories.map(cat => (
+                  <div key={cat} style={{ 
+                    flex: 1,
+                    minHeight: 0,
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    backgroundColor: 'rgba(255,255,255,0.7)', 
+                    padding: '0 clamp(8px, 1vw, 16px)', 
+                    borderRadius: '12px', 
+                    border: '3px solid black', 
+                    gap: 'clamp(8px, 1vw, 14px)',
+                  }}>
+                    <div style={{ 
+                      width: 'clamp(18px, 2vw, 30px)', 
+                      height: 'clamp(18px, 2vw, 30px)', 
+                      borderRadius: '6px', 
+                      border: '2px solid black', 
+                      backgroundColor: CATEGORY_COLORS[cat] || '#888',
+                      flexShrink: 0,
+                    }} />
+                    <input
+                      type="text"
+                      value={localCategoryLabels[cat] || ''}
+                      onChange={e => setLocalCategoryLabels(prev => ({ ...prev, [cat]: e.target.value }))}
+                      style={{ 
+                        flex: 1, 
+                        border: 'none', 
+                        outline: 'none', 
+                        background: 'transparent', 
+                        fontFamily: "'Montserrat', sans-serif", 
+                        fontSize: 'clamp(11px, 1.4vw, 18px)', 
+                        fontWeight: 'bold', 
+                        color: 'black',
+                        width: '100%',
+                        minWidth: 0,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Column: Questions & Tags */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'clamp(3px, 0.6vh, 8px)', minHeight: 0 }}>
+                {questionOrder.map(q => {
+                  const color = questionColors[q] || '#888'
+                  return (
+                    <div key={q} style={{ 
+                      flex: 1,
+                      minHeight: 0,
                       display: 'flex', 
                       alignItems: 'center', 
                       backgroundColor: 'rgba(255,255,255,0.7)', 
-                      padding: '12px 20px', 
-                      borderRadius: '16px', 
+                      padding: '0 clamp(8px, 1vw, 16px)', 
+                      borderRadius: '12px', 
                       border: '3px solid black', 
-                      gap: '16px' 
+                      gap: 'clamp(8px, 1vw, 14px)',
                     }}>
                       <div style={{ 
-                        width: '36px', 
-                        height: '36px', 
-                        borderRadius: '8px', 
-                        border: '3px solid black', 
-                        backgroundColor: CATEGORY_COLORS[cat] || '#888' 
+                        width: 'clamp(18px, 2vw, 30px)', 
+                        height: 'clamp(18px, 2vw, 30px)', 
+                        borderRadius: '6px', 
+                        border: '2px solid black', 
+                        backgroundColor: color,
+                        flexShrink: 0,
                       }} />
                       <input
                         type="text"
-                        value={localCategoryLabels[cat] || ''}
-                        onChange={e => setLocalCategoryLabels(prev => ({ ...prev, [cat]: e.target.value }))}
+                        value={localQuestionLabels[q] || ''}
+                        onChange={e => setLocalQuestionLabels(prev => ({ ...prev, [q]: e.target.value }))}
                         style={{ 
                           flex: 1, 
                           border: 'none', 
                           outline: 'none', 
                           background: 'transparent', 
                           fontFamily: "'Montserrat', sans-serif", 
-                          fontSize: '20px', 
+                          fontSize: 'clamp(11px, 1.4vw, 18px)', 
                           fontWeight: 'bold', 
                           color: 'black',
-                          width: '100%'
+                          width: '100%',
+                          minWidth: 0,
                         }}
                       />
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column: Questions & Tags */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ 
-                  fontSize: '36px', 
-                  textAlign: 'center', 
-                  color: 'black',
-                  marginBottom: '20px', 
-                  borderBottom: '3px dashed rgba(0,0,0,0.2)', 
-                  paddingBottom: '10px' 
-                }}>
-                  QUESTIONS & TAGS
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {questionOrder.map(q => {
-                    const color = questionColors[q] || '#888'
-                    return (
-                      <div key={q} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        backgroundColor: 'rgba(255,255,255,0.7)', 
-                        padding: '12px 20px', 
-                        borderRadius: '16px', 
-                        border: '3px solid black', 
-                        gap: '16px' 
-                      }}>
-                        <div style={{ 
-                          width: '36px', 
-                          height: '36px', 
-                          borderRadius: '8px', 
-                          border: '3px solid black', 
-                          backgroundColor: color 
-                        }} />
-                        <input
-                          type="text"
-                          value={localQuestionLabels[q] || ''}
-                          onChange={e => setLocalQuestionLabels(prev => ({ ...prev, [q]: e.target.value }))}
-                          style={{ 
-                            flex: 1, 
-                            border: 'none', 
-                            outline: 'none', 
-                            background: 'transparent', 
-                            fontFamily: "'Montserrat', sans-serif", 
-                            fontSize: '20px', 
-                            fontWeight: 'bold', 
-                            color: 'black',
-                            width: '100%'
-                          }}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
+                  )
+                })}
               </div>
 
             </div>
 
             {/* Actions Footer */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', padding: '30px' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '24px',
+              padding: 'clamp(8px, 1.2vh, 20px) 24px clamp(12px, 1.6vh, 24px)',
+              flexShrink: 0,
+            }}>
               <button
                 onClick={onClose}
                 style={{ 
-                  padding: '12px 40px', 
-                  borderRadius: '16px', 
+                  padding: 'clamp(6px, 0.8vh, 12px) clamp(20px, 2.5vw, 40px)', 
+                  borderRadius: '14px', 
                   backgroundColor: '#444', 
                   color: 'white', 
-                  fontSize: '32px', 
+                  fontSize: 'clamp(18px, 2.2vw, 30px)', 
                   fontFamily: "'Jersey 15', sans-serif", 
                   border: '4px solid black', 
                   cursor: 'pointer',
-                  boxShadow: '0 4px 0px rgba(0,0,0,1)'
+                  boxShadow: '0 4px 0px rgba(0,0,0,1)',
                 }}
               >
                 ANNULER
@@ -309,16 +323,16 @@ export function SettingsModal({
                 onClick={handleConfirm}
                 disabled={!hasChanges}
                 style={{ 
-                  padding: '12px 40px', 
-                  borderRadius: '16px', 
+                  padding: 'clamp(6px, 0.8vh, 12px) clamp(20px, 2.5vw, 40px)', 
+                  borderRadius: '14px', 
                   backgroundColor: hasChanges ? 'white' : 'rgba(255,255,255,0.4)', 
                   color: hasChanges ? 'black' : 'rgba(0,0,0,0.4)', 
-                  fontSize: '32px', 
+                  fontSize: 'clamp(18px, 2.2vw, 30px)', 
                   fontFamily: "'Jersey 15', sans-serif", 
                   border: hasChanges ? '4px solid black' : '4px solid rgba(0,0,0,0.2)', 
                   cursor: hasChanges ? 'pointer' : 'not-allowed',
                   boxShadow: hasChanges ? '0 4px 0px rgba(0,0,0,1)' : 'none',
-                  transform: hasChanges ? 'translateY(-2px)' : 'none'
+                  transform: hasChanges ? 'translateY(-2px)' : 'none',
                 }}
               >
                 CONFIRMER
@@ -330,4 +344,5 @@ export function SettingsModal({
     </AnimatePresence>
   )
 }
+
 

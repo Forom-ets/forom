@@ -1,32 +1,29 @@
 // =============================================================================
-// FOROM CONFIGURATION — Managed by the supermoderator via the Settings panel.
-// Run the dev server as 'xylo', open Settings, and click Save to update these
-// values permanently. They are baked into every build of this project, so any
-// user who downloads and runs it will see the supermoderator's configuration.
+// FOROM CONFIGURATION — Default labels used for every new forom.
 // =============================================================================
 
 export const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
-  A: "A",
-  B: "B",
-  C: "C",
-  D: "D",
-  E: "Introduction",
-  F: "F",
-  G: "G",
-  H: "H",
-  I: "I",
-  J: "J",
+  A: "Vision",
+  B: "Équipe",
+  C: "Stratégie",
+  D: "Opérations",
+  E: "Logistique",
+  F: "Soutien",
+  G: "Réalisations",
+  H: "Gouvernance",
+  I: "Mémoire",
+  J: "Hors-sujet",
 }
 
 export const DEFAULT_QUESTION_LABELS: Record<string, string> = {
-  '0': "0",
-  '1': "1",
-  '2': "2",
-  '3': "3",
-  '4': "4",
-  '5': "5",
-  '6': "6",
-  '7': "7",
-  '8': "8",
-  '9': "9",
+  '0': "Idée",
+  '1': "Échange",
+  '2': "Quête",
+  '3': "Chantier",
+  '4': "SOS",
+  '5': "Accompli",
+  '6': "Matériel",
+  '7': "Décision",
+  '8': "Savoir",
+  '9': "Urgence",
 }
