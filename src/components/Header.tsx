@@ -108,7 +108,7 @@ export function Header({ onTokenClick, onSupportClick, onUserClick, onLobbyClick
             style={{ width: '36px', height: '36px', background: 'none', border: 'none', padding: 0 }}
             title="Return to Lobby"
           >
-            <img src={chromaNotesIcon} alt="Forom Lobby (Chroma Notes)" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
+              <img src={chromaNotesIcon} alt="Forom Lobby (Chroma Notes)" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
           </motion.button>
 
           <motion.button

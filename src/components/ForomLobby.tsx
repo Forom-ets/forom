@@ -4,7 +4,6 @@ import romWht from '../assets/icons/rom_wht.png'
 import foromLogoWht from '../assets/icons/forom_logo_wht.png'
 import githubIcon from '../assets/icons/github.png'
 import chromaNotesIcon from '../assets/icons/chroma_notes.svg'
-
 import userIcon from '../assets/icons/user.png'
 
 const LANGUAGES = [
@@ -346,7 +345,6 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
                 onChange={e => setJoinRule(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && joinRule.trim()) {
-                    console.log('Friend joined Forom with rule:', joinRule, 'and color:', joinColor)
                     setJoinStep('idle')
                     // Proceed to transition to lobby
                   }
@@ -520,7 +518,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser }: { onCon
               flexShrink: 0,
             }}
           />
-          <LanguageCarousel onChange={(lang) => console.log('Language changed:', lang)} />
+          <LanguageCarousel onChange={() => {}} />
 
           {/* GitHub icon — same gap as between logo and carousel */}
           <a

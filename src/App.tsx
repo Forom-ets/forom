@@ -23,6 +23,9 @@ import { SettingsFAB } from './components/SettingsFAB'
 import { QUESTION_ORDER, QUESTION_COLORS } from './data/memories'
 import { DEFAULT_CATEGORY_LABELS, DEFAULT_QUESTION_LABELS } from './data/forom-config'
 
+import { useAppStore } from './stores/useAppStore'
+import { useModalStore } from './stores/useModalStore'
+
 // Leveling helper — 10 XP per quest, 10 quests = lvl 1 (100 XP per level)
 export function getLevelAndTitle(xp: number) {
   const level = Math.floor(xp / 100)
@@ -89,9 +92,10 @@ function ThemeToggle({
 // =============================================================================
 
 function App() {
+  const { phase, setPhase } = useAppStore();
+  const modals = useModalStore();
+
   const [isLoading, setIsLoading] = useState(true)
-  const [isInLobby, setIsInLobby] = useState(true)
-  const [isCreating, setIsCreating] = useState(false)
   const [isPhantomMode, setIsPhantomMode] = useState(false)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [mission, setMission] = useState('Sauver les communautés')
@@ -101,9 +105,6 @@ function App() {
     Array.from({ length: 8 }, () => 'FRM-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase())
   )
   const [activeCategory, setActiveCategory] = useState('E')
-  const [activeModal, setActiveModal] = useState<'token' | 'support' | 'user' | null>(null)
-  const [isRomapOpen, setIsRomapOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isRubixView, setIsRubixView] = useState(false)
 
@@ -156,16 +157,19 @@ function App() {
   const cornerIconSize = { width: '64px', height: '64px' }
 
   if (isLoading) {
-    return <LoadingScreen onComplete={() => setIsLoading(false)} />
+    return <LoadingScreen onComplete={() => {
+      setIsLoading(false);
+      setPhase('lobby');
+    }} />
   }
 
-  if (isInLobby && !isCreating) {
+  if (phase === 'lobby') {
     return (
       <ForomLobby 
-        onConfirm={() => setIsCreating(true)} 
+        onConfirm={() => setPhase('creation-flow')} 
         onSkip={() => {
           setIsPhantomMode(!currentUser)
-          setIsInLobby(false)
+          setPhase('grid')
         }}
         onSignIn={(username) => {
           setCurrentUser(username)
@@ -180,14 +184,13 @@ function App() {
     )
   }
 
-  if (isInLobby && isCreating) {
+  if (phase === 'creation-flow') {
     return (
       <ForomCreationFlow
         onComplete={(m, color) => {
           setMission(m)
           setForomColor(color)
-          setIsInLobby(false)
-          setIsCreating(false)
+          setPhase('grid')
           setIsPhantomMode(false)
           // A user-created forom always starts with the base A–J / 0–9 format.
           // Only the main public forom uses the supermoderator's saved config.
@@ -200,7 +203,7 @@ function App() {
             setPixels(500);    // members start with 500
           }
         }}
-        onBack={() => setIsCreating(false)}
+        onBack={() => setPhase('lobby')}
       />
     )
   }
@@ -217,18 +220,18 @@ function App() {
       >
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
         {isSuperModerator && (
-          <SettingsFAB onClick={() => setIsSettingsOpen(true)} />
+          <SettingsFAB onClick={modals.openSettings} />
         )}
       </div>
 
       <Header 
-        onTokenClick={() => setActiveModal('token')}
-        onSupportClick={() => setActiveModal('support')}
-        onUserClick={() => setActiveModal('user')}
-        onRomapClick={() => setIsRomapOpen(true)}
+        onTokenClick={modals.openWallet}
+        onSupportClick={modals.openQuest}
+        onUserClick={modals.openUser}
+        onRomapClick={modals.openRomap}
         seasonPhase={seasonPhase}
         onLobbyClick={() => {
-          setIsInLobby(true)
+          setPhase('lobby')
           // Restore the main forom's supermoderator-configured labels when
           // returning to lobby so the user can re-enter the main forom correctly.
           setCategoryLabels({ ...DEFAULT_CATEGORY_LABELS })
@@ -319,8 +322,8 @@ function App() {
           Modals
       -------------------------------------------------------------------------- */}
       <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        isOpen={modals.isSettingsOpen}
+        onClose={modals.closeSettings}
         onSave={(newCats, newTags) => {
           setCategoryLabels(newCats)
           setQuestionLabels(newTags)
@@ -333,8 +336,8 @@ function App() {
       />
 
       <UserModal
-        isOpen={activeModal === 'user'}
-        onClose={() => setActiveModal(null)}
+        isOpen={modals.isUserOpen}
+        onClose={modals.closeUser}
         pixels={pixels}
         level={level}
         title={title}
@@ -350,20 +353,20 @@ function App() {
       />
 
       <WalletModal
-        isOpen={activeModal === 'token'}
-        onClose={() => setActiveModal(null)}
+        isOpen={modals.isWalletOpen}
+        onClose={modals.closeWallet}
         pixels={pixels}
       />
 
       <RomapModal
-        isOpen={isRomapOpen}
-        onClose={() => setIsRomapOpen(false)}
+        isOpen={modals.isRomapOpen}
+        onClose={modals.closeRomap}
         currentPhase={seasonPhase === 'V1' ? 1 : seasonPhase === 'V2' ? 2 : 3}
       />
 
       <QuestModal
-        isOpen={activeModal === 'support'}
-        onClose={() => setActiveModal(null)}
+        isOpen={modals.isQuestOpen}
+        onClose={modals.closeQuest}
         personalQuests={personalQuests}
         acceptedQuestId={acceptedQuestId}
         questionLabels={questionLabels}

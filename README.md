@@ -31,9 +31,25 @@
 
 ## 🧭 Overview
 
-**Forom** is an infinite 2D feed grid that reinvents how users navigate content. Scroll horizontally through items, vertically through categories — all driven by physics-based spring animations and a distinctive curved wheel sidebar.
+**Forom** is a federated, spatial 10x10 2D feed grid built to save and empower communities. Far beyond a traditional social media feed, Forom utilizes a unique spatial organization driven by physics-based spring animations to reinvent how users explore content, tackle community challenges, and gather collective intelligence. 
 
-Built as a real platform for the **ÉTS (École de technologie supérieure)** student community, Forom powers video discovery, memory cards, quest systems, and a token-based economy — all inside a single responsive interface.
+**The Goal of Starting a Forom:**
+Every Forom starts as an empty, untamed grid. A Forom is started to save, unite, or mobilize a community towards a shared mission. As users participate, complete challenges, and contribute memory cards, the Forom progresses through a **gamified 3-phase progression system**, slowly unlocking and expanding its collective universe. Supporting this journey is **ROM**, an embedded RAG-based AI system designed to intelligently surface community knowledge and guide users across their quests.
+
+By default, every newly generated Forom categorizes its community knowledge into a structured 10x10 matrix. 
+The 10 foundational categories (Vertical Axis) are:
+- **Vision** (A)
+- **Équipe** (B)
+- **Stratégie** (C)
+- **Opérations** (D)
+- **Logistique** (E)
+- **Soutien** (F)
+- **Réalisations** (G)
+- **Gouvernance** (H)
+- **Mémoire** (I)
+- **Hors-sujet** (J)
+
+These are crossed with 10 structural question/action tags (Horizontal Axis) ranging from **Idée** & **Quête** to **Savoir** & **Urgence**, establishing 100 unique intersection points for deeply contextual content organization.
 
 > **Fork it. Remix it. Build your own universe on top of it.**
 

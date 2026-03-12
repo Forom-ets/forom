@@ -7,4 +7,17 @@ export default defineConfig({
   server: {
     allowedHosts: ['forom.prodv2.cedille.club', 'forom.etsmtl.ca'],
   },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-ui': ['lucide-react', 'react-modal', 'zustand']
+        }
+      }
+    }
+  }
 })
