@@ -22,6 +22,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { SettingsFAB } from './components/SettingsFAB'
 import { QUESTION_ORDER, QUESTION_COLORS } from './data/memories'
 import { DEFAULT_CATEGORY_LABELS, DEFAULT_QUESTION_LABELS } from './data/forom-config'
+import { DEFAULT_PUBLIC_FOROM_MISSION, getInitialQuestsForMission } from './data/quests'
 
 import { useAppStore } from './stores/useAppStore'
 import { useModalStore } from './stores/useModalStore'
@@ -98,7 +99,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isPhantomMode, setIsPhantomMode] = useState(false)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [mission, setMission] = useState('Sauver les communautés')
+  const [mission, setMission] = useState(DEFAULT_PUBLIC_FOROM_MISSION)
   const [foromColor, setForomColor] = useState<ForomColor | null>('creation')
   const [foromRules] = useState<string[]>(['Honnêteté', '', '', '', '', '', '', '', '', 'Curiosité'])
   const [foromFriendKeys] = useState<string[]>(() =>
@@ -111,10 +112,12 @@ function App() {
   // Economy & Leveling State
   const [pixels, setPixels] = useState(0)
   const [inVault, setInVault] = useState(0) // 5000 reserved
-  const [seasonPhase, setSeasonPhase] = useState<'V1' | 'V2' | 'V3'>('V1')
   const [xp, setXp] = useState(0)
-  const [personalQuests, setPersonalQuests] = useState<Quest[]>([])
+  const [personalQuests, setPersonalQuests] = useState<Quest[]>(() => getInitialQuestsForMission(DEFAULT_PUBLIC_FOROM_MISSION))
   const [acceptedQuestId, setAcceptedQuestId] = useState<string | null>(null)
+
+  const completedFoundationalQuestCount = personalQuests.filter(q => q.completed).length
+  const seasonPhase: 'V1' | 'V2' | 'V3' = completedFoundationalQuestCount >= 100 ? 'V2' : 'V1'
 
   const { level, title } = getLevelAndTitle(xp)
 
@@ -129,13 +132,6 @@ function App() {
 
   // Detect Supermoderator
   const isSuperModerator = currentUser === 'xylo'
-
-  // Update Season Phase based on quests count
-  useEffect(() => {
-    if (seasonPhase === 'V1' && personalQuests.length >= 100) {
-      setSeasonPhase('V2')
-    }
-  }, [personalQuests.length, seasonPhase])
 
   // Apply dark mode class to document
   useEffect(() => {
