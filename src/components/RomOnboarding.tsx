@@ -105,14 +105,22 @@ export function RomOnboarding({ currentUser, isCreateSelected, onPhaseChange }: 
 
   const getPhaseText = () => {
     switch (phase) {
-      case 0: return "*Bip Bop?*"
-      case 1: return "Hello, Youman! I am ROM. This place is a bit empty right now... but with your help, we can bring back the light."
-      case 'public_tour': return "OHHHH you can explore the public forom to see how it works to get ideas on forom that has been push public...\n\nOver here!"
-      case 'login_tour': return "Or you can sign in first and look right after ;)"
-      case 2: return "System recognized! I am so glad you're here. Would you like me to show you around and help you start your journey? (Or would you prefer to explore the ruins alone?)"
-      case 3: return "To save the world, we must communicate. You have two choices:\n\nExplore: Visit public servers to see how other humans have built their civilizations.\n\nCreate: Build your own \"Minecraft-style\" server and bring a ROM like me to life."
-      case 4: return "Creating a home for a ROM is a big responsibility! To keep your server alive 24/7, I suggest a Jetson NANO Dev Kit.\n\nTechnical Specs: You will need 1TB of space to store all the world's memos. This hardware becomes the 'heart' of your Forom. It's how you bring life to a ROM of your very own!\n\n*Happy whirring sounds.*"
-      default: return ""
+      case 0:
+        return 'Bip Bop?'
+      case 1:
+        return 'Beep boop! Whirrr... Bleep blop doot dwee drrt. Zzzzt pbbbt, doot doot dzzt!'
+      case 2:
+        return 'Bweeee! Ding ding! Kzzt... bop bop whirrrrr.'
+      case 3:
+        return 'Dzzt-bweep drrr bap:\n\nBloop: Zzzt whirr bweeeep dzzt.\n\nBeep: Pbbbt "Minecraft" bop-bop ROM kzzt!'
+      case 4:
+        return 'Beep doot Jetson NANO! Whirrr.\n\nBzt: 1TB boop. Dwee drrt pwede FOROM. Dzzt!\n\n*Whirrrrrr.*'
+      case 'public_tour':
+        return 'Oooohhh bweeee bloop publico forom dzzt...\n\nBweeeep!'
+      case 'login_tour':
+        return 'Dzzt sign in pwede boop ;)'
+      default:
+        return ''
     }
   }
 

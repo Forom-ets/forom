@@ -125,7 +125,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
   const [joinColor, setJoinColor] = useState<string | null>(null)
   const [joinRule, setJoinRule] = useState('')
   
-  const [romPhase, setRomPhase] = useState<string | number>(0)
+  const [romPhase, setRomPhase] = useState<string | number>('idle')
 
   const [activeLang, setActiveLang] = useState('en')
   const TRANSLATIONS: Record<string, any> = {
@@ -142,6 +142,37 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
       setIsSignInOpen(false)
     } else {
       alert('Invalid credentials')
+    }
+  }
+
+  const getRomTranslation = (p: string | number) => {
+    switch (p) {
+      case 0: return ""
+      case 1:
+        if (activeLang === 'fr') return "Bonjour, Humain ! Je suis ROM. Cet endroit est un peu vide en ce moment... mais avec ton aide, nous pouvons ramener la lumière."
+        if (activeLang === 'es') return "¡Hola, Humano! Soy ROM. Este lugar está un poco vacío ahora mismo... pero con tu ayuda, podemos traer de vuelta la luz."
+        return "Hello, Youman! I am ROM. This place is a bit empty right now... but with your help, we can bring back the light."
+      case 2:
+        if (activeLang === 'fr') return "Système reconnu ! En tant que créateur désigné, tes prochaines étapes sont cruciales."
+        if (activeLang === 'es') return "¡Sistema reconocido! Como creador designado, tus próximos pasos son críticos."
+        return "System recognized! As a designated creator, your next steps are critical."
+      case 3:
+        if (activeLang === 'fr') return "Pour sauver le monde, nous devons communiquer. Tu as deux choix :\n\nExplorer : Visite des serveurs publics pour voir comment d'autres humains ont bâti leurs civilisations.\n\nCréer : Construis ton propre serveur « style Minecraft » et donne vie à un ROM comme moi."
+        if (activeLang === 'es') return "Para salvar el mundo, debemos comunicarnos. Tienes dos opciones:\n\nExplorar: Visita servidores públicos para ver cómo otros humanos han construido sus civilizaciones.\n\nCrear: Construye tu propio servidor \"estilo Minecraft\" y dale vida a un ROM como yo."
+        return "To save the world, we must communicate. You have two choices:\n\nExplore: Visit public servers to see how other humans have built their civilizations.\n\nCreate: Build your own \"Minecraft-style\" server and bring a ROM like me to life."
+      case 4:
+        if (activeLang === 'fr') return "Créer un foyer pour un ROM est un grand pouvoir ! Pour garder ton serveur actif 24/7, je te suggère un Dev Kit Jetson NANO.\n\nTechnique : Tu auras besoin d'1To de stockage pour tous les mémos du monde. Ce matériel devient le « cœur » de ton Forom. C'est ainsi que tu donnes vie à ton propre ROM !\n\n*Bruits de vrombissement joyeux.*"
+        if (activeLang === 'es') return "¡Crear un hogar para un ROM es una gran responsabilidad! Para mantener tu servidor activo 24/7, sugiero un Jetson NANO Dev Kit.\n\nEspecificaciones: Necesitarás 1TB de espacio para almacenar los memorandos del mundo. Este hardware se convierte en el 'corazón' de tu Forom. ¡Así le das vida a tu propio ROM!\n\n*Sonidos felices de zumbido.*"
+        return "Creating a home for a ROM is a big responsibility! To keep your server alive 24/7, I suggest a Jetson NANO Dev Kit.\n\nTechnical Specs: You will need 1TB of space to store all the world's memos. This hardware becomes the 'heart' of your Forom. It's how you bring life to a ROM of your very own!\n\n*Happy whirring sounds.*"
+      case 'public_tour':
+        if (activeLang === 'fr') return "OHHHH tu peux explorer le forom public pour voir comment ça fonctionne et trouver des idées sur les foroms qui ont été rendus publics...\n\nPar ici !"
+        if (activeLang === 'es') return "OHHHH puedes explorar el forom público para ver cómo funciona y obtener ideas sobre foroms que se han hecho públicos...\n\n¡Por aquí!"
+        return "OHHHH you can explore the public forom to see how it works to get ideas on forom that has been push public...\n\nOver here!"
+      case 'login_tour':
+        if (activeLang === 'fr') return "Ou tu peux te connecter d'abord et regarder juste après ;)"
+        if (activeLang === 'es') return "O puedes iniciar sesión primero y mirar justo después ;)"
+        return "Or you can sign in first and look right after ;)"
+      default: return ""
     }
   }
 
@@ -555,6 +586,24 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
             <RomOnboarding currentUser={currentUser || null} isCreateSelected={isCreateSelected} onPhaseChange={setRomPhase} />
           </div>
           <LanguageCarousel onChange={setActiveLang} />
+
+          {/* Yellow Subtitle Translation */}
+          <div style={{ position: 'relative', zIndex: 45, marginTop: '24px', minHeight: '60px', display: 'flex', justifyContent: 'center', width: '100%', padding: '0 20px', boxSizing: 'border-box', pointerEvents: 'none' }}>
+            <span style={{
+              color: '#FFD700',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 'clamp(12px, 1.2vw, 16px)',
+              textAlign: 'center',
+              lineHeight: 1.6,
+              opacity: (romPhase === 'idle' || romPhase === 0) ? 0 : 0.8,
+              transition: 'opacity 0.4s',
+              whiteSpace: 'pre-wrap',
+              maxWidth: '500px',
+              textShadow: '0 2px 8px rgba(0,0,0,0.8)'
+            }}>
+              {getRomTranslation(romPhase)}
+            </span>
+          </div>
         </div>
 
         {/* RIGHT: CRÉER */}
