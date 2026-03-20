@@ -1,10 +1,39 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import foromLogoWht from '../assets/icons/forom_logo_wht.png'
 import githubIcon from '../assets/icons/github.png'
 import chromaNotesIcon from '../assets/icons/chroma_notes.svg'
 import userIcon from '../assets/icons/user.png'
 import { RomOnboarding } from './RomOnboarding'
+
+const DelayedTypewriterText = ({ text, delayMs = 200 }: { text: string, delayMs?: number }) => {
+  const [displayed, setDisplayed] = useState('')
+
+  useEffect(() => {
+    setDisplayed('')
+    if (!text) return
+    
+    let i = 0
+    let interval: ReturnType<typeof setInterval>
+    
+    const timeout = setTimeout(() => {
+      interval = setInterval(() => {
+        setDisplayed(text.slice(0, i))
+        i++
+        if (i > text.length) {
+          clearInterval(interval)
+        }
+      }, 40)
+    }, delayMs)
+    
+    return () => {
+      clearTimeout(timeout)
+      if (interval) clearInterval(interval)
+    }
+  }, [text, delayMs])
+
+  return <>{displayed}</>
+}
 
 const LANGUAGES = [
   { id: 'en', label: 'WELCOME' },
@@ -601,7 +630,11 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
               maxWidth: '500px',
               textShadow: '0 2px 8px rgba(0,0,0,0.8)'
             }}>
-              {getRomTranslation(romPhase)}
+              <DelayedTypewriterText 
+                key={`${activeLang}-${romPhase}`} 
+                text={getRomTranslation(romPhase)} 
+                delayMs={200} 
+              />
             </span>
           </div>
         </div>

@@ -161,17 +161,19 @@ export function RomOnboarding({ currentUser, isCreateSelected, onPhaseChange }: 
           }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{
-            scale: phase === 'public_tour' || phase === 'login_tour' ? 0.35 : 1, // Only scale the child image
+            scale: 1,
+            width: phase === 'idle' || phase === 0 ? 'clamp(104px, 14vw, 220px)' : 'clamp(36px, 5vw, 77px)',
+            height: phase === 'idle' || phase === 0 ? 'clamp(104px, 14vw, 220px)' : 'clamp(36px, 5vw, 77px)',
             opacity: phase === 'idle' ? 0.6 : 1,
             y: phase === 'idle' ? 0 : [0, -10, 0],
           }}
           transition={{
+            width: { type: 'spring', damping: 14, stiffness: 200, duration: 0.5 },
+            height: { type: 'spring', damping: 14, stiffness: 200, duration: 0.5 },
             scale: { type: 'spring', damping: 14, stiffness: 200, duration: 0.5 },
             y: { repeat: phase === 'idle' ? 0 : Infinity, duration: 2, ease: 'easeInOut' }
           }}
           style={{
-            width: 'clamp(104px, 14vw, 220px)',
-            height: 'clamp(104px, 14vw, 220px)',
             objectFit: 'contain',
             marginBottom: phase !== 'idle' ? '0px' : 'clamp(24px, 4vh, 56px)',
             flexShrink: 0,
@@ -198,8 +200,8 @@ export function RomOnboarding({ currentUser, isCreateSelected, onPhaseChange }: 
                 borderRadius: '16px',
                 padding: (phase === 0 || phase === 'public_tour' || phase === 'login_tour') ? '16px 20px' : '16px 24px',
                 width: phase === 0 ? '260px' : (phase === 'public_tour' || phase === 'login_tour' ? '320px' : '95vw'),
-                maxWidth: phase === 0 ? '260px' : (phase === 'public_tour' || phase === 'login_tour' ? '320px' : '680px'),
-                height: phase === 0 ? '90px' : (phase === 'public_tour' ? '190px' : (phase === 'login_tour' ? '110px' : (phase === 1 || phase === 2 ? '130px' : '200px'))),
+                maxWidth: phase === 0 ? '260px' : (phase === 'public_tour' || phase === 'login_tour' ? '320px' : '880px'),
+                height: phase === 0 ? '90px' : (phase === 'public_tour' ? '150px' : (phase === 'login_tour' ? '110px' : (phase === 1 || phase === 2 ? '100px' : '140px'))),
                 boxShadow: 'inset 0 0 0 4px #e0e0e0, 0 16px 32px rgba(0,0,0,0.6)', 
                 zIndex: 10,
                 pointerEvents: 'auto',
