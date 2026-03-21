@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS, getMemory } from '../data/memories'
 import type { CategoryType, WhQuestion } from '../data/memories'
 import { mixColors } from '../utils/colors'
+import type { UserRole } from '../App'
 
 // Category band colors removed because we now use mixColors
 
@@ -38,6 +39,7 @@ export interface QuestModalProps {
   onAcceptQuest: (id: string) => void
   onCompleteQuest: (id: string) => void
   onCancelQuest: (id: string) => void
+  userRole?: UserRole
 }
 
 // =============================================================================
@@ -107,7 +109,8 @@ export function QuestModal({
   seasonPhase = 'V1',
   pixels = 0,
   canCreateQuest = true,
-  categories = ['A', 'B', 'C', 'D', 'E']
+  categories = ['A', 'B', 'C', 'D', 'E'],
+  userRole
 }: QuestModalProps) {
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
   const [newTitle, setNewTitle] = useState('')
@@ -524,7 +527,9 @@ export function QuestModal({
                               const qIdx2 = qObj?.question ? QUESTION_ORDER.indexOf(qObj.question as WhQuestion) : -1;
                               const mem2 = qIdx2 >= 0 ? getMemory(qObj!.category as CategoryType, qIdx2) : null;
                               const descWords2 = (mem2?.isFilled && mem2?.description) ? mem2.description.trim().split(/\s+/).filter(Boolean).length : 0;
-                              const canComplete = !!boardSelectedId && !!(mem2?.videoUrl) && descWords2 >= 100 && !!(mem2?.sources && mem2.sources.length > 0);
+                              const isMod = userRole === 'S-MODS' || userRole === 'MODS';
+                              const objectivesMet = !!boardSelectedId && !!(mem2?.videoUrl) && descWords2 >= 100 && !!(mem2?.sources && mem2.sources.length > 0);
+                              const canComplete = !isMod && objectivesMet;
                               return (
                                 <button
                                   onClick={() => {
@@ -567,7 +572,7 @@ export function QuestModal({
                                     }
                                   }}
                                 >
-                                  COMPLÉTER
+                                  {isMod ? 'INTERDIT (MODS)' : 'COMPLÉTER'}
                                 </button>
                               )
                             })()}

@@ -29,8 +29,20 @@ import { useModalStore } from './stores/useModalStore'
 import { getLevelAndTitle } from './utils/leveling'
 
 // =============================================================================
-// CONSTANTS
+// TYPES & CONSTANTS
 // =============================================================================
+
+export type UserRole = 'S-MODS' | 'MODS' | 'CREATEURS' | 'ASSOCIES' | null;
+
+export const getUserRole = (username: string | null): UserRole => {
+  if (!username) return null;
+  const lower = username.toLowerCase();
+  if (lower === 'xylo') return 'S-MODS';
+  if (lower === 'zylo') return 'MODS';
+  if (lower === 'bylo') return 'CREATEURS';
+  if (lower === 'dylo') return 'ASSOCIES';
+  return null;
+}
 
 /** Available categories for the application */
 const CATEGORIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
@@ -119,8 +131,10 @@ function App() {
     () => ({ ...DEFAULT_QUESTION_LABELS }),
   )
 
-  // Detect Supermoderator
-  const isSuperModerator = currentUser === 'xylo'
+  // Detect roles
+  const userRole = getUserRole(currentUser)
+  const isSuperModerator = userRole === 'S-MODS'
+  const isModerator = userRole === 'MODS'
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -163,6 +177,10 @@ function App() {
           if (username === 'xylo') {
             setPixels(500)
             setInVault(5000)
+          } else if (username === 'zylo') {
+            setPixels(0)
+          } else if (['bylo', 'dylo'].includes(username)) {
+            setPixels(500)
           }
         }}
         currentUser={currentUser}
@@ -257,14 +275,14 @@ function App() {
       {/* Bottom Center - Rubix View Toggle */}
       <div 
         className="fixed z-50 flex justify-center items-center pointer-events-none"
-        style={{ bottom: '48px', left: '0', right: '0' }}
+        style={{ bottom: '15px', left: '0', right: '0' }}
       >
         <motion.button
           onClick={() => setIsRubixView(prev => !prev)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center justify-center shrink-0 pointer-events-auto shadow-lg bg-black/20 dark:bg-white/10 backdrop-blur-sm rounded-full p-2"
-          style={{ width: '56px', height: '56px', border: '1px solid rgba(255,255,255,0.1)' }}
+          className="flex items-center justify-center shrink-0 pointer-events-auto"
+          style={{ width: '56px', height: '56px', background: 'transparent', border: 'none' }}
           title="Toggle Rubix View"
           aria-label="Toggle Rubix View"
         >
@@ -276,12 +294,15 @@ function App() {
           Main Layout
       -------------------------------------------------------------------------- */}
 
-      <Sidebar
-        items={sidebarItems}
-        activeId={activeCategory}
-        onSelect={setActiveCategory}
-        isDark={isDarkMode}
-      />
+      {!isRubixView && (
+        <Sidebar
+          items={sidebarItems}
+          activeId={activeCategory}
+          onSelect={setActiveCategory}
+          isDark={isDarkMode}
+          position="right"
+        />
+      )}
 
       <CarouselGrid
         categories={CATEGORIES}
@@ -291,6 +312,7 @@ function App() {
         isRubixView={isRubixView}
         onCloseRubix={() => setIsRubixView(false)}
         acceptedQuestId={acceptedQuestId}
+        categoryLabels={categoryLabels}
         onQuestComplete={(id) => {
           const quest = personalQuests.find(q => q.id === id)
           if (quest) {
@@ -333,6 +355,7 @@ function App() {
         mission={mission}
         currentUser={currentUser}
         isSuperModerator={isSuperModerator}
+        userRole={userRole}
         inVault={inVault}
         foromRules={foromRules}
         foromFriendKeys={foromFriendKeys}
@@ -342,6 +365,7 @@ function App() {
         isOpen={modals.isWalletOpen}
         onClose={modals.closeWallet}
         pixels={pixels}
+        userRole={userRole}
       />
 
       <RomapModal
@@ -360,7 +384,8 @@ function App() {
         categories={CATEGORIES as unknown as string[]}
         seasonPhase={seasonPhase}
         pixels={pixels}
-        canCreateQuest={isSuperModerator}
+        canCreateQuest={isSuperModerator || isModerator}
+        userRole={userRole}
         onCreateQuest={(title, reward, question, category) => {
           const cost = seasonPhase === 'V1' ? 2 : 1;
           if (pixels < cost) return;
