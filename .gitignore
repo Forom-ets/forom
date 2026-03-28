@@ -36,6 +36,13 @@ coverage/
 *.sln
 *.sw?
 
+# Electron build artifacts
+dist-electron
+release
+public/downloads/
+
+
+
 # OS generated files
 Thumbs.db
 desktop.ini
