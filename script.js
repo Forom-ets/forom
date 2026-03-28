@@ -1,3 +1,4 @@
+/* eslint-disable */
 const fs = require('fs');
 let code = fs.readFileSync('c:/corom/forom/src/components/MoodSelection.tsx', 'utf8');
 
@@ -66,7 +67,7 @@ const modalCode = \
             <button
               onClick={() => { setIsSignInOpen(false); setShowDevLogin(false); }}
               style={{ position: 'absolute', top: '14px', right: '18px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '24px', cursor: 'pointer', lineHeight: 1 }}
-            >×</button>
+            >ï¿½</button>
 
             <h2 style={{ margin: '0 0 6px', fontSize: '20px', textAlign: 'center', fontWeight: 700, color: 'white', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'Jersey 15', sans-serif" }}>Se connecter</h2>
 
@@ -79,12 +80,12 @@ const modalCode = \
                   { id: 'meta', label: 'Meta', bg: '#0467DF', fg: '#fff', border: '#0467DF', soon: false },
                   { id: 'x', label: 'X', bg: '#000', fg: '#fff', border: '#555', soon: false },
                   { id: 'apple', label: 'Apple', bg: '#000', fg: '#fff', border: '#555', soon: false },
-                  { id: 'ets', label: 'ETS — Authentik', bg: '#1a1a1a', fg: '#6CB4E4', border: '#6CB4E4', soon: true },
+                  { id: 'ets', label: 'ETS ï¿½ Authentik', bg: '#1a1a1a', fg: '#6CB4E4', border: '#6CB4E4', soon: true },
                 ] as const).map(p => (
                   <button
                     key={p.id}
                     disabled
-                    title={p.soon ? 'Bientôt disponible' : 'Bientôt disponible'}
+                    title={p.soon ? 'Bientï¿½t disponible' : 'Bientï¿½t disponible'}
                     style={{
                       position: 'relative', padding: '11px 18px', borderRadius: '10px',
                       border: \1px solid \\, backgroundColor: p.bg, color: p.fg,
@@ -95,7 +96,7 @@ const modalCode = \
                   >
                     {p.label}
                     <span style={{ marginLeft: 'auto', fontSize: '10px', opacity: 0.7, fontStyle: 'italic', fontWeight: 400 }}>
-                      {p.soon ? '? bientôt' : 'bientôt'}
+                      {p.soon ? '? bientï¿½t' : 'bientï¿½t'}
                     </span>
                   </button>
                 ))}
@@ -106,7 +107,7 @@ const modalCode = \
               </>
             ) : (
               <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.35)', textAlign: 'center', fontFamily: 'monospace' }}>accès développeur</p>
+                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.35)', textAlign: 'center', fontFamily: 'monospace' }}>accï¿½s dï¿½veloppeur</p>
                 <input
                   type="text"
                   placeholder="Username"

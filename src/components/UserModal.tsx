@@ -1,6 +1,6 @@
-import ReactModal from 'react-modal'
+﻿import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import userIcon from '../assets/icons/user.png'
 import type { ForomColor } from '../utils/foromColors'
 import type { UserRole } from '../App'
@@ -24,6 +24,18 @@ interface UserModalProps {
   foromRules?: string[]
   foromFriendKeys?: string[]
   userRole?: UserRole
+}
+
+type UserListMember = {
+  id: number
+  name: string
+  quests: number
+  pixels: number
+  missions: number
+  level: number
+  isBot: boolean
+  key?: string | null
+  team?: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +224,8 @@ export function UserModal({
   const [isTeamCreated, setIsTeamCreated] = useState(false)
   const [hasVotedSos, setHasVotedSos] = useState(false)
   const [sosVotes, setSosVotes] = useState(24)
+
+  const randomMembersCount = useMemo(() => Math.floor(Math.random() * 3) + 2, [])
 
   const copyKey = useCallback((key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -536,7 +550,7 @@ export function UserModal({
                           
                           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                              <div style={{ fontSize: 10, fontFamily: 'Montserrat, sans-serif', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.05em' }}>
-                               MEMBRES ({Math.floor(Math.random() * 3) + 2}/25)
+                               MEMBRES ({randomMembersCount}/25)
                              </div>
                              <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '8px 10px', borderRadius: 6, fontFamily: "'Jersey 15', sans-serif", fontSize: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
                                1. {displayName} (MOD)
@@ -774,7 +788,7 @@ export function UserModal({
                     const list = getActiveList();
                     if (list.length === 0) return null;
 
-                    return list.map((member: any) => {
+                    return list.map((member: UserListMember) => {
                       const isMe = member.name.toLowerCase() === currentUser?.toLowerCase();
                       // Only S-MODS can see keys in any tab
                       const showKey = (userRole === 'S-MODS' && !!member.key);

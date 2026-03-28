@@ -172,13 +172,25 @@ function loadMemoriesFromJson(): Memory[] {
   const memories: Memory[] = []
   
   // Use Vite's glob import to load all 100 JSON memos synchronously
-  const memoModules = import.meta.glob('./memos/V1/*.json', { eager: true }) as Record<string, any>;
+  type MemoModule = {
+    grid_coordinate?: string
+    title?: string
+    resume?: string
+    video_url?: string
+    image_url?: string
+    sources?: string[]
+    question?: string
+    videoUrl?: string
+    thumbnailUrl?: string
+    [key: string]: unknown
+  }
+  const memoModules = import.meta.glob('./memos/V1/*.json', { eager: true }) as Record<string, MemoModule>;
 
   CATEGORIES.forEach((category) => {
     for (let i = 0; i < ITEMS_PER_ROW; i++) {
       // Look for a memo module that matches the grid coordinate
       const coord = `${category}${i}`;
-      let matchedMemo: any = null;
+      let matchedMemo: MemoModule | null = null;
 
       for (const path in memoModules) {
         if (memoModules[path].grid_coordinate === coord) {

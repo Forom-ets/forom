@@ -353,7 +353,7 @@ export function CarouselGrid({
         setHorizontalIndex(closestCol)
       }
     }
-  }, [activeIndex, categories, horizontalIndex, onCategoryChange])
+  }, [activeIndex, categories, horizontalIndex, onCategoryChange, getProcessedMemory])
 
   // ---------------------------------------------------------------------------
   // Grid Render Logic

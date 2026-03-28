@@ -57,9 +57,10 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
 
   const [romPhase, setRomPhase] = useState<string | number>('idle')
   const ghostPanelWidth = 'min(30vw, 440px)'
+  const useGhostLayoutForColorMood = true
 
   const { language: activeLang } = useAppStore()
-  const TRANSLATIONS: Record<string, any> = {
+  const TRANSLATIONS: Record<string, Record<string, string>> = {
     en: { rejoindre: 'JOIN', creer: 'CREATE', connectKey: 'Connect with a Key', confirmer: 'Confirm', public: 'Public', prive: 'Private' },
     fr: { rejoindre: 'REJOINDRE', creer: 'CRÉER', connectKey: 'Se connecter avec une clé', confirmer: 'Confirmer', public: 'Public', prive: 'Privé' },
     es: { rejoindre: 'UNIRSE', creer: 'CREAR', connectKey: 'Conectar con una llave', confirmer: 'Confirmar', public: 'Público', prive: 'Privado' }
@@ -373,7 +374,7 @@ export function ForomLobby({ onConfirm, onSkip, onSignIn, currentUser, onBackToL
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        {!currentUser ? (
+        {(!currentUser || useGhostLayoutForColorMood) ? (
           <>
             {/* GHOST VIEW LEFT */}
             <div style={{ flex: '0 0 clamp(180px, 20vw, 300px)', minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: romPhase === "public_tour" ? 45 : 1, minHeight: 'clamp(520px, 74vh, 860px)' }}>

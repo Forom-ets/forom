@@ -39,16 +39,18 @@ export function WheelSelector({
     if (activeId) {
       const idx = items.findIndex(i => i.id === activeId)
       if (idx !== -1) {
-        setCenter(prev => {
-          const currentMod = ((prev % N) + N) % N
-          if (currentMod !== idx) {
-            let diff = idx - currentMod
-            if (diff > N / 2) diff -= N
-            if (diff < -N / 2) diff += N
-            return prev + diff
-          }
-          return prev
-        })
+        window.setTimeout(() => {
+          setCenter(prev => {
+            const currentMod = ((prev % N) + N) % N
+            if (currentMod !== idx) {
+              let diff = idx - currentMod
+              if (diff > N / 2) diff -= N
+              if (diff < -N / 2) diff += N
+              return prev + diff
+            }
+            return prev
+          })
+        }, 0)
       }
     }
   }, [activeId, items, N])

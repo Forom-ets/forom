@@ -59,8 +59,10 @@ export function RomOnboarding({ currentUser, isCreateSelected, onPhaseChange }: 
   const prevUser = useRef(currentUser)
   useEffect(() => {
     if (!prevUser.current && currentUser) {
-      setPhase(2)
-      setIsTyping(true)
+      window.setTimeout(() => {
+        setPhase(2)
+        setIsTyping(true)
+      }, 0)
     }
     prevUser.current = currentUser
   }, [currentUser])
@@ -68,8 +70,10 @@ export function RomOnboarding({ currentUser, isCreateSelected, onPhaseChange }: 
   const prevCreate = useRef(isCreateSelected)
   useEffect(() => {
     if (!prevCreate.current && isCreateSelected && phase === 3) {
-      setPhase(4)
-      setIsTyping(true)
+      window.setTimeout(() => {
+        setPhase(4)
+        setIsTyping(true)
+      }, 0)
     }
     prevCreate.current = isCreateSelected
   }, [isCreateSelected, phase])
