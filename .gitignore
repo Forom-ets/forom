@@ -12,6 +12,19 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env*
+!.env.example
+
+# Cache directories
+.vite/
+.cache/
+.parcel-cache/
+
+# Coverage reports
+coverage/
+*.lcov
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,3 +42,7 @@ release
 public/downloads/
 
 
+
+# OS generated files
+Thumbs.db
+desktop.ini

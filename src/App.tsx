@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { LoadingScreen } from './components/LoadingScreen'
-import { MoodSelection } from './components/MoodSelection'
-import { ForomLobby } from './components/ForomLobby'
-import { ForomCreationFlow } from './components/ForomCreationFlow'
+import { LoginScreen } from './components/LoginScreen.tsx'
 import { type ForomColor } from './utils/foromColors'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
@@ -35,14 +32,14 @@ import { getLevelAndTitle } from './utils/leveling'
 
 export type UserRole = 'S-MODS' | 'MODS' | 'CREATEURS' | 'ASSOCIES' | null;
 
-export const getUserRole = (username: string | null): UserRole => {
-  if (!username) return null;
-  const lower = username.toLowerCase();
-  if (lower === 'xylo') return 'S-MODS';
-  if (lower === 'zylo') return 'MODS';
-  if (lower === 'bylo') return 'CREATEURS';
-  if (lower === 'dylo') return 'ASSOCIES';
-  return null;
+type BackendUserRole = 'supermoderator' | 'moderator' | 'creator' | 'associate'
+
+export const getUserRole = (role: BackendUserRole | null): UserRole => {
+  if (!role) return null;
+  if (role === 'supermoderator') return 'S-MODS';
+  if (role === 'moderator') return 'MODS';
+  if (role === 'creator') return 'CREATEURS';
+  return 'ASSOCIES';
 }
 
 /** Available categories for the application */
@@ -124,11 +121,11 @@ function App() {
   const { phase, setPhase } = useAppStore();
   const modals = useModalStore();
 
-  const [isLoading, setIsLoading] = useState(true)
   const [isPhantomMode, setIsPhantomMode] = useState(false)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [mission, setMission] = useState(DEFAULT_PUBLIC_FOROM_MISSION)
-  const [foromColor, setForomColor] = useState<ForomColor | null>('creation')
+  const [currentUserBackendRole, setCurrentUserBackendRole] = useState<BackendUserRole | null>(null)
+  const [mission, setMission] = useState('Club étudiants ÉTS')
+  const [foromColor, setForomColor] = useState<ForomColor | null>('guardien')
   const [foromRules] = useState<string[]>(['Honnêteté', '', '', '', '', '', '', '', '', 'Curiosité'])
   const [foromFriendKeys] = useState<string[]>(() =>
     Array.from({ length: 8 }, () => 'FRM-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase())
@@ -143,6 +140,7 @@ function App() {
   const [xp, setXp] = useState(0)
   const [personalQuests, setPersonalQuests] = useState<Quest[]>(() => getInitialQuestsForMission(DEFAULT_PUBLIC_FOROM_MISSION))
   const [acceptedQuestId, setAcceptedQuestId] = useState<string | null>(null)
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').trim()
 
   const completedFoundationalQuestCount = personalQuests.filter(q => q.completed).length
   const seasonPhase: 'V1' | 'V2' | 'V3' = completedFoundationalQuestCount >= 100 ? 'V2' : 'V1'
@@ -159,14 +157,51 @@ function App() {
   )
 
   // Detect roles
-  const userRole = getUserRole(currentUser)
+  const userRole = getUserRole(currentUserBackendRole)
   const isSuperModerator = userRole === 'S-MODS'
   const isModerator = userRole === 'MODS'
-  const isEtsForom = mission === 'Club étudiants ÉTS'
+  const isEtsForom = true
 
-  const activeCategoryLabels = isEtsForom ? ETS_CATEGORY_LABELS : categoryLabels
-  const activeQuestionLabels = isEtsForom ? ETS_QUESTION_LABELS : questionLabels
-  const activePersonalQuests = isEtsForom ? [] : personalQuests
+  const activeCategoryLabels = ETS_CATEGORY_LABELS
+  const activeQuestionLabels = ETS_QUESTION_LABELS
+  const activePersonalQuests: Quest[] = []
+
+  const hydrateUserFromToken = async (fallbackUsername?: string | null) => {
+    const token = localStorage.getItem('foromAccessToken')
+
+    if (!token) {
+      if (fallbackUsername) {
+        setCurrentUser(fallbackUsername)
+      }
+      return
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || !payload?.user) {
+        throw new Error('Unable to hydrate user')
+      }
+
+      setCurrentUser(payload.user.username || fallbackUsername || null)
+      setCurrentUserBackendRole(payload.user.role || null)
+      setPixels(Number(payload.user.currency || 0))
+      setInVault(payload.user.role === 'supermoderator' ? 5000 : 0)
+      setIsPhantomMode(false)
+    } catch {
+      if (fallbackUsername) {
+        setCurrentUser(fallbackUsername)
+      }
+      setCurrentUserBackendRole(null)
+      setPixels(0)
+      setInVault(0)
+    }
+  }
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -176,6 +211,37 @@ function App() {
       document.documentElement.classList.remove('dark')
     }
   }, [isDarkMode])
+
+  // Consume OAuth callback params after Authentik redirect.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const authToken = params.get('authToken')
+    const oauthUsername = params.get('username')
+    const authError = params.get('authError')
+
+    if (!authToken && !oauthUsername && !authError) {
+      return
+    }
+
+    if (authError) {
+      console.error('OAuth callback error:', authError)
+    }
+
+    if (authToken) {
+      localStorage.setItem('foromAccessToken', authToken)
+    }
+
+    if (oauthUsername || authToken) {
+      void hydrateUserFromToken(oauthUsername)
+      setMission('Club étudiants ÉTS')
+      setForomColor('guardien')
+      setPhase('grid')
+      useModalStore.getState().openUser()
+    }
+
+    const cleanedUrl = `${window.location.pathname}${window.location.hash}`
+    window.history.replaceState({}, document.title, cleanedUrl)
+  }, [apiBase, setPhase])
 
   // Map categories to sidebar items
   const sidebarItems = CATEGORIES.map((category) => ({
@@ -187,90 +253,36 @@ function App() {
   const cornerIconStyle = "rounded-full overflow-hidden cursor-pointer shadow-lg hover:shadow-xl border-2 border-transparent transition-all flex items-center justify-center"
   const cornerIconSize = { width: '64px', height: '64px' }
 
-  if (isLoading) {
-    return <LoadingScreen onComplete={() => {
-      setIsLoading(false);
-      setPhase('mood');
-    }} />
-  }
-
-  if (phase === 'mood') {
+  if (phase === 'login') {
     return (
-      <MoodSelection 
-        onGhost={() => {
+      <LoginScreen
+        isDark={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(prev => !prev)}
+        onGuest={() => {
           setIsPhantomMode(true);
-          setPhase('lobby');
+          setCurrentUser(null);
+          setCurrentUserBackendRole(null);
+          setPixels(0);
+          setInVault(0);
+          setMission('Club étudiants ÉTS')
+          setForomColor('guardien')
+          setPhase('grid');
         }}
-        onColor={(username) => {
-          setCurrentUser(username);
-          setIsPhantomMode(false);
-          setPhase('lobby');
+        onAuthenticated={(username: string) => {
+          void hydrateUserFromToken(username)
+          setMission('Club étudiants ÉTS')
+          setForomColor('guardien')
+          setPhase('grid');
           useModalStore.getState().openUser();
         }}
       />
     );
   }
 
-  if (phase === 'lobby') {
-    return (
-      <ForomLobby 
-        onConfirm={() => setPhase('creation-flow')} 
-        onSkip={() => {
-          setIsPhantomMode(!currentUser)
-          setPhase('grid')
-        }}
-        onBackToLoading={() => setIsLoading(true)}
-        onJoinEts={() => {
-          setIsPhantomMode(false)
-          setPhase('grid')
-          setMission('Club étudiants ÉTS')
-          setForomColor('guardien')
-        }}
-        onSignIn={(username) => {
-          setCurrentUser(username)
-          setIsPhantomMode(false)
-          if (username === 'xylo') {
-            setPixels(500)
-            setInVault(5000)
-          } else if (username === 'zylo') {
-            setPixels(0)
-          } else if (['bylo', 'dylo', 'ets'].includes(username)) {
-            setPixels(500)
-          }
-        }}
-        currentUser={currentUser}
-      />
-    )
-  }
-
-  if (phase === 'creation-flow') {
-    return (
-      <ForomCreationFlow
-        onComplete={(m, color) => {
-          setMission(m)
-          setForomColor(color)
-          setPhase('grid')
-          setIsPhantomMode(false)
-          // A user-created forom always starts with the base A–J / 0–9 format.
-          // Only the main public forom uses the supermoderator's saved config.
-          setCategoryLabels(Object.fromEntries(CATEGORIES.map(c => [c, c])))
-          setQuestionLabels(Object.fromEntries(QUESTION_ORDER.map(q => [q, q])))
-          if (currentUser === 'xylo') {
-            setPixels(500);    // 500 px for all supermods initially
-            setInVault(5000);  // 5000 reserved (not used visually yet)
-          } else {
-            setPixels(500);    // members start with 500
-          }
-        }}
-        onBack={() => setPhase('lobby')}
-      />
-    )
-  }
-
   return (
     <div 
       className="h-screen overflow-hidden relative transition-colors duration-300"
-      style={{ backgroundColor: isEtsForom && !isDarkMode ? '#E3022C' : 'var(--color-bg)' }}
+      style={{ backgroundColor: isDarkMode ? '#0D0D0F' : '#FF7878' }}
     >
       {/* Right Column Stack: Theme, Settings */}
       <div 
@@ -290,7 +302,7 @@ function App() {
         onRomapClick={modals.openRomap}
         seasonPhase={seasonPhase}
         onLobbyClick={() => {
-          setPhase('lobby')
+          setPhase('login')
           if (isPhantomMode) {
             setIsPhantomMode(false)
           }

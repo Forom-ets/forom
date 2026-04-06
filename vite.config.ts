@@ -87,6 +87,12 @@ export default defineConfig(({ command, mode }) => {
     base: enableElectron && command !== 'serve' ? './' : '/',
     server: {
       allowedHosts: ['forom.prodv2.cedille.club', 'forom.etsmtl.ca'],
+      proxy: {
+        '/api': {
+          target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:4000',
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       target: 'esnext',
