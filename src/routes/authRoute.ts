@@ -1,6 +1,8 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import passport from '../auth/passport';  // import passport from our custom passport file
-import * as AuthService from '../services/AuthService';  // assuming you have a service
+import type { UserRecord } from '../database/models/User';
 
 const router = Router();
 
@@ -24,10 +26,14 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
   try {
     // we can use req.user because the GoogleStrategy that we've 
     // implemented in `google.ts` attaches the user
-    const user = req.user as User;
+    const user = req.user as UserRecord;
 
     // handle the google callback, generate auth token
-    const { authToken } = AuthService.handleGoogleCallback({ id: user.id, jwtSecureCode: user.jwtSecureCode });
+    const authToken = jwt.sign(
+      { id: user.id, jwtSecureCode: user.jwtSecureCode },
+      process.env.JWT_SECRET || 'secret-test',
+      { expiresIn: '7d' }
+    );
 
     // redirect to frontend with the accessToken as query param
     const redirectUrl = `${process.env.FE_BASE_URL}?accessToken=${authToken}`;

@@ -1,6 +1,7 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
 import requireJwt from '../middlewares/requireJwt'; // our middleware to authenticate using JWT
-import UserService from '../services/UserService' // assuming you have a service
+import type { UserRecord } from '../database/models/User'
 
 const router = Router();
 
@@ -15,12 +16,14 @@ router.get('/', requireJwt, (req: Request, res: Response) => {
     */
     // req.user is populated after passing through the requireJwt 
     // middleware
-    const user = req.user as User;
+    const user = req.user as UserRecord;
 
-    const veryVerySecretUserInfo = await UserService.getUser({ userId: user.id });
-
-    // it is a mock, you MUST return only the necessary info :)
-    return res.status(200).json(veryVerySecretUserInfo);
+    // it is a mock, return only non-sensitive information.
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    });
   } catch (error) {
     return res.status(500).json({ message: 'An error occurred while fetching user info', error });
   }

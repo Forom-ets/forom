@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AppPhase = 'loading' | 'mood' | 'lobby' | 'color-select' | 'creation-flow' | 'grid';
+export type AppPhase = 'login' | 'grid';
 export type AppLanguage = 'fr' | 'en' | 'es';
 
 /**
@@ -29,7 +29,7 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set, _get) => ({ // eslint-disable-line @typescript-eslint/no-unused-vars
-  phase: 'loading',
+  phase: 'login',
   language: 'fr',
   selectedColor: null,
   joinRule: null,

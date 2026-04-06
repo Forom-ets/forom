@@ -1,5 +1,6 @@
 import { Strategy as GoogleStrategy, type Profile, type VerifyCallback } from 'passport-google-oauth20';
 import User from './../database/models/User'; // mock user class
+import { type UserRecord } from './../database/models/User';
 import { v4 as uuidv4 } from 'uuid';
 
 const options = {
@@ -8,11 +9,11 @@ const options = {
   callbackURL: `${process.env.BE_BASE_URL}/api/auth/google/callback`,
 };
 
-async function verify(accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) {
+async function verify(_accessToken: string, _refreshToken: string, profile: Profile, done: VerifyCallback) {
   try {
     // we check for if the user is present in our system/database.
     // which states that; is that a sign-up or sign-in?
-    let user = await User.findOne({
+    let user: UserRecord | null = await User.findOne({
       where: {
         googleId: profile.id,
       },

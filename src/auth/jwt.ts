@@ -1,6 +1,5 @@
 import { Strategy, ExtractJwt, type VerifiedCallback } from 'passport-jwt';
 import User from './../database/models/User'; // mock user class
-import bcrypt from 'bcrypt';
 
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -32,7 +31,7 @@ async function verify(payload: any, done: VerifiedCallback) {
   // compare User's jwtSecureCode with the JWT's `jwtSecureCode` that the 
   // request has.
   // bad path: bad JWT, it sucks.
-  if (!bcrypt.compareSync(user.jwtSecureCode, payload.jwtSecureCode)) {
+  if (user.jwtSecureCode !== payload.jwtSecureCode) {
     return done(null, false);
   }
 
