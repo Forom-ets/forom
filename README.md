@@ -4,8 +4,6 @@
 
 <div align="center">
 
-  <img width="240" alt="Rubix View Icon" src="https://media.discordapp.net/attachments/1286472457754247199/1490234616139878410/rubix_view_ETS.png?ex=69d350a3&is=69d1ff23&hm=530905c84f1942977105f01bd65b73010dc68d730376e59362d53fbf58c2e7d2&=&format=webp&quality=lossless&width=590&height=590" />
-
   <br/>
 
   <b>F O R O M &nbsp; É T S</b>
