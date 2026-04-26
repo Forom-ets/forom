@@ -24,7 +24,6 @@ interface CarouselGridProps {
   categoryLabels?: Record<string, string>
   personalQuests?: Array<{ id: string; category: string; question: string | null; title: string; completed?: boolean }>
   isEmptyGrid?: boolean
-  isEtsForom?: boolean
 }
 
 // =============================================================================
@@ -62,15 +61,22 @@ export function CarouselGrid({
   categoryLabels = {},
   personalQuests = [],
   isEmptyGrid = false,
-  isEtsForom = false,
 }: CarouselGridProps) {
   // Start at horizontal index 5 so that the center tile (5 + activeIndex*10) hits 46 when paired with category E
   const [horizontalIndex, setHorizontalIndex] = useState(5)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const [memoryUpdateKey, setMemoryUpdateKey] = useState(0) // For triggering re-renders
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth)
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
+
+  // Track window dimensions for responsive grid layout
+  useEffect(() => {
+    const handleResize = () => setIsPortrait(window.innerHeight > window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Grid swipe-drag state
   const [isGridDragging, setIsGridDragging] = useState(false)
@@ -323,7 +329,7 @@ export function CarouselGrid({
       const cat = categories[c] as CategoryType
       for (let i = 0; i < ITEMS_PER_ROW; i++) {
         const mem = getProcessedMemory(cat, i)
-        
+
         // Match if it has the right question
         if (mem && mem.question === questionStr) {
           // Calculate a simple distance metric (row distance heavily weighted to prefer current row, plus horizontal distance)
@@ -346,7 +352,7 @@ export function CarouselGrid({
       if (closestRow !== activeIndex) {
         onCategoryChange(categories[closestRow])
       }
-      
+
       // 2. Slide horizontally
       if (closestCol !== horizontalIndex) {
         setSlideDirection(closestCol > horizontalIndex ? 'right' : 'left')
@@ -383,87 +389,114 @@ export function CarouselGrid({
     },
   }
 
-  const renderRow = (rowOffset: number, opacity: number, gap: string = '32px') => {
+  const renderCell = (rowOffset: number, col: number) => {
+    const isCentered = rowOffset === 0 && col === 0
+    const globalIndex = getGlobalIndex(rowOffset, col)
+    let memory = getMemoryForPosition(rowOffset, col)
+
+    // Determine if there is a quest assigned to this slot
+    const itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#e5e7eb';
+    let customBgColor: string | undefined = undefined;
+    if (memory) {
+      const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
+      const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
+
+      const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
+
+      const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
+      if (matchedQuest) {
+        if (matchedQuest.completed || isMemoryDone) {
+          customBgColor = mixColors(catColor, tagColor);
+        }
+        memory = { ...memory, title: matchedQuest.title };
+      } else if (isMemoryDone) {
+        customBgColor = mixColors(catColor, tagColor);
+      }
+    }
+
+    const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
+    const isLocked = !memory?.isFilled && !(
+      acceptedQuest &&
+      memory &&
+      acceptedQuest.category === memory.category &&
+      acceptedQuest.question === memory.question
+    )
+
+    const isExtraSmall = false
+    const isSmall = !isCentered
+
+    const categoryName = memory ? (categoryLabels[memory.category] || memory.category) : undefined
+    const tagName = memory?.question ? (questionLabels[memory.question] || memory.question) : undefined
+
     return (
-      <div
-        key={rowOffset}
-        className="flex items-center justify-center transition-opacity duration-200"
-        style={{ gap, opacity }}
-      >
-        <AnimatePresence mode="popLayout" custom={slideDirection}>
-          {[-2, -1, 0, 1, 2].map((col) => {
-            // Center box of the middle row gets special treatment
-            const isCentered = rowOffset === 0 && col === 0
-            const globalIndex = getGlobalIndex(rowOffset, col)
-            let memory = getMemoryForPosition(rowOffset, col)
+      <AnimatePresence mode="popLayout" custom={slideDirection} key={`${rowOffset}-${col}`}>
+        <motion.div
+          key={`${rowOffset}-${col}-${horizontalIndex + col}-${memoryUpdateKey}`}
+          custom={slideDirection}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          layout
+        >
+          <MemoryBox
+            memory={memory}
+            borderColor={itemBorderColor}
+            customBgColor={customBgColor}
+            displayNumber={globalIndex}
+            isCentered={isCentered}
+            isSmall={isSmall}
+            isExtraSmall={isExtraSmall}
+            isDark={isDark}
+            isLocked={isLocked}
+            onClick={() => handleBoxClick(rowOffset, col)}
+            onInfoClick={isCentered && !isLocked ? () => setIsModalOpen(true) : undefined}
+            categoryName={categoryName}
+            tagName={tagName}
+            isPortrait={isPortrait}
+          />
+        </motion.div>
+      </AnimatePresence>
+    )
+  }
 
-            // Determine if there is a quest assigned to this slot
-            const itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#555555';
-            let customBgColor: string | undefined = undefined;
-            if (memory) {
-              const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
-              const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
-              
-              const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
-
-              const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
-              if (matchedQuest) {
-                if (matchedQuest.completed || isMemoryDone) {
-                  customBgColor = mixColors(catColor, tagColor);
-                }
-                memory = { ...memory, title: matchedQuest.title };
-              } else if (isMemoryDone) {
-                customBgColor = mixColors(catColor, tagColor);
-              }
-            }
-
-            // A slot is locked unless: already filled, OR the accepted quest matches this slot
-            const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
-            const isLocked = !memory?.isFilled && !(
-              acceptedQuest &&
-              memory &&
-              acceptedQuest.category === memory.category &&
-              acceptedQuest.question === memory.question
-            )
-
-            // Calculate sizing based on positions to create sphere perspective
-            const absRow = Math.abs(rowOffset)
-            const absCol = Math.abs(col)
-
-            // Make outer columns smaller to enhance depth effect
-            const isExtraSmall = absRow === 1 && absCol === 2
-            const isSmall = (absRow === 1 && absCol === 1) || (absRow === 0 && absCol === 2)
-
+  const renderGridCells = () => {
+    // We isolate layout flows using Flexbox so that the massive middle item
+    // doesn't distort grid columns/rows irregularly on the outer edges.
+    
+    if (isPortrait) {
+      // Portrait Mode: 3 Columns, 5 items per column.
+      const colsList = [-1, 0, 1]
+      const rowsList = [-2, -1, 0, 1, 2]
+      return (
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 'min(4vw, 24px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+          {colsList.map(col => {
+            const opacity = Math.abs(col) === 0 ? 1 : 0.7
             return (
-              <motion.div
-                key={`${rowOffset}-${col}-${horizontalIndex + col}-${memoryUpdateKey}`}
-                custom={slideDirection}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                layout
-              >
-                <MemoryBox
-                  memory={memory}
-                  borderColor={itemBorderColor}
-                  customBgColor={customBgColor}
-                  displayNumber={globalIndex}
-                  isCentered={isCentered}
-                  isSmall={isSmall}
-                  isExtraSmall={isExtraSmall}
-                  isDark={isDark}
-                  isLocked={isLocked}
-                  onClick={() => handleBoxClick(rowOffset, col)}
-                  onInfoClick={isCentered && !isLocked ? () => setIsModalOpen(true) : undefined}
-                  questionLabels={questionLabels}
-                />
-              </motion.div>
+              <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 'min(2vh, 16px)', opacity, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                {rowsList.map(rowOffset => renderCell(rowOffset, col))}
+              </div>
             )
           })}
-        </AnimatePresence>
-      </div>
-    )
+        </div>
+      )
+    } else {
+      // Landscape Mode: 3 Rows, 5 items per row.
+      const rowsList = [-1, 0, 1]
+      const colsList = [-2, -1, 0, 1, 2]
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'min(3vh, 24px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+          {rowsList.map(rowOffset => {
+            const opacity = Math.abs(rowOffset) === 0 ? 1 : 0.7
+            return (
+              <div key={rowOffset} style={{ display: 'flex', flexDirection: 'row', gap: 'min(2vw, 16px)', opacity, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                {colsList.map(col => renderCell(rowOffset, col))}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
   }
 
   if (isRubixView) {
@@ -475,14 +508,14 @@ export function CarouselGrid({
         <div className="flex flex-col items-center justify-center flex-1 w-full" style={{ gap: '0.6vw', minHeight: 0 }}>
           {categories.map((category, row) => (
             <div key={category} className="flex items-center justify-center relative" style={{ gap: '0.6vw' }}>
-              
+
               {/* Subtle Row Label (Category) positioned on the right */}
-              <div 
-                className="absolute left-full text-gray-400 font-bold uppercase flex items-center h-full whitespace-nowrap pointer-events-none" 
-                style={{ 
-                  fontFamily: "'Jersey 15', sans-serif", 
-                  fontSize: 'clamp(12px, 1.5vw, 20px)', 
-                  letterSpacing: '0.05em', 
+              <div
+                className="absolute left-full text-gray-400 font-bold uppercase flex items-center h-full whitespace-nowrap pointer-events-none"
+                style={{
+                  fontFamily: "'Jersey 15', sans-serif",
+                  fontSize: 'clamp(12px, 1.5vw, 20px)',
+                  letterSpacing: '0.05em',
                   opacity: 0.5,
                   marginLeft: '8%' // ~15% spacing as requested
                 }}
@@ -495,7 +528,7 @@ export function CarouselGrid({
                 let memory = getProcessedMemory(category as CategoryType, col)
                 const itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#e5e7eb';
                 let customBgColor: string | undefined = undefined;
-                
+
                 if (memory) {
                   const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
                   const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
@@ -546,6 +579,7 @@ export function CarouselGrid({
                       isDark={isDark}
                       isLocked={cellIsLocked}
                       isRubixView={true}
+                      isPortrait={isPortrait}
                     />
                   </motion.div>
                 )
@@ -554,39 +588,39 @@ export function CarouselGrid({
           ))}
         </div>
 
-      <div
-        className="flex w-full items-center justify-center pointer-events-none"
-        style={{ gap: '0.6vw', marginTop: '0.5vh' }}
-      >
-        {QUESTION_ORDER.map((q) => (
-          <div key={q} className="flex justify-center items-center relative shrink-0">
-            {/* 1) GHOST MEMORY BOX FOR FLAWLESS GEOMETRY MATCHING */}
-            <div style={{ opacity: 0, pointerEvents: 'none' }}>
-              <MemoryBox
-                memory={null}
-                borderColor="transparent"
-                displayNumber={0}
-                isCentered={false}
-                isSmall={true}
-                isExtraSmall={false}
-              />
+        <div
+          className="flex w-full items-center justify-center pointer-events-none"
+          style={{ gap: '0.6vw', marginTop: '0.5vh' }}
+        >
+          {QUESTION_ORDER.map((q) => (
+            <div key={q} className="flex justify-center items-center relative shrink-0">
+              {/* 1) GHOST MEMORY BOX FOR FLAWLESS GEOMETRY MATCHING */}
+              <div style={{ opacity: 0, pointerEvents: 'none' }}>
+                <MemoryBox
+                  memory={null}
+                  borderColor="transparent"
+                  displayNumber={0}
+                  isCentered={false}
+                  isSmall={true}
+                  isExtraSmall={false}
+                />
+              </div>
+
+              {/* 2) ABSOLUTE TEXT CENTERED OVER THE GHOST BOX */}
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 font-bold uppercase text-center whitespace-nowrap"
+                style={{
+                  fontFamily: "'Jersey 15', sans-serif",
+                  fontSize: 'clamp(10px, 1.2vw, 16px)',
+                  letterSpacing: '0.05em',
+                  opacity: 0.5,
+                }}
+              >
+                {questionLabels[q] || q}
+              </div>
             </div>
-            
-            {/* 2) ABSOLUTE TEXT CENTERED OVER THE GHOST BOX */}
-            <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 font-bold uppercase text-center whitespace-nowrap"
-              style={{
-                fontFamily: "'Jersey 15', sans-serif",
-                fontSize: 'clamp(10px, 1.2vw, 16px)',
-                letterSpacing: '0.05em',
-                opacity: 0.5,
-              }}
-            >
-              {questionLabels[q] || q}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
       </div>
     )
@@ -597,29 +631,20 @@ export function CarouselGrid({
       className="absolute flex flex-col items-center justify-center z-10 pointer-events-none"
       style={{ top: 0, bottom: 0, left: 0, right: 0, paddingBottom: '30px' }}
     >
-      
+
       {/* Top Question Filters removed - replaced by bottom custom Wheel */}
 
       {/* Main Content - Grid centered, Vertical Navigation positioned separately */}
       <div
         ref={gridRef}
-        className="relative flex items-center justify-center pointer-events-auto"
+        className="relative flex justify-center items-center pointer-events-auto"
         onMouseDown={handleGridMouseDown}
         onClickCapture={(e) => { if (gridDragMoved.current) { e.stopPropagation(); gridDragMoved.current = false } }}
-        style={{ cursor: isGridDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+        style={{ cursor: isGridDragging ? 'grabbing' : 'grab', userSelect: 'none', height: '100%', width: '100%', overflow: 'hidden' }}
       >
-        {/* 3x5 Grid - centered */}
-        <div className="flex flex-col items-center" style={{ gap: '32px' }}>
-          {/* Top Row (-1) */}
-          {renderRow(-1, 0.7)}
-
-          {/* Middle Row (0) - Active with larger center box */}
-          {renderRow(0, 1)}
-
-          {/* Bottom Row (+1) */}
-          {renderRow(1, 0.7)}
+        <div style={{ display: 'contents' }}>
+          {renderGridCells()}
         </div>
-
 
       </div>
 
@@ -631,7 +656,6 @@ export function CarouselGrid({
           activeId={currentMemory?.question || ''}
           onSelect={handleQuestionClick}
           isDark={isDark}
-          isEtsForom={isEtsForom}
         />
       )}
 

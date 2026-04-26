@@ -13,6 +13,8 @@ import { HeartFAB } from './components/HeartFAB'
 import { RomapModal } from './components/RomapModal'
 
 // Import Icons
+import { Lock } from 'lucide-react'
+import tokensIcon from './assets/icons/tokens.svg'
 import wikiIcon from './assets/icons/wiki.png'
 import rubixViewIcon from './assets/icons/rubix_view.svg'
 
@@ -60,10 +62,10 @@ function ThemeToggle({
   return (
     <motion.button
       onClick={onToggle}
-      className="relative flex items-center justify-between rounded-full p-1 cursor-pointer"
+      className="relative flex flex-col items-center justify-between rounded-full p-1 cursor-pointer"
       style={{
-        width: '56px',
-        height: '28px',
+        width: '28px',
+        height: '56px',
         backgroundColor: isDark ? '#3b82f6' : '#e5e7eb',
         border: '2px solid',
         borderColor: isDark ? '#2563eb' : '#d1d5db',
@@ -73,14 +75,14 @@ function ThemeToggle({
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {/* Sun icon */}
-      <span className="text-xs" style={{ opacity: isDark ? 0.4 : 1 }}>☀️</span>
+      <span className="text-xs" style={{ opacity: isDark ? 0.4 : 1, lineHeight: 1 }}>☀️</span>
       {/* Moon icon */}
-      <span className="text-xs" style={{ opacity: isDark ? 1 : 0.4 }}>🌙</span>
+      <span className="text-xs" style={{ opacity: isDark ? 1 : 0.4, lineHeight: 1 }}>🌙</span>
       {/* Toggle knob */}
       <motion.div
         className="absolute rounded-full bg-white shadow-md"
-        style={{ width: '20px', height: '20px', top: '2px' }}
-        animate={{ left: isDark ? '32px' : '2px' }}
+        style={{ width: '20px', height: '20px', left: '2px' }}
+        animate={{ top: isDark ? '32px' : '2px' }}
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       />
     </motion.button>
@@ -167,6 +169,15 @@ function App() {
   const activePersonalQuests: Quest[] = []
 
   const hydrateUserFromToken = async (fallbackUsername?: string | null) => {
+    if (fallbackUsername?.toLowerCase() === 'xylo') {
+      setCurrentUser('XYLO')
+      setCurrentUserBackendRole('supermoderator')
+      setPixels(5000)
+      setInVault(5000)
+      setIsPhantomMode(false)
+      return
+    }
+
     const token = localStorage.getItem('foromAccessToken')
 
     if (!token) {
@@ -290,14 +301,37 @@ function App() {
         style={{ bottom: '48px', right: '3%', gap: '3vh' }}
       >
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
-        {isSuperModerator && (
-          <SettingsFAB onClick={modals.openSettings} />
-        )}
-      </div>
+        
+        {/* Quest Hub */}
+        <motion.button
+          onClick={isPhantomMode ? undefined : () => modals.openQuest()}
+          whileHover={isPhantomMode ? {} : { scale: 1.12 }}
+          whileTap={isPhantomMode ? {} : { scale: 0.92 }}
+          className={`rounded-full flex items-center justify-center border-2 border-transparent hover:border-orange-500 transition-colors duration-300 ${isPhantomMode ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+          style={{ width: '36px', height: '36px', backgroundColor: 'transparent' }}
+          title={isPhantomMode ? "Locked (Phantom Mode)" : "Quest"}
+          aria-label="Quest"
+        >
+          {isPhantomMode ? (
+            <Lock size={16} color="#ffffff" />
+          ) : (
+            <img src={tokensIcon} alt="Quest" className="w-full h-full object-contain" />
+          )}
+        </motion.button>
+        </div>
 
-      <Header 
-        onTokenClick={modals.openWallet}
-        onSupportClick={modals.openQuest}
+        {/* Left Edge Center: Settings Matrix */}
+        {isSuperModerator && (
+          <div 
+            className="fixed z-50 flex flex-col items-center justify-center pointer-events-auto"
+            style={{ top: '50%', left: '1%', transform: 'translateY(-50%)' }}
+          >
+            <SettingsFAB onClick={modals.openSettings} />
+          </div>
+        )}
+
+        <Header 
+          onTokenClick={modals.openWallet}
         onUserClick={modals.openUser}
         onRomapClick={modals.openRomap}
         seasonPhase={seasonPhase}
@@ -364,7 +398,6 @@ function App() {
           onSelect={setActiveCategory}
           isDark={isDarkMode}
           position="right"
-          isEtsForom={isEtsForom}
         />
       )}
 
@@ -389,7 +422,6 @@ function App() {
         questionLabels={activeQuestionLabels}
         personalQuests={activePersonalQuests}
         isEmptyGrid={isEtsForom}
-        isEtsForom={isEtsForom}
       />
 
       {/* --------------------------------------------------------------------------

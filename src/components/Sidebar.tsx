@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { CATEGORY_COLORS } from '../data/memories'
 
 // =============================================================================
@@ -19,7 +19,6 @@ export interface SidebarProps {
   onSelect: (id: string) => void
   isDark?: boolean
   position?: 'left' | 'right' | 'bottom'
-  isEtsForom?: boolean
 }
 
 // =============================================================================
@@ -36,9 +35,19 @@ const CURVE_INTENSITY = 12
 // COMPONENT
 // =============================================================================
 
-export function Sidebar({ items, activeId, onSelect, isDark = false, position = 'left', isEtsForom = false }: SidebarProps) {
+export function Sidebar({ items, activeId, onSelect, isDark = false, position = 'left' }: SidebarProps) {
   const wheelRef = useRef<HTMLDivElement>(null)
   const activeIndex = items.findIndex((item) => item.id === activeId)
+  
+  // Responsive Scale Factor for overlap resolution
+  const [scaleFactor, setScaleFactor] = useState(0.50)
+  
+  useEffect(() => {
+    const handleResize = () => setScaleFactor(window.innerHeight > window.innerWidth ? 0.35 : 0.50)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Handle mouse wheel scrolling for navigation
   useEffect(() => {
@@ -113,14 +122,14 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
   let targetAnim = {}
 
   if (position === 'left') {
-    initialAnim = { opacity: 0, scale: 0.50, x: '-50%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: 0.50, x: '-50%', y: '-50%' }
+    initialAnim = { opacity: 0, scale: scaleFactor, x: '-50%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: scaleFactor, x: '-50%', y: '-50%' }
   } else if (position === 'right') {
-    initialAnim = { opacity: 0, scale: 0.50, x: '50%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: 0.50, x: '50%', y: '-50%' }
+    initialAnim = { opacity: 0, scale: scaleFactor, x: '50%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: scaleFactor, x: '50%', y: '-50%' }
   } else if (position === 'bottom') {
-    initialAnim = { opacity: 0, scale: 0.50, x: '-50%', y: '50%' }
-    targetAnim = { opacity: 1, scale: 0.50, x: '-50%', y: '50%' }
+    initialAnim = { opacity: 0, scale: scaleFactor, x: '-50%', y: '50%' }
+    targetAnim = { opacity: 1, scale: scaleFactor, x: '-50%', y: '50%' }
   }
 
   return (
@@ -137,10 +146,10 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
       <div
         className="absolute rounded-full w-full h-full transition-all duration-300 pointer-events-auto"
         style={{
-          border: `3px solid ${isDark ? '#52525b' : (isEtsForom ? '#b30022' : '#9ca3af')}`,
+          border: `3px solid ${isDark ? '#52525b' : '#9ca3af'}`,
           background: isDark 
             ? 'linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%)' 
-            : (isEtsForom ? '#E3022C' : 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)'),
+            : '#FF7878',
         }}
       />
 

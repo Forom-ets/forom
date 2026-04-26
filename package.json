@@ -32,7 +32,7 @@
     "react-dom": "^19.2.0",
     "react-modal": "^3.16.3",
     "tailwindcss": "^4.1.18",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
