@@ -346,6 +346,17 @@ function App() {
         isPhantom={isPhantomMode}
       />
 
+      {/* Bottom Fade Gradient */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none transition-colors duration-300"
+        style={{ 
+          height: '25vh', 
+          background: isDarkMode 
+            ? 'linear-gradient(to top, #0D0D0F 15%, transparent 100%)' 
+            : 'linear-gradient(to top, #FF7878 15%, transparent 100%)' 
+        }}
+      />
+
       {/* --------------------------------------------------------------------------
           Corner Icons
       -------------------------------------------------------------------------- */}
@@ -371,7 +382,7 @@ function App() {
 
       {/* Bottom Center - Rubix View Toggle */}
       <div 
-        className="fixed z-50 flex justify-center items-center pointer-events-none"
+        className="fixed z-30 flex justify-center items-center pointer-events-none"
         style={{ bottom: '15px', left: '0', right: '0' }}
       >
         <motion.button

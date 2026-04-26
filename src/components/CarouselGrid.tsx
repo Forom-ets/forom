@@ -469,11 +469,11 @@ export function CarouselGrid({
       const colsList = [-1, 0, 1]
       const rowsList = [-2, -1, 0, 1, 2]
       return (
-        <div style={{ display: 'flex', flexDirection: 'row', gap: 'min(4vw, 24px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 'clamp(10px, 12vw, 60px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
           {colsList.map(col => {
             const opacity = Math.abs(col) === 0 ? 1 : 0.7
             return (
-              <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 'min(2vh, 16px)', opacity, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 4vh, 40px)', opacity, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                 {rowsList.map(rowOffset => renderCell(rowOffset, col))}
               </div>
             )
@@ -485,11 +485,11 @@ export function CarouselGrid({
       const rowsList = [-1, 0, 1]
       const colsList = [-2, -1, 0, 1, 2]
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'min(3vh, 24px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 10vh, 50px)', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
           {rowsList.map(rowOffset => {
             const opacity = Math.abs(rowOffset) === 0 ? 1 : 0.7
             return (
-              <div key={rowOffset} style={{ display: 'flex', flexDirection: 'row', gap: 'min(2vw, 16px)', opacity, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+              <div key={rowOffset} style={{ display: 'flex', flexDirection: 'row', gap: 'clamp(10px, 5vw, 40px)', opacity, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                 {colsList.map(col => renderCell(rowOffset, col))}
               </div>
             )

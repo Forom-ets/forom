@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { CATEGORY_COLORS } from '../data/memories'
 
 // =============================================================================
@@ -38,16 +38,6 @@ const CURVE_INTENSITY = 12
 export function Sidebar({ items, activeId, onSelect, isDark = false, position = 'left' }: SidebarProps) {
   const wheelRef = useRef<HTMLDivElement>(null)
   const activeIndex = items.findIndex((item) => item.id === activeId)
-  
-  // Responsive Scale Factor for overlap resolution
-  const [scaleFactor, setScaleFactor] = useState(0.50)
-  
-  useEffect(() => {
-    const handleResize = () => setScaleFactor(window.innerHeight > window.innerWidth ? 0.35 : 0.50)
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   // Handle mouse wheel scrolling for navigation
   useEffect(() => {
@@ -97,7 +87,7 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
   }, [items, activeId, onSelect])
 
   // Determine fixed positioning CSS
-  let containerClassName = "fixed z-40 flex items-center justify-center pointer-events-none"
+  let containerClassName = "fixed z-50 flex items-center justify-center pointer-events-none"
   let containerStyle: React.CSSProperties = { transformOrigin: 'center center', width: '400px', height: '400px' }
   let listStyle: React.CSSProperties = {}
   let listClassName = "absolute flex pointer-events-auto "
@@ -118,18 +108,23 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
   }
 
   // Initial animation
-  let initialAnim = {}
-  let targetAnim = {}
+  // Determine initial off-screen positioning to show a only a sliver of the circle
+  let initialAnim: any = {}
+  let targetAnim: any = {}
+  let hoverAnim: any = {}
 
   if (position === 'left') {
-    initialAnim = { opacity: 0, scale: scaleFactor, x: '-50%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: scaleFactor, x: '-50%', y: '-50%' }
+    initialAnim = { opacity: 0, scale: 1.2, x: '-90%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: 1.2, x: '-90%', y: '-50%' }
+    hoverAnim = { scale: 1.25, x: '-85%' }
   } else if (position === 'right') {
-    initialAnim = { opacity: 0, scale: scaleFactor, x: '50%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: scaleFactor, x: '50%', y: '-50%' }
+    initialAnim = { opacity: 0, scale: 1.2, x: '90%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: 1.2, x: '90%', y: '-50%' }
+    hoverAnim = { scale: 1.25, x: '85%' }
   } else if (position === 'bottom') {
-    initialAnim = { opacity: 0, scale: scaleFactor, x: '-50%', y: '50%' }
-    targetAnim = { opacity: 1, scale: scaleFactor, x: '-50%', y: '50%' }
+    initialAnim = { opacity: 0, scale: 1.2, x: '-50%', y: '90%' }
+    targetAnim = { opacity: 1, scale: 1.2, x: '-50%', y: '90%' }
+    hoverAnim = { scale: 1.25, y: '85%' }
   }
 
   return (
@@ -137,7 +132,7 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
       ref={wheelRef}
       initial={initialAnim}
       animate={targetAnim}
-      whileHover={{ scale: 0.8 }}
+      whileHover={hoverAnim}
       transition={{ duration: 0.3, type: 'spring', damping: 18 }}
       className={containerClassName}
       style={containerStyle}

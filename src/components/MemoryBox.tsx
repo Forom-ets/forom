@@ -55,14 +55,14 @@ export const MemoryBox = memo(function MemoryBox({
     if (isPortrait) {
       // Tall rectangles for portrait - scaled down to match screenshot 2 exactly
       if (isCentered) return { width: 'clamp(160px, 45vw, 240px)', height: 'clamp(200px, 25vh, 320px)', minWidth: '160px', minHeight: '200px' };
-      if (isSmall)    return { width: 'clamp(60px, 20vw, 120px)', height: 'clamp(80px, 14vh, 170px)', minWidth: '60px', minHeight: '80px' };
-      if (isExtraSmall) return { width: 'clamp(40px, 12vw, 80px)', height: 'clamp(60px, 8vh, 120px)', minWidth: '40px', minHeight: '60px' };
+      if (isSmall)    return { width: 'clamp(60px, 22vw, 160px)', height: 'clamp(80px, 15vh, 200px)', minWidth: '60px', minHeight: '80px' };
+      if (isExtraSmall) return { width: 'clamp(40px, 15vw, 100px)', height: 'clamp(60px, 10vh, 140px)', minWidth: '40px', minHeight: '60px' };
       return { width: 'clamp(50px, 12vw, 90px)', height: 'clamp(70px, 10vh, 130px)', minWidth: '50px', minHeight: '70px' };
     } else {
       // Wide rectangles for landscape - scaled down to prevent hiding under header/sidebar
       if (isCentered) return { width: 'clamp(240px, 40vw, 550px)', height: 'clamp(180px, 40vh, 320px)', minWidth: '240px', minHeight: '180px' };
-      if (isSmall)    return { width: 'clamp(120px, 18vw, 280px)', height: 'clamp(90px, 16vh, 200px)', minWidth: '120px', minHeight: '90px' };
-      if (isExtraSmall) return { width: 'clamp(60px, 8vw, 140px)', height: 'clamp(50px, 8vh, 100px)', minWidth: '60px', minHeight: '50px' };
+      if (isSmall)    return { width: 'clamp(120px, 20vw, 320px)', height: 'clamp(90px, 18vh, 240px)', minWidth: '120px', minHeight: '90px' };
+      if (isExtraSmall) return { width: 'clamp(60px, 10vw, 160px)', height: 'clamp(50px, 10vh, 120px)', minWidth: '60px', minHeight: '50px' };
       return { width: 'clamp(100px, 15vw, 240px)', height: 'clamp(80px, 16vh, 160px)', minWidth: '100px', minHeight: '80px' };
     }
   }

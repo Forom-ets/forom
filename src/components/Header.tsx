@@ -84,7 +84,7 @@ export function Header({ onTokenClick, onUserClick, onLobbyClick, onRomapClick, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="px-[3%] relative z-50 flex items-center transition-colors duration-300"
-      style={{ paddingTop: '2.2vh', paddingBottom: '1.6vh', backgroundColor: isDark ? '#0D0D0F' : '#FF7878' }}
+      style={{ paddingTop: '2.2vh', paddingBottom: '1.6vh', background: isDark ? 'linear-gradient(to bottom, #0D0D0F 1%, transparent 100%)' : 'linear-gradient(to bottom, #FF7878 1%, transparent 100%)' }}
     >
       {/* ---- Left group: Top Left Stack ---- */}
       <div className="flex items-start" style={{ gap: '5%', flex: 1 }}>
