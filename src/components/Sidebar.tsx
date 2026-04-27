@@ -94,37 +94,38 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
 
   if (position === 'left') {
     containerStyle = { ...containerStyle, left: '0px', top: '50%' }
-    listStyle = { left: '440px', top: '50%', transform: 'translateY(-50%)' }
+    listStyle = { left: '420px', top: '50%', transform: 'translateY(-50%)' } // Offset so text is always visible
     listClassName += "flex-col items-start"
   } else if (position === 'right') {
     containerStyle = { ...containerStyle, right: '0px', top: '50%' }
-    listStyle = { right: '440px', top: '50%', transform: 'translateY(-50%)' }
+    listStyle = { right: '420px', top: '50%', transform: 'translateY(-50%)' } // Offset so text is always visible
     listClassName += "flex-col items-end"
   } else if (position === 'bottom') {
     containerStyle = { ...containerStyle, bottom: '0px', left: '50%' }
-    // Text container anchored above the circle. 240px physical from center -> 120px visual from center.
-    listStyle = { bottom: '440px', left: '50%', transform: 'translateX(-50%)', width: '800px' } 
+    // Text container anchored above the circle
+    listStyle = { bottom: '420px', left: '50%', transform: 'translateX(-50%)', width: '800px' } 
     listClassName += "flex-row justify-center items-end gap-12"
   }
 
   // Initial animation
-  // Determine initial off-screen positioning to show a only a sliver of the circle
+  // Determine initial off-screen positioning to show a only a sliver of the circle (10%)
+  // On hover, we reveal up to 50% of the circle by sliding it out
   let initialAnim: any = {}
   let targetAnim: any = {}
   let hoverAnim: any = {}
 
   if (position === 'left') {
-    initialAnim = { opacity: 0, scale: 1.2, x: '-90%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: 1.2, x: '-90%', y: '-50%' }
-    hoverAnim = { scale: 1.25, x: '-85%' }
+    initialAnim = { opacity: 0, scale: 0.5, x: '-65%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: 0.5, x: '-65%', y: '-50%' }
+    hoverAnim = { scale: 0.6, x: '-50%' }
   } else if (position === 'right') {
-    initialAnim = { opacity: 0, scale: 1.2, x: '90%', y: '-50%' }
-    targetAnim = { opacity: 1, scale: 1.2, x: '90%', y: '-50%' }
-    hoverAnim = { scale: 1.25, x: '85%' }
+    initialAnim = { opacity: 0, scale: 0.5, x: '65%', y: '-50%' }
+    targetAnim = { opacity: 1, scale: 0.5, x: '65%', y: '-50%' }
+    hoverAnim = { scale: 0.6, x: '50%' }
   } else if (position === 'bottom') {
-    initialAnim = { opacity: 0, scale: 1.2, x: '-50%', y: '90%' }
-    targetAnim = { opacity: 1, scale: 1.2, x: '-50%', y: '90%' }
-    hoverAnim = { scale: 1.25, y: '85%' }
+    initialAnim = { opacity: 0, scale: 0.5, x: '-50%', y: '65%' }
+    targetAnim = { opacity: 1, scale: 0.5, x: '-50%', y: '65%' }
+    hoverAnim = { scale: 0.6, y: '50%' }
   }
 
   return (

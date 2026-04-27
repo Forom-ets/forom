@@ -303,21 +303,24 @@ function App() {
         <ThemeToggle isDark={isDarkMode} onToggle={() => setIsDarkMode(!isDarkMode)} />
         
         {/* Quest Hub */}
-        <motion.button
-          onClick={isPhantomMode ? undefined : () => modals.openQuest()}
-          whileHover={isPhantomMode ? {} : { scale: 1.12 }}
-          whileTap={isPhantomMode ? {} : { scale: 0.92 }}
-          className={`rounded-full flex items-center justify-center border-2 border-transparent hover:border-orange-500 transition-colors duration-300 ${isPhantomMode ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-          style={{ width: '36px', height: '36px', backgroundColor: 'transparent' }}
-          title={isPhantomMode ? "Locked (Phantom Mode)" : "Quest"}
-          aria-label="Quest"
-        >
-          {isPhantomMode ? (
-            <Lock size={16} color="#ffffff" />
-          ) : (
-            <img src={tokensIcon} alt="Quest" className="w-full h-full object-contain" />
-          )}
-        </motion.button>
+        <div className="flex flex-col items-center">
+          <motion.button
+            onClick={isPhantomMode ? undefined : () => modals.openQuest()}
+            whileHover={isPhantomMode ? {} : { scale: 1.12 }}
+            whileTap={isPhantomMode ? {} : { scale: 0.92 }}
+            className={`rounded-full flex items-center justify-center border-2 border-transparent hover:border-orange-500 transition-colors duration-300 ${isPhantomMode ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+            style={{ width: '64px', height: '64px', backgroundColor: 'transparent', marginTop: '1vh' }}
+            title={isPhantomMode ? "Locked (Phantom Mode)" : "Quest"}
+            aria-label="Quest"
+          >
+            {isPhantomMode ? (
+              <Lock size={16} color="#ffffff" />
+            ) : (
+              <img src={tokensIcon} alt="Quest" className="w-3/4 h-3/4 object-contain" />
+            )}
+          </motion.button>
+          
+        </div>
         </div>
 
         {/* Left Edge Center: Settings Matrix */}
@@ -346,7 +349,18 @@ function App() {
         isPhantom={isPhantomMode}
       />
 
-      {/* Bottom Fade Gradient */}
+      {/* Edge Fade Gradients (Top, Bottom, Left, Right) */}
+      {/* Top Edge */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-20 pointer-events-none transition-colors duration-300"
+        style={{ 
+          height: '25vh', 
+          background: isDarkMode 
+            ? 'linear-gradient(to bottom, #0D0D0F 15%, transparent 100%)' 
+            : 'linear-gradient(to bottom, #FF7878 15%, transparent 100%)' 
+        }}
+      />
+      {/* Bottom Edge */}
       <div 
         className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none transition-colors duration-300"
         style={{ 
@@ -354,6 +368,26 @@ function App() {
           background: isDarkMode 
             ? 'linear-gradient(to top, #0D0D0F 15%, transparent 100%)' 
             : 'linear-gradient(to top, #FF7878 15%, transparent 100%)' 
+        }}
+      />
+      {/* Left Edge */}
+      <div 
+        className="fixed top-0 bottom-0 left-0 z-20 pointer-events-none transition-colors duration-300"
+        style={{ 
+          width: '5vw', 
+          background: isDarkMode 
+            ? 'linear-gradient(to right, #0D0D0F 15%, transparent 100%)' 
+            : 'linear-gradient(to right, #FF7878 15%, transparent 100%)' 
+        }}
+      />
+      {/* Right Edge */}
+      <div 
+        className="fixed top-0 bottom-0 right-0 z-20 pointer-events-none transition-colors duration-300"
+        style={{ 
+          width: '5vw', 
+          background: isDarkMode 
+            ? 'linear-gradient(to left, #0D0D0F 15%, transparent 100%)' 
+            : 'linear-gradient(to left, #FF7878 15%, transparent 100%)' 
         }}
       />
 
@@ -372,7 +406,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
           className={`${cornerIconStyle}`}
-          style={{ ...cornerIconSize, backgroundColor: 'transparent', borderColor: 'transparent' }}
+          style={{ ...cornerIconSize, backgroundColor: 'transparent', borderColor: 'transparent', marginTop: '1vh' }}
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -383,7 +417,7 @@ function App() {
       {/* Bottom Center - Rubix View Toggle */}
       <div 
         className="fixed z-30 flex justify-center items-center pointer-events-none"
-        style={{ bottom: '15px', left: '0', right: '0' }}
+        style={{ bottom: '86px', left: '0', right: '0' }}
       >
         <motion.button
           onClick={() => setIsRubixView(prev => !prev)}

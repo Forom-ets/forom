@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, easeOut, easeIn } from 'framer-motion'
 import { MemoryBox } from './MemoryBox'
 import { MemoryModal } from './MemoryModal'
+import { EmptyQuestModal } from './EmptyQuestModal'
+import { useModalStore } from '../stores/useModalStore'
 import { getMemory, ITEMS_PER_ROW, QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS } from '../data/memories'
 import type { Memory, CategoryType } from '../data/memories'
 import { mixColors } from '../utils/colors'
@@ -65,11 +67,14 @@ export function CarouselGrid({
   // Start at horizontal index 5 so that the center tile (5 + activeIndex*10) hits 46 when paired with category E
   const [horizontalIndex, setHorizontalIndex] = useState(5)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEmptyQuestModalOpen, setIsEmptyQuestModalOpen] = useState(false)
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
   const [memoryUpdateKey, setMemoryUpdateKey] = useState(0) // For triggering re-renders
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth)
   const activeIndex = categories.indexOf(activeCategory)
   const gridRef = useRef<HTMLDivElement | null>(null)
+  
+  const openQuest = useModalStore(state => state.openQuest)
 
   // Track window dimensions for responsive grid layout
   useEffect(() => {
@@ -222,7 +227,7 @@ export function CarouselGrid({
 
     const handleWheel = (e: WheelEvent) => {
       // Don't handle wheel events if modal is open
-      if (isModalOpen) return
+      if (isModalOpen || isEmptyQuestModalOpen) return
       if (!gridRef.current?.contains(e.target as Node)) return
       e.preventDefault()
 
@@ -258,7 +263,7 @@ export function CarouselGrid({
       node.addEventListener('wheel', handleWheel, { passive: false })
       return () => node.removeEventListener('wheel', handleWheel)
     }
-  }, [isModalOpen, handlePrevCategory, handleNextCategory, handlePrevVideo, handleNextVideo])
+  }, [isModalOpen, isEmptyQuestModalOpen, handlePrevCategory, handleNextCategory, handlePrevVideo, handleNextVideo])
 
   /** Handle click on a video box to navigate to it */
   const handleBoxClick = (rowOffset: number, colOffset: number) => {
@@ -450,7 +455,13 @@ export function CarouselGrid({
             isDark={isDark}
             isLocked={isLocked}
             onClick={() => handleBoxClick(rowOffset, col)}
-            onInfoClick={isCentered && !isLocked ? () => setIsModalOpen(true) : undefined}
+            onInfoClick={isCentered ? () => {
+              if (isLocked) {
+                setIsEmptyQuestModalOpen(true)
+              } else {
+                setIsModalOpen(true)
+              }
+            } : undefined}
             categoryName={categoryName}
             tagName={tagName}
             isPortrait={isPortrait}
@@ -669,6 +680,19 @@ export function CarouselGrid({
         onMemoryUpdate={handleMemoryUpdate}
         onQuestComplete={acceptedQuestId && onQuestComplete ? () => onQuestComplete(acceptedQuestId) : undefined}
         questionLabels={questionLabels}
+      />
+
+      {/* Empty Quest / Terminal redirect */}
+      <EmptyQuestModal
+        isOpen={isEmptyQuestModalOpen}
+        onClose={() => setIsEmptyQuestModalOpen(false)}
+        memory={currentMemory}
+        categoryLabel={currentMemory ? (categoryLabels[currentMemory.category] || currentMemory.category) : undefined}
+        tagLabel={currentMemory?.question ? (questionLabels[currentMemory.question] || currentMemory.question) : undefined}
+        onTokenClick={() => {
+          setIsEmptyQuestModalOpen(false)
+          openQuest()
+        }}
       />
     </div>
   )
