@@ -39,7 +39,7 @@ export function EmptyQuestModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[15] flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[35] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]"
           onClick={onClose}
         >
           {/* Main Container - Centered */}
@@ -47,20 +47,40 @@ export function EmptyQuestModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative flex flex-col items-center justify-center text-center bg-[#D9D9D9] w-[85vw] h-[70vh] max-w-[1200px] border-[10px] md:border-[16px] border-black rounded-[40px] shadow-2xl"
+            className="relative flex flex-col items-center justify-center text-center bg-[#D9D9D9] w-[80vw] h-[65vh] max-w-[1000px] border-[8px] md:border-[12px] border-[#747474] rounded-[24px] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
             style={{ boxSizing: 'border-box' }}
           >
             {/* Close Button top-right */}
             <button
-              onClick={onClose}
-              className="absolute top-4 right-4 md:top-6 md:right-6 bg-black hover:bg-gray-800 text-white rounded-full w-[36px] h-[36px] md:w-[48px] md:h-[48px] transition-colors z-50 flex items-center justify-center cursor-pointer shadow-lg outline-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              style={{
+                position: 'absolute',
+                top: '-15px',
+                right: '-15px',
+                backgroundColor: 'white',
+                color: 'black',
+                border: '3px solid black',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 100,
+                pointerEvents: 'auto',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}
             >
-              <X size={20} strokeWidth={3} className="md:w-[24px] md:h-[24px]" />
+              <X size={20} strokeWidth={3} />
             </button>
 
             {/* TOP INFOS */}
-            <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-center gap-1 uppercase font-bold text-[#111111]" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 'clamp(10px, 1.2vw, 14px)' }}>
+            <div className="absolute top-[12%] left-0 w-full flex flex-col items-center justify-center gap-1 uppercase font-bold text-[#111111]" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 'clamp(10px, 1.2vw, 14px)' }}>
               <div>[ CATEGORY: {categoryLabel || memory.category} ]</div>
               <div>[ TAG: {tagLabel || memory.question} ]</div>
             </div>
@@ -69,7 +89,7 @@ export function EmptyQuestModal({
             <div className="flex-1 flex items-center justify-center">
               <h2 
                 className="text-black uppercase tracking-widest drop-shadow-sm font-bold m-0 leading-none"
-                style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(40px, 9vw, 100px)' }}
+                style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(50px, 12vw, 150px)' }}
               >
                 AUCUNE QUÊTE
               </h2>
@@ -84,8 +104,12 @@ export function EmptyQuestModal({
                 </span>
               </span>
               <button 
-                onClick={onTokenClick}
-                className="hover:scale-110 transition-transform cursor-pointer bg-transparent border-none p-0 outline-none mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTokenClick();
+                }}
+                className="hover:scale-110 transition-transform cursor-pointer outline-none mt-2 relative"
+                style={{ background: 'transparent', border: 'none', padding: 0, zIndex: 100, pointerEvents: 'auto' }}
               >
                 <img 
                   src={tokensIcon} 

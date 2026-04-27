@@ -352,42 +352,42 @@ function App() {
       {/* Edge Fade Gradients (Top, Bottom, Left, Right) */}
       {/* Top Edge */}
       <div 
-        className="fixed top-0 left-0 right-0 z-20 pointer-events-none transition-colors duration-300"
+        className="fixed top-0 left-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
         style={{ 
           height: '25vh', 
           background: isDarkMode 
-            ? 'linear-gradient(to bottom, #0D0D0F 15%, transparent 100%)' 
-            : 'linear-gradient(to bottom, #FF7878 15%, transparent 100%)' 
+            ? 'linear-gradient(to bottom, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
+            : 'linear-gradient(to bottom, #FF7878 5%, #FF787899 20%, transparent 100%)' 
         }}
       />
       {/* Bottom Edge */}
       <div 
-        className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none transition-colors duration-300"
+        className="fixed bottom-0 left-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
         style={{ 
           height: '25vh', 
           background: isDarkMode 
-            ? 'linear-gradient(to top, #0D0D0F 15%, transparent 100%)' 
-            : 'linear-gradient(to top, #FF7878 15%, transparent 100%)' 
+            ? 'linear-gradient(to top, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
+            : 'linear-gradient(to top, #FF7878 5%, #FF787899 20%, transparent 100%)' 
         }}
       />
       {/* Left Edge */}
       <div 
-        className="fixed top-0 bottom-0 left-0 z-20 pointer-events-none transition-colors duration-300"
+        className="fixed top-0 bottom-0 left-0 z-[60] pointer-events-none transition-colors duration-300"
         style={{ 
-          width: '5vw', 
+          width: '15vw', 
           background: isDarkMode 
-            ? 'linear-gradient(to right, #0D0D0F 15%, transparent 100%)' 
-            : 'linear-gradient(to right, #FF7878 15%, transparent 100%)' 
+            ? 'linear-gradient(to right, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
+            : 'linear-gradient(to right, #FF7878 5%, #FF787899 20%, transparent 100%)' 
         }}
       />
       {/* Right Edge */}
       <div 
-        className="fixed top-0 bottom-0 right-0 z-20 pointer-events-none transition-colors duration-300"
+        className="fixed top-0 bottom-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
         style={{ 
-          width: '5vw', 
+          width: '15vw', 
           background: isDarkMode 
-            ? 'linear-gradient(to left, #0D0D0F 15%, transparent 100%)' 
-            : 'linear-gradient(to left, #FF7878 15%, transparent 100%)' 
+            ? 'linear-gradient(to left, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
+            : 'linear-gradient(to left, #FF7878 5%, #FF787899 20%, transparent 100%)' 
         }}
       />
 

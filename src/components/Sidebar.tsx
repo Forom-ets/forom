@@ -87,7 +87,7 @@ export function Sidebar({ items, activeId, onSelect, isDark = false, position = 
   }, [items, activeId, onSelect])
 
   // Determine fixed positioning CSS
-  let containerClassName = "fixed z-50 flex items-center justify-center pointer-events-none"
+  let containerClassName = "fixed z-40 flex items-center justify-center pointer-events-none"
   let containerStyle: React.CSSProperties = { transformOrigin: 'center center', width: '400px', height: '400px' }
   let listStyle: React.CSSProperties = {}
   let listClassName = "absolute flex pointer-events-auto "
