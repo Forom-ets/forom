@@ -1,11 +1,12 @@
 import ReactModal from 'react-modal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useRef, useEffect, useCallback, useMemo, Fragment } from 'react'
-import { X } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { X, Mail } from 'lucide-react'
 import { QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS, getMemory } from '../data/memories'
 import type { CategoryType, WhQuestion } from '../data/memories'
 import { mixColors } from '../utils/colors'
 import type { UserRole } from '../App'
+import tokenIcon from '../assets/icons/tokens.svg'
 
 // Category band colors removed because we now use mixColors
 
@@ -101,21 +102,12 @@ export function QuestModal({
   personalQuests,
   acceptedQuestId,
   questionLabels,
-  categoryLabels = {},
-  onCreateQuest,
-  onAcceptQuest,
+  categories = ['A', 'B', 'C', 'D', 'E'],
   onCompleteQuest,
   onCancelQuest,
-  seasonPhase = 'V1',
-  pixels = 0,
-  canCreateQuest = true,
-  categories = ['A', 'B', 'C', 'D', 'E'],
   userRole
 }: QuestModalProps) {
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
-  const [newTitle, setNewTitle] = useState('')
-  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0])
   const [wheelIndex, setWheelIndex] = useState(0)
   const [boardSelectedId, setBoardSelectedId] = useState<string | null>(null)
   const wheelRef = useRef<HTMLDivElement>(null)
@@ -222,33 +214,6 @@ export function QuestModal({
     }
   }, [acceptedQuestId])
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newTitle.trim() || !selectedQuestion) return // Require tag/question
-    
-    // In V1, limit is 100. In V2+, we allow "iterations"
-    const cost = seasonPhase === 'V1' ? 2 : 1;
-    if (pixels < cost) {
-      alert(`Vous n'avez pas assez de pixels. (Coût: ${cost}px)`);
-      return;
-    }
-
-    if (seasonPhase === 'V1' && personalQuests.length >= 100) return
-
-    // Calculate where this new quest will land so we can scroll to it immediately
-    const catIdx = categories.indexOf(selectedCategory)
-    const tagIndex = parseInt(selectedQuestion || '0', 10)
-    const targetIdx = catIdx * 10 + (isNaN(tagIndex) ? 0 : tagIndex)
-
-    onCreateQuest(newTitle, cost, selectedQuestion, selectedCategory)
-    setNewTitle('')
-    setSelectedQuestion(null)
-    
-    // Auto-scroll the wheel to the newly created quest's position
-    setWheelIndex(targetIdx)
-  }
-
-  const centeredQuestId = wheelQuests[wheelIndex]?.id ?? null
   return (
     <AnimatePresence>
       {isOpen && (
@@ -274,10 +239,10 @@ export function QuestModal({
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
-              backgroundColor: '#FE6C17',
-              border: '6px solid black',
+              backgroundColor: '#FFCA82',
+              border: '6px solid white',
               borderRadius: '32px',
-              color: 'white',
+              color: 'black',
               overflow: 'hidden',
             }}
           >
@@ -294,21 +259,19 @@ export function QuestModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#FF4B4B',
-                border: '3px solid black',
+                backgroundColor: 'black',
+                border: '4px solid white',
                 cursor: 'pointer',
-                boxShadow: '0 4px 0px rgba(0,0,0,1)',
+                boxShadow: 'none',
                 transition: 'transform 0.1s, box-shadow 0.1s'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#ff3333'
+                e.currentTarget.style.backgroundColor = '#333'
                 e.currentTarget.style.transform = 'translateY(2px)'
-                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = '#FF4B4B'
+                e.currentTarget.style.backgroundColor = 'black'
                 e.currentTarget.style.transform = 'none'
-                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
               }}
               type="button"
               aria-label="Close modal"
@@ -327,11 +290,11 @@ export function QuestModal({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#0066FF',
-                  border: '3px solid black',
+                  backgroundColor: 'transparent',
+                  border: '4px solid white',
                   cursor: 'pointer',
-                  boxShadow: activeTab === 'community' ? '0 0px 0px rgba(0,0,0,1)' : '0 4px 0px rgba(0,0,0,1)',
-                  transform: activeTab === 'community' ? 'translateY(4px)' : 'none',
+                  boxShadow: 'none',
+                  transform: activeTab === 'community' ? 'scale(1.1)' : 'none',
                   transition: 'transform 0.1s, box-shadow 0.1s',
                   fontFamily: "'Jersey 15', sans-serif",
                   fontSize: '28px',
@@ -341,17 +304,13 @@ export function QuestModal({
                 }}
                 onMouseOver={(e) => {
                   if (activeTab !== 'community') {
-                    e.currentTarget.style.backgroundColor = '#3385ff'
-                    e.currentTarget.style.transform = 'translateY(2px)'
-                    e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'
                     e.currentTarget.style.opacity = '1'
                   }
                 }}
                 onMouseOut={(e) => {
                   if (activeTab !== 'community') {
-                    e.currentTarget.style.backgroundColor = '#0066FF'
-                    e.currentTarget.style.transform = 'none'
-                    e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
+                    e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.opacity = '0.7'
                   }
                 }}
@@ -369,11 +328,11 @@ export function QuestModal({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#FFD700',
-                  border: '3px solid black',
+                  backgroundColor: 'transparent',
+                  border: '4px solid black',
                   cursor: 'pointer',
-                  boxShadow: activeTab === 'personal' ? '0 0px 0px rgba(0,0,0,1)' : '0 4px 0px rgba(0,0,0,1)',
-                  transform: activeTab === 'personal' ? 'translateY(4px)' : 'none',
+                  boxShadow: 'none',
+                  transform: activeTab === 'personal' ? 'scale(1.1)' : 'none',
                   transition: 'transform 0.1s, box-shadow 0.1s',
                   fontFamily: "'Jersey 15', sans-serif",
                   fontSize: '28px',
@@ -383,17 +342,13 @@ export function QuestModal({
                 }}
                 onMouseOver={(e) => {
                   if (activeTab !== 'personal') {
-                    e.currentTarget.style.backgroundColor = '#ffe033'
-                    e.currentTarget.style.transform = 'translateY(2px)'
-                    e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
+                    e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.1)'
                     e.currentTarget.style.opacity = '1'
                   }
                 }}
                 onMouseOut={(e) => {
                   if (activeTab !== 'personal') {
-                    e.currentTarget.style.backgroundColor = '#FFD700'
-                    e.currentTarget.style.transform = 'none'
-                    e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
+                    e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.opacity = '0.7'
                   }
                 }}
@@ -403,13 +358,25 @@ export function QuestModal({
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto flex flex-col font-jersey" style={{ padding: 'clamp(16px, 3vh, 40px) clamp(20px, 4vw, 60px)' }}>
+            <div className="flex-1 overflow-auto flex flex-col font-jersey relative" style={{ padding: 'clamp(16px, 3vh, 40px) clamp(20px, 4vw, 60px)' }}>
               {/* Header */}
-              <div className="relative flex justify-between items-center mb-[clamp(8px,2vh,32px)]">
-                <div className="w-full flex justify-center items-end">
-                  <h1 className="flex-shrink-0 text-white tracking-widest m-0 leading-none text-center font-bold uppercase drop-shadow-sm" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '50px' }}>
-                    QUESTS
-                  </h1>
+              <div className="relative flex justify-center items-center flex-col mt-4 mb-[clamp(8px,2vh,32px)] z-10">
+                <h1 className="text-black tracking-widest m-0 leading-none text-center font-bold font-jersey" style={{ fontSize: '80px' }}>
+                  Terminal
+                </h1>
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-25px', // adjust Token icon position
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFCA82', // Match BG
+                  zIndex: 20
+                }}>
+                  <img src={tokenIcon} alt="Tokens" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
               </div>
 
@@ -851,189 +818,18 @@ export function QuestModal({
 
                 </div>
               ) : (
-                <div className="flex-1 flex w-full max-w-7xl mx-auto h-full overflow-hidden mt-2 pb-2 px-4" style={{ gap: '2vw' }}>
-                  
-                  {/* LEFTSIDE: CREATION (Idées) — only for creators/mods/supermods */}
-                  {canCreateQuest && (
-                  <div className="flex flex-col relative w-1/2 h-full">
-                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] flex flex-col relative flex-1 min-h-0 overflow-hidden" style={{ padding: 'clamp(8px, 1.5vh, 24px)' }}>
-                      {/* Header */}
-                      <div className="flex-shrink-0 flex items-center justify-center pb-2">
-                        <h3 className="text-center text-[clamp(20px,4vh,50px)] text-black uppercase tracking-widest drop-shadow-sm font-bold m-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif", color: 'black' }}>
-                          ENVOYER UNE QUÊTE
-                        </h3>
-                      </div>
-                      
-                      {/* Inner Content - scaled to fit without scroll */}
-                      <div className="flex-1 w-full flex flex-col items-center justify-start pt-1 overflow-hidden" style={{ gap: 'clamp(2px, 0.5vh, 6px)' }}>
-                        
-                        {/* Top Block: QUESTION_ORDER (Vision, Équipe...) labeled as "TAGS" on the right */}
-                        <div className="flex items-center w-[90%] mb-1 mt-2">
-                          <span className="font-bold uppercase tracking-widest mr-[10px]" style={{ color: '#000000', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(10px, 1.5vh, 14px)' }}>X</span>
-                          <div className="flex-1 h-[2px]" style={{ backgroundColor: '#000000' }}></div>
-                          <span className="font-bold uppercase tracking-widest ml-[10px]" style={{ color: '#000000', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(10px, 1.5vh, 14px)' }}>TAGS</span>
-                        </div>
-
-                        {/* Question tags (Tags) */}
-                        <div className="flex flex-wrap justify-center items-center font-bold text-center" style={{ width: '90%', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(11px, 1.8vh, 16px)', lineHeight: 'clamp(14px, 2.5vh, 24px)' }}>
-                          {QUESTION_ORDER.map((tag, i) => {
-                            const color = QUESTION_COLORS[tag] || '#888888';
-                            const isSelected = selectedQuestion === tag;
-                            const label = questionLabels[tag] || tag;
-                            return (
-                              <Fragment key={tag}>
-                                <span
-                                  onClick={() => setSelectedQuestion(isSelected ? null : tag)}
-                                  className="cursor-pointer transition-all"
-                                  style={{
-                                    backgroundColor: isSelected ? color : 'transparent',
-                                    color: isSelected ? '#FFFFFF' : '#000000',
-                                    padding: 'clamp(1px, 0.2vh, 4px) clamp(4px, 0.8vw, 10px)',
-                                    borderRadius: '8px',
-                                    border: isSelected ? '3px solid #000000' : '3px solid transparent',
-                                    margin: '0 2px',
-                                    display: 'inline-block',
-                                    lineHeight: 1,
-                                    transform: isSelected ? 'scale(1.05)' : 'none',
-                                    boxShadow: isSelected ? '0 2px 0px rgba(0,0,0,1)' : 'none',
-                                  }}
-                                >
-                                  {label}
-                                </span>
-                                {i < QUESTION_ORDER.length - 1 && <span className="font-normal px-[2px]" style={{ color: '#000000' }}>|</span>}
-                              </Fragment>
-                            );
-                          })}
-                        </div>
-                        
-                        {/* Bottom Block: categories (Idées, Échange...) labeled as "CATEGORIES" on the left */}
-                        <div className="flex items-center w-[90%] mb-1 mt-2">
-                          <span className="font-bold uppercase tracking-widest mr-[10px]" style={{ color: '#000000', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(10px, 1.5vh, 14px)' }}>CATEGORIES</span>
-                          <div className="flex-1 h-[2px]" style={{ backgroundColor: '#000000' }}></div>
-                          <span className="font-bold uppercase tracking-widest ml-[10px]" style={{ color: '#000000', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(10px, 1.5vh, 14px)' }}>Y</span>
-                        </div>
-
-                        {/* Category selector */}
-                        <div className="flex flex-wrap justify-center items-center font-bold text-center" style={{ width: '90%', fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(11px, 1.8vh, 16px)', lineHeight: 'clamp(14px, 2.5vh, 24px)' }}>
-                          {categories.map((cat, i) => {
-                            const isSelected = selectedCategory === cat;
-                            const label = categoryLabels[cat] || cat;
-                            return (
-                              <Fragment key={cat}>
-                                <span
-                                  onClick={() => setSelectedCategory(cat)}
-                                  className="cursor-pointer transition-all"
-                                  style={{
-                                    backgroundColor: isSelected ? (CATEGORY_COLORS[cat] || 'rgba(0,0,0,0.4)') : 'transparent',
-                                    color: isSelected ? '#FFFFFF' : '#000000',
-                                    padding: 'clamp(1px, 0.2vh, 4px) clamp(4px, 0.8vw, 10px)',
-                                    borderRadius: '8px',
-                                    border: isSelected ? '3px solid #000000' : '3px solid transparent',
-                                    margin: '0 2px',
-                                    display: 'inline-block',
-                                    lineHeight: 1,
-                                    transform: isSelected ? 'scale(1.05)' : 'none',
-                                    boxShadow: isSelected ? '0 2px 0px rgba(0,0,0,1)' : 'none',
-                                  }}
-                                >
-                                  {label}
-                                </span>
-                                {i < categories.length - 1 && <span className="font-normal px-[2px]" style={{ color: '#000000' }}>|</span>}
-                              </Fragment>
-                            );
-                          })}
-                        </div>
-
-                      <form id="quest-form" onSubmit={handleCreate} className="flex flex-col items-center w-full mt-auto flex-shrink-0 pt-[clamp(2px,0.5vh,6px)] pb-[clamp(2px,0.5vh,6px)]">
-                        <input
-                          type="text"
-                          value={newTitle}
-                          onChange={e => setNewTitle(e.target.value)}
-                          placeholder="TITRE DE LA QUÊTE"
-                          className="text-[clamp(14px,2vh,20px)] text-center text-black font-bold uppercase placeholder:text-black/40"
-                          style={{
-                            fontFamily: "'Jersey 15', sans-serif",
-                            letterSpacing: '0.15em',
-                            paddingBottom: 'clamp(2px, 0.3vh, 4px)',
-                            marginBottom: 'clamp(2px, 0.5vh, 6px)',
-                            width: '90%',
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: '2px solid black',
-                            outline: 'none',
-                            WebkitAppearance: 'none',
-                            MozAppearance: 'none',
-                            appearance: 'none',
-                            boxShadow: 'none',
-                          }}
-                          maxLength={40}
-                        />
-                      </form>
-                      </div> {/* End Inner Content */}
-
-                      {/* Envoyer button — flex child, same pb/pt as SÉLECTIONNER for vertical alignment */}
-                      <div className="flex flex-shrink-0 flex-col justify-center items-center pt-4" style={{ gap: '8px' }}>
-                        {/* Quest count */}
-                        <span style={{
-                          fontFamily: "'Jersey 15', sans-serif",
-                          fontSize: '18px',
-                          color: personalQuests.length >= 100 ? '#c0392b' : 'rgba(0,0,0,0.45)',
-                          letterSpacing: '0.05em',
-                        }}>
-                          {personalQuests.length} / 100
-                        </span>
-                        <button
-                          form="quest-form"
-                          type="submit"
-                          disabled={!newTitle.trim() || !selectedQuestion || (seasonPhase === 'V1' && personalQuests.length >= 100) || pixels < (seasonPhase === 'V1' ? 2 : 1)}
-                          style={{
-                            padding: '12px 40px',
-                            borderRadius: '16px',
-                            backgroundColor: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'rgba(255,255,255,0.4)' : 'white',
-                            color: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'rgba(0,0,0,0.4)' : 'black',
-                            fontSize: '32px',
-                            fontFamily: "'Jersey 15', sans-serif",
-                            border: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? '4px solid rgba(0,0,0,0.2)' : '4px solid black',
-                            cursor: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'not-allowed' : 'pointer',
-                            boxShadow: (!newTitle.trim() || !selectedQuestion || personalQuests.length >= 100) ? 'none' : '0 4px 0px rgba(0,0,0,1)',
-                            transition: 'transform 0.1s, box-shadow 0.1s',
-                            whiteSpace: 'nowrap',
-                          }}
-                          onMouseOver={(e) => {
-                            if (newTitle.trim() && selectedQuestion && (seasonPhase !== 'V1' || personalQuests.length < 100)) {
-                              e.currentTarget.style.transform = 'translateY(2px)'
-                              e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            if (newTitle.trim() && selectedQuestion && (seasonPhase !== 'V1' || personalQuests.length < 100)) {
-                              e.currentTarget.style.transform = 'none'
-                              e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                            }
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>
-                              {seasonPhase === 'V1' ? (personalQuests.length >= 100 ? 'GRILLE PLEINE' : 'ENVOYER') : 'ITÉRER'}
-                            </span>
-                            {personalQuests.length < 100 && (
-                              <span style={{ color: '#FF4B4B' }}>
-                                (-{seasonPhase === 'V1' ? 2 : 1}px)
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  )} {/* end canCreateQuest */}
-
-                  {/* RIGHTSIDE: Infinite vertical scroll wheel */}
-                  <div className={`flex flex-col relative h-full ${canCreateQuest ? 'w-1/2' : 'w-full'}`}>
+                <div className="flex-1 flex w-full max-w-3xl mx-auto h-full overflow-hidden mt-2 pb-2 px-4" style={{ gap: '2vw' }}>
+                  {/* Infinite vertical scroll wheel centered */}
+                  <div className={`flex flex-col relative h-full w-full`}>
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
-                      <h3 className="text-center text-[clamp(24px,3vw,50px)] text-black uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-3 pb-0 leading-none" style={{ fontFamily: "'Jersey 15', sans-serif", color: 'black' }}>
+                      <h3 className="text-center text-[clamp(30px,4vw,50px)] text-black uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-6 pb-2 leading-none font-jersey">
                         LISTE DES QUÊTES
                       </h3>
+
+                      {/* Top slot indicator / dummy element (like in image) */}
+                      <div className="flex justify-center my-4 opacity-50 z-20">
+                        <div style={{ width: '60%', height: '40px', backgroundColor: '#e0e0e0', borderRadius: '12px', border: '3px solid rgba(0,0,0,0.2)' }}></div>
+                      </div>
 
                       {/* Wheel area */}
                       <div
@@ -1046,46 +842,40 @@ export function QuestModal({
                         onPointerUp={handlePointerUp}
                         onPointerCancel={handlePointerUp}
                       >
-                        {/* Center highlight line removed per user request */}
+                        {/* Center highlight row simulation */}
+                        <div className="absolute top-1/2 left-[8%] right-[8%] h-[80px] border-[5px] border-[#7A7A7A] bg-white rounded-[16px] z-0" style={{ transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                            {/* Inner dummy text to mimic the middle slot design */}
+                            <div className="flex justify-between items-center w-full h-full px-6">
+                              <span className="font-jersey font-bold" style={{ fontSize: '20px', color: '#008033' }}>Atelier</span>
+                              <span className="font-jersey text-black font-bold" style={{ fontSize: '28px' }}>FAIT UNE REQUÊTE</span>
+                              <span className="font-jersey font-bold" style={{ fontSize: '20px', color: '#008080' }}>Déploiement</span>
+                            </div>
+                        </div>
 
-                        {/* Top fade */}
-                        <div className="absolute inset-x-0 top-0 h-1/3 pointer-events-none" style={{
-                          background: 'linear-gradient(to bottom, #D9D9D9 0%, transparent 100%)',
-                          zIndex: 10,
-                        }} />
-                        {/* Bottom fade */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none" style={{
-                          background: 'linear-gradient(to top, #D9D9D9 0%, transparent 100%)',
-                          zIndex: 10,
-                        }} />
-
-                        {/* Items — absolutely positioned, center slot exactly matches highlight strip */}
+                        {/* Items — absolutely positioned */}
                         {(() => {
                           const ITEM_H = winHeight < 800 ? 50 : 65
-                          const GAP = winHeight < 800 ? 6 : 10
+                          const GAP = winHeight < 800 ? 12 : 20
                           const slots = [-2, -1, 0, 1, 2]
 
                           return slots.map((offset) => {
                             const isCenter = offset === 0
                             const dist = Math.abs(offset)
-                            const opacity = dist === 0 ? 1 : dist === 1 ? 0.6 : 0.4
                             const topPct = 50
                             const topPx = offset * (ITEM_H + GAP)
-                            const inset = isCenter ? '8%' : dist === 1 ? '12%' : '18%'
+                            const inset = isCenter ? '8%' : dist === 1 ? '16%' : '26%'
 
                             const realIdx = (((wheelIndex + offset) % 100) + 100) % 100
                             const q = wheelQuests[realIdx]
                             const isAccepted = q ? q.id === acceptedQuestId : false
-                            const questNum = realIdx + 1
                             
                             // Visuals
-                            const boxShadow = isCenter ? '0 4px 0px rgba(0,0,0,0.8)' : 'none'
                             const cursor = offset !== 0 ? 'pointer' : 'default'
 
                             // Default empty styling
-                            let bgColor = '#D9D9D9'
-                            let borderColor = 'rgba(0,0,0,0.3)'
-                            let borderSize = isCenter ? '4px' : '3px'
+                            let bgColor = '#E2E2E2'
+                            let borderColor = '#B0B0B0'
+                            let borderSize = '4px'
                             
                             if (q) {
                               const tagColor = q.question ? QUESTION_COLORS[q.question] : null
@@ -1103,7 +893,6 @@ export function QuestModal({
                                 borderColor = tagColor || catColor || 'black'
                                 bgColor = q.completed ? (tagColor || catColor || '#888') : '#f5f5f5'
                               }
-                              borderSize = isCenter ? '6px' : '4px'
                             }
                             
                             const boxBorder = `${borderSize} solid ${borderColor}`
@@ -1119,24 +908,22 @@ export function QuestModal({
                                   position: 'absolute',
                                   left: inset,
                                   right: inset,
-                                  height: `${ITEM_H}px`,
-                                  top: `calc(${topPct}% + ${topPx}px - ${ITEM_H / 2}px)`,
-                                  borderRadius: '12px',
-                                  display: 'flex',
+                                  height: `${isCenter ? 80 : 50}px`,
+                                  top: `calc(${topPct}% + ${topPx}px - ${isCenter ? 40 : 25}px)`,
+                                  borderRadius: '16px',
+                                  display: isCenter ? 'none' : 'flex',
                                   alignItems: 'center',
                                   justifyContent: q ? 'center' : 'flex-start',
                                   paddingLeft: q ? '0' : '24px',
                                   cursor,
                                   transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
-                                  opacity: isCenter ? 1 : opacity,
+                                  opacity: isCenter ? 0 : dist === 1 ? 0.6 : 0.4,
                                   backgroundColor: bgColor,
                                   border: boxBorder,
-                                  boxShadow,
                                   zIndex: isCenter ? 5 : 3,
                                   overflow: 'hidden',
                                 }}
                               >
-                                {/* Accepted glow overlay */}
                                 {isCenter && isAccepted && (
                                   <div style={{
                                     position: 'absolute', inset: 0,
@@ -1145,22 +932,8 @@ export function QuestModal({
                                     pointerEvents: 'none',
                                   }} />
                                 )}
-                                
                                 {!q ? (
-                                  <span style={{
-                                    fontFamily: "'Jersey 15', sans-serif",
-                                    fontSize: isCenter ? '36px' : '28px',
-                                    color: 'white',
-                                    textShadow: '0px 2px 4px rgba(0,0,0,0.4)',
-                                    letterSpacing: '0.05em',
-                                    fontWeight: 'bold',
-                                    lineHeight: 1,
-                                    userSelect: 'none',
-                                    position: 'relative',
-                                    zIndex: 2,
-                                  }}>
-                                    {questNum}.
-                                  </span>
+                                  <span style={{ display: 'none' }}></span>
                                 ) : (
                                   <div style={{ 
                                     display: 'flex', 
@@ -1191,22 +964,6 @@ export function QuestModal({
                                     >
                                       {q.title}
                                     </span>
-                                    <span style={{
-                                        fontFamily: "'Jersey 15', sans-serif",
-                                        fontSize: isCenter ? '16px' : '13px',
-                                        color: q.completed ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.45)',
-                                        textShadow: q.completed ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
-                                        letterSpacing: '0.05em',
-                                        marginTop: '2px',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        maxWidth: '100%',
-                                      }}>
-                                        {q.completed
-                                          ? `✓ ${q.completedBy || 'COMPLÉTÉ'}`
-                                          : (isCenter ? `#${questNum} • ${q.category}` : q.category)}
-                                      </span>
                                   </div>
                                 )}
                               </div>
@@ -1215,53 +972,48 @@ export function QuestModal({
                         })()}
                       </div>
 
-                      {/* Action buttons — flex child so wheel 50% is truly centered between title and button */}
-                      <div className="flex flex-shrink-0 justify-center items-center pt-4" style={{ gap: '30px', zIndex: 20, paddingBottom: 'max(3%, 24px)' }}>
-                        {wheelQuests[wheelIndex]?.completed ? (
-                          <div style={{
-                            padding: '12px 40px',
-                            borderRadius: '16px',
-                            backgroundColor: 'rgba(34, 197, 94, 0.25)',
-                            color: '#166534',
-                            fontSize: '32px',
-                            fontFamily: "'Jersey 15', sans-serif",
-                            border: '4px solid #22c55e',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            COMPLET ✓
-                          </div>
-                        ) : (
+                      {/* Action buttons (REQUÊTE) */}
+                      <div className="flex flex-shrink-0 justify-center items-center pt-2" style={{ zIndex: 20, paddingBottom: '32px' }}>
                           <button
-                            onClick={() => { if (centeredQuestId) onAcceptQuest(centeredQuestId) }}
+                            onClick={() => { console.log('Requête clicked') }}
                             style={{
-                              padding: '12px 40px',
-                              borderRadius: '16px',
-                              backgroundColor: centeredQuestId ? 'white' : 'rgba(255,255,255,0.4)',
-                              color: centeredQuestId ? 'black' : 'rgba(0,0,0,0.4)',
-                              fontSize: '32px',
-                              fontFamily: "'Jersey 15', sans-serif",
-                              border: centeredQuestId ? '4px solid black' : '4px solid rgba(0,0,0,0.2)',
-                              cursor: centeredQuestId ? 'pointer' : 'not-allowed',
-                              boxShadow: centeredQuestId ? '0 4px 0px rgba(0,0,0,1)' : 'none',
-                              transition: 'transform 0.1s, box-shadow 0.1s',
-                              whiteSpace: 'nowrap',
-                            }}
-                            onMouseOver={(e) => {
-                              if (centeredQuestId) {
-                                e.currentTarget.style.transform = 'translateY(2px)'
-                                e.currentTarget.style.boxShadow = '0 2px 0px rgba(0,0,0,1)'
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              if (centeredQuestId) {
-                                e.currentTarget.style.transform = 'none'
-                                e.currentTarget.style.boxShadow = '0 4px 0px rgba(0,0,0,1)'
-                              }
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
                             }}
                           >
-                            SÉLECTIONNER
+                            <div style={{
+                                width: '64px',
+                                height: '50px',
+                                backgroundColor: '#D387FF',
+                                border: '4px solid #B2B2B2',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'transform 0.1s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                                <Mail size={28} color="black" />
+                            </div>
+                            <span style={{
+                                fontFamily: "'Jersey 15', sans-serif",
+                                fontSize: '24px',
+                                color: 'black',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '2px'
+                            }}>
+                                REQUÊTE
+                            </span>
                           </button>
-                        )}
                       </div>
                     </div>
                   </div>

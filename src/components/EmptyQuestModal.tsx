@@ -106,7 +106,9 @@ export function EmptyQuestModal({
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  onTokenClick();
+                  if (onTokenClick) {
+                    onTokenClick()
+                  }
                 }}
                 className="hover:scale-110 transition-transform cursor-pointer outline-none mt-2 relative"
                 style={{ background: 'transparent', border: 'none', padding: 0, zIndex: 100, pointerEvents: 'auto' }}
