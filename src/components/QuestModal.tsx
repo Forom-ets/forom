@@ -105,8 +105,18 @@ export function QuestModal({
   categories = ['A', 'B', 'C', 'D', 'E'],
   onCompleteQuest,
   onCancelQuest,
-  userRole
+  userRole,
+  /* unused props below */
+  categoryLabels,
+  seasonPhase,
+  pixels,
+  canCreateQuest,
+  onCreateQuest,
+  onAcceptQuest
 }: QuestModalProps) {
+  
+  // To avoid un-used checks
+  void { categoryLabels, seasonPhase, pixels, canCreateQuest, onCreateQuest, onAcceptQuest }
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
   const [wheelIndex, setWheelIndex] = useState(0)
   const [boardSelectedId, setBoardSelectedId] = useState<string | null>(null)
@@ -121,16 +131,7 @@ export function QuestModal({
 
   const wheelQuests = useMemo(() => {
     const arr = Array(100).fill(null)
-    personalQuests.forEach(q => {
-      const cat = q.category || categories[0]
-      const catIdx = categories.indexOf(cat)
-      if (catIdx === -1) return
-      
-      const tagIndex = parseInt(q.question || '0', 10)
-      if (!isNaN(tagIndex) && tagIndex >= 0 && tagIndex < 10) {
-        arr[catIdx * 10 + tagIndex] = q
-      }
-    })
+    // Wheel is empty by request
     return arr
   }, [personalQuests, categories])
 
@@ -361,7 +362,7 @@ export function QuestModal({
             <div className="flex-1 overflow-auto flex flex-col font-jersey relative" style={{ padding: 'clamp(16px, 3vh, 40px) clamp(20px, 4vw, 60px)' }}>
               {/* Header */}
               <div className="relative flex justify-center items-center flex-col mt-4 mb-[clamp(8px,2vh,32px)] z-10">
-                <h1 className="text-black tracking-widest m-0 leading-none text-center font-bold font-jersey" style={{ fontSize: '80px' }}>
+                <h1 className="text-black tracking-widest m-0 leading-none text-center font-bold" style={{ fontSize: '80px', fontFamily: "'Jersey 15', sans-serif" }}>
                   Terminal
                 </h1>
                 <div style={{
@@ -822,9 +823,12 @@ export function QuestModal({
                   {/* Infinite vertical scroll wheel centered */}
                   <div className={`flex flex-col relative h-full w-full`}>
                     <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
-                      <h3 className="text-center text-[clamp(30px,4vw,50px)] text-black uppercase tracking-widest drop-shadow-sm font-bold flex-shrink-0 m-0 pt-6 pb-2 leading-none font-jersey">
-                        LISTE DES QUÊTES
-                      </h3>
+                        <h3 
+                          className="text-center text-[clamp(28px,4vw,50px)] text-black uppercase tracking-widest drop-shadow-sm flex-shrink-0 m-0 pt-6 pb-2 leading-none"
+                          style={{ fontFamily: "'Jersey 15', sans-serif" }}
+                        >
+                          LISTE DES QUÊTES
+                        </h3>
 
                       {/* Top slot indicator / dummy element (like in image) */}
                       <div className="flex justify-center my-4 opacity-50 z-20">
@@ -842,15 +846,43 @@ export function QuestModal({
                         onPointerUp={handlePointerUp}
                         onPointerCancel={handlePointerUp}
                       >
-                        {/* Center highlight row simulation */}
-                        <div className="absolute top-1/2 left-[8%] right-[8%] h-[80px] border-[5px] border-[#7A7A7A] bg-white rounded-[16px] z-0" style={{ transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                            {/* Inner dummy text to mimic the middle slot design */}
-                            <div className="flex justify-between items-center w-full h-full px-6">
-                              <span className="font-jersey font-bold" style={{ fontSize: '20px', color: '#008033' }}>Atelier</span>
-                              <span className="font-jersey text-black font-bold" style={{ fontSize: '28px' }}>FAIT UNE REQUÊTE</span>
-                              <span className="font-jersey font-bold" style={{ fontSize: '20px', color: '#008080' }}>Déploiement</span>
+                        {/* Center highlight row simulation - DYNAMIC category/tag on sides, FIXED center text */}
+                        {(() => {
+                          const catIdx = Math.floor(wheelIndex / 10)
+                          const tagIdx = wheelIndex % 10
+                          const currentCategory = categories[catIdx] || 'A'
+                          const currentTag = String(tagIdx)
+                          const categoryColor = CATEGORY_COLORS[currentCategory] || '#888'
+                          const tagColor = QUESTION_COLORS[currentTag] || '#888'
+                          const categoryLabel = categoryLabels?.[currentCategory] || currentCategory
+                          const tagLabel = questionLabels?.[currentTag] || currentTag
+                          
+                          return (
+                            <div className="absolute top-1/2 left-[8%] right-[8%] h-[80px] border-[5px] border-[#7A7A7A] bg-white rounded-[16px] z-0" style={{ transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                              {/* Three-column balanced layout */}
+                              <div className="flex items-center w-full h-full px-8" style={{ gap: '32px', justifyContent: 'space-between' }}>
+                                {/* LEFT: Dynamic category label */}
+                                <div style={{ width: '120px', textAlign: 'center', flexShrink: 0 }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '28px', color: categoryColor, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.08em', display: 'block', lineHeight: 1.1 }}>
+                                    {categoryLabel}
+                                  </span>
+                                </div>
+                                
+                                {/* CENTER: Fixed "FAIT UNE REQUÊTE" */}
+                                <span className="text-black uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '42px', flex: 1, textAlign: 'center', lineHeight: 1.1 }}>
+                                  FAIT UNE REQUÊTE
+                                </span>
+                                
+                                {/* RIGHT: Dynamic tag label */}
+                                <div style={{ width: '120px', textAlign: 'center', flexShrink: 0 }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '28px', color: tagColor, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.08em', display: 'block', lineHeight: 1.1 }}>
+                                    {tagLabel}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                        </div>
+                          )
+                        })()}
 
                         {/* Items — absolutely positioned */}
                         {(() => {
