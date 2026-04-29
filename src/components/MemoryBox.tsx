@@ -38,6 +38,7 @@ export const MemoryBox = memo(function MemoryBox({
   isRubixView = false,
   onClick,
   onInfoClick,
+  customBgColor,
   categoryName,
   tagName,
   isPortrait = false,
@@ -91,7 +92,7 @@ export const MemoryBox = memo(function MemoryBox({
         onClick={handleBoxClick}
         style={{
           border: `10px solid #747474`,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: customBgColor || '#FFFFFF',
           ...dimensions,
           cursor: (onClick || onInfoClick) ? 'pointer' : 'default',
           borderRadius: '24px',

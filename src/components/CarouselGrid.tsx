@@ -5,7 +5,7 @@ import { MemoryModal } from './MemoryModal'
 import { EmptyQuestModal } from './EmptyQuestModal'
 import { useModalStore } from '../stores/useModalStore'
 import { getMemory, ITEMS_PER_ROW, QUESTION_ORDER, QUESTION_COLORS, CATEGORY_COLORS } from '../data/memories'
-import type { Memory, CategoryType } from '../data/memories'
+import type { Memory, CategoryType, WhQuestion } from '../data/memories'
 import { mixColors } from '../utils/colors'
 import { Sidebar } from './Sidebar'
 
@@ -75,6 +75,7 @@ export function CarouselGrid({
   const gridRef = useRef<HTMLDivElement | null>(null)
   
   const openQuest = useModalStore(state => state.openQuest)
+  const sentRequests = useModalStore(state => state.sentRequests)
 
   // Track window dimensions for responsive grid layout
   useEffect(() => {
@@ -399,6 +400,11 @@ export function CarouselGrid({
     const globalIndex = getGlobalIndex(rowOffset, col)
     let memory = getMemoryForPosition(rowOffset, col)
 
+    const catIdx = categories.indexOf(memory?.category || 'A')
+    const tagIdx = memory?.question ? QUESTION_ORDER.indexOf(memory.question as WhQuestion) : 0
+    const wheelIndex = catIdx * 10 + tagIdx
+    const isSent = sentRequests.includes(wheelIndex)
+
     // Determine if there is a quest assigned to this slot
     const itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#e5e7eb';
     let customBgColor: string | undefined = undefined;
@@ -409,7 +415,10 @@ export function CarouselGrid({
       const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
 
       const matchedQuest = personalQuests.find(q => q.category === memory?.category && q.question === memory?.question);
-      if (matchedQuest) {
+      if (isSent) {
+        customBgColor = '#D387FF';
+        memory = { ...memory, title: 'REQUÊTE ENVOYÉ', isFilled: true }; // Fake isFilled to render nicely
+      } else if (matchedQuest) {
         if (matchedQuest.completed || isMemoryDone) {
           customBgColor = mixColors(catColor, tagColor);
         }
@@ -420,7 +429,7 @@ export function CarouselGrid({
     }
 
     const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
-    const isLocked = !memory?.isFilled && !(
+    const isLocked = !isSent && !memory?.isFilled && !(
       acceptedQuest &&
       memory &&
       acceptedQuest.category === memory.category &&
@@ -513,10 +522,10 @@ export function CarouselGrid({
   if (isRubixView) {
     return (
       <div
-        className="absolute flex flex-col items-center justify-start z-10 pointer-events-auto"
-        style={{ top: 0, bottom: 0, left: 0, right: 0, paddingTop: 'calc(max(9vh, 80px))', paddingBottom: 'calc(116px + 2vh)', backgroundColor: 'var(--color-bg)' }}
+        className="absolute flex flex-col items-center justify-center z-10 pointer-events-auto"
+        style={{ top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'transparent', paddingTop: 'calc(max(9vh, 80px))', paddingBottom: 'calc(116px + 2vh)' }}
       >
-        <div className="flex flex-col items-center justify-center flex-1 w-full" style={{ gap: '0.6vw', minHeight: 0 }}>
+        <div className="flex flex-col items-center justify-center w-full" style={{ gap: '0.6vw', minHeight: 0 }}>
           {categories.map((category, row) => (
             <div key={category} className="flex items-center justify-center relative" style={{ gap: '0.6vw' }}>
 
@@ -536,11 +545,15 @@ export function CarouselGrid({
 
               {Array.from({ length: 10 }).map((_, col) => {
                 const globalIndex = row * 10 + col
+                const isSent = sentRequests.includes(globalIndex)
                 let memory = getProcessedMemory(category as CategoryType, col)
                 const itemBorderColor = memory ? mixColors(CATEGORY_COLORS[memory.category] || '#ffffff', memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888') : '#e5e7eb';
                 let customBgColor: string | undefined = undefined;
 
-                if (memory) {
+                if (isSent) {
+                  customBgColor = '#D387FF';
+                  memory = memory ? { ...memory, title: 'REQUÊTE ENVOYÉ', isFilled: true } : { id: `dummy-${globalIndex}`, category: category as CategoryType, question: String(col) as WhQuestion, title: 'REQUÊTE ENVOYÉ', description: '', videoUrl: null, thumbnailUrl: null, isFilled: true };
+                } else if (memory) {
                   const catColor = CATEGORY_COLORS[memory.category] || '#ffffff';
                   const tagColor = memory.question ? (QUESTION_COLORS[memory.question] || '#888888') : '#888888';
                   const isMemoryDone = memory.isFilled && memory.videoUrl && memory.description && memory.description.trim().length > 0 && Array.isArray(memory.sources) && memory.sources.length > 0;
@@ -557,7 +570,7 @@ export function CarouselGrid({
                 }
 
                 const acceptedQuest = personalQuests.find(q => q.id === acceptedQuestId)
-                const cellIsLocked = !memory?.isFilled && !(
+                const cellIsLocked = !isSent && !memory?.isFilled && !(
                   acceptedQuest &&
                   memory &&
                   acceptedQuest.category === memory.category &&
@@ -599,9 +612,31 @@ export function CarouselGrid({
           ))}
         </div>
 
+        {/* Internal Edge Fade Gradients (Top and Bottom) - Placed here to render OVER the matrix but UNDER the tags */}
+        <div 
+          className="absolute top-0 left-0 right-0 pointer-events-none transition-colors duration-300"
+          style={{ 
+            height: '35vh', 
+            background: isDark 
+              ? 'linear-gradient(to bottom, #0D0D0F 0%, transparent 100%)' 
+              : 'linear-gradient(to bottom, #FF7878 0%, transparent 100%)',
+            zIndex: 20
+          }}
+        />
+        <div 
+          className="absolute bottom-0 left-0 right-0 pointer-events-none transition-colors duration-300"
+          style={{ 
+            height: '35vh', 
+            background: isDark 
+              ? 'linear-gradient(to top, #0D0D0F 0%, transparent 100%)' 
+              : 'linear-gradient(to top, #FF7878 0%, transparent 100%)',
+            zIndex: 20
+          }}
+        />
+
         <div
-          className="flex w-full items-center justify-center pointer-events-none"
-          style={{ gap: '0.6vw', marginTop: '0.5vh' }}
+          className="flex w-full items-center justify-center pointer-events-none relative"
+          style={{ gap: '0.6vw', marginTop: '0.5vh', zIndex: 30 }}
         >
           {QUESTION_ORDER.map((q) => (
             <div key={q} className="flex justify-center items-center relative shrink-0">
@@ -614,6 +649,7 @@ export function CarouselGrid({
                   isCentered={false}
                   isSmall={true}
                   isExtraSmall={false}
+                  isRubixView={true}
                 />
               </div>
 
@@ -691,7 +727,7 @@ export function CarouselGrid({
         tagLabel={currentMemory?.question ? (questionLabels[currentMemory.question] || currentMemory.question) : undefined}
         onTokenClick={() => {
           setIsEmptyQuestModalOpen(false)
-          openQuest()
+          openQuest(undefined, activeIndex * 10 + horizontalIndex)
         }}
       />
     </div>

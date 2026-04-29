@@ -8,6 +8,8 @@ import { mixColors } from '../utils/colors'
 import type { UserRole } from '../App'
 import tokenIcon from '../assets/icons/tokens.svg'
 
+import { useModalStore } from '../stores/useModalStore'
+
 // Category band colors removed because we now use mixColors
 
 // =============================================================================
@@ -41,6 +43,7 @@ export interface QuestModalProps {
   onCompleteQuest: (id: string) => void
   onCancelQuest: (id: string) => void
   userRole?: UserRole
+  initialWheelIndex?: number | null
 }
 
 // =============================================================================
@@ -112,7 +115,8 @@ export function QuestModal({
   pixels,
   canCreateQuest,
   onCreateQuest,
-  onAcceptQuest
+  onAcceptQuest,
+  initialWheelIndex
 }: QuestModalProps) {
   
   // To avoid un-used checks
@@ -120,6 +124,14 @@ export function QuestModal({
   const [activeTab, setActiveTab] = useState<'community' | 'personal'>('personal')
   const [wheelIndex, setWheelIndex] = useState(0)
   const [boardSelectedId, setBoardSelectedId] = useState<string | null>(null)
+  
+  // NEW STATES
+  const [isRequestMode, setIsRequestMode] = useState(false)
+  const [requestText, setRequestText] = useState('')
+  const sentRequests = useModalStore(state => state.sentRequests)
+  const addSentRequest = useModalStore(state => state.addSentRequest)
+  const hasSentRequest = sentRequests.includes(wheelIndex)
+  
   const wheelRef = useRef<HTMLDivElement>(null)
 
   const [winHeight, setWinHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 1080)
@@ -128,6 +140,15 @@ export function QuestModal({
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsRequestMode(false)
+      setRequestText('')
+    } else if (initialWheelIndex !== undefined && initialWheelIndex !== null) {
+      setWheelIndex(initialWheelIndex)
+    }
+  }, [isOpen, initialWheelIndex])
 
   const wheelQuests = useMemo(() => {
     const arr = Array(100).fill(null)
@@ -240,11 +261,12 @@ export function QuestModal({
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
-              backgroundColor: '#FFCA82',
+              backgroundColor: isRequestMode ? '#D387FF' : '#FFCA82',
               border: '6px solid white',
               borderRadius: '32px',
               color: 'black',
               overflow: 'hidden',
+              transition: 'background-color 0.3s'
             }}
           >
             <button
@@ -281,7 +303,8 @@ export function QuestModal({
             </button>
 
             {/* Left Side Switch Buttons (Info / Quêtes) */}
-            <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 100, display: 'flex', gap: '16px' }}>
+            {!isRequestMode && (
+              <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 100, display: 'flex', gap: '16px' }}>
               <button
                 onClick={() => setActiveTab('community')}
                 style={{ 
@@ -358,8 +381,132 @@ export function QuestModal({
                 Q
               </button>
             </div>
+            )}
 
-            <div className="flex-1 overflow-auto flex flex-col font-jersey relative" style={{ padding: 'clamp(16px, 3vh, 40px) clamp(20px, 4vw, 60px)' }}>
+            {isRequestMode ? (
+              <div className="flex-1 flex flex-col w-full h-full relative items-center" style={{ padding: 'clamp(20px, 4vh, 40px) 0' }}>
+                {(() => {
+                  const catIdx = Math.floor(wheelIndex / 10)
+                  const tagIdx = wheelIndex % 10
+                  const currentCategory = categories[catIdx] || 'A'
+                  const currentTag = String(tagIdx)
+                  const categoryLabel = categoryLabels?.[currentCategory] || currentCategory
+                  const tagLabel = questionLabels?.[currentTag] || currentTag
+                  
+                  const words = requestText.trim().split(/\s+/).filter(Boolean).length
+                  const wordCountColor = words === 0 ? '#ef4444' : words < 40 ? '#ef4444' : words < 60 ? '#f97316' : words < 80 ? '#eab308' : '#22c55e'
+                  const canSend = words >= 80
+
+                  if (hasSentRequest) {
+                    return (
+                      <>
+                        <div className="absolute top-[24px] right-[24px] z-50 cursor-pointer" onClick={() => setIsRequestMode(false)}>
+                          <div style={{ backgroundColor: 'black', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '20px' }}>X</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center mt-[10vh]" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '22px', color: 'black', letterSpacing: '0.05em', gap: '4px' }}>
+                          <span>{`[ CATEGORY: ${categoryLabel.toUpperCase()} ]`}</span>
+                          <span>{`[ TAG: ${tagLabel.toUpperCase()} ]`}</span>
+                        </div>
+                        
+                        <h1 className="text-black m-0 leading-none text-center font-bold absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full" style={{ fontSize: '80px', fontFamily: "'Jersey 15', sans-serif" }}>
+                          REQUÊTE ENVOYÉ
+                        </h1>
+
+                        <div className="absolute bottom-[10vh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '16px', color: 'black' }}>
+                            Allez dans le terminal
+                          </span>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '16px', color: 'black', fontWeight: 'bold' }}>
+                            to V
+                          </span>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FFCA82', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            <span style={{ fontSize: '24px', lineHeight: 1 }}>🪙</span>
+                          </div>
+                        </div>
+                      </>
+                    )
+                  }
+
+                  return (
+                    <>
+                      <h1 className="text-black tracking-widest m-0 leading-none text-center font-bold" style={{ fontSize: '100px', fontFamily: "'Jersey 15', sans-serif" }}>
+                        REQUÊTE
+                      </h1>
+                      <div className="flex flex-col items-center mt-4" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '22px', color: 'black', letterSpacing: '0.05em', gap: '4px' }}>
+                        <span>{`[ CATEGORY: ${categoryLabel.toUpperCase()} ]`}</span>
+                        <span>{`[ TAG: ${tagLabel.toUpperCase()} ]`}</span>
+                      </div>
+                      <h2 className="text-black m-0 mt-6 mb-[4vh] font-bold text-center" style={{ fontSize: '50px', fontFamily: "'Jersey 15', sans-serif", lineHeight: 1 }}>
+                        Idées et demandes
+                      </h2>
+                      
+                      <div 
+                        className="flex-1 w-[90%] max-w-[90%] min-w-0 flex box-border" 
+                        style={{
+                          backgroundColor: 'white',
+                          border: '8px solid #7A7A7A',
+                          borderRadius: '24px',
+                          padding: '24px'
+                        }}
+                      >
+                        <textarea
+                          value={requestText}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            const currentWords = text.trim().split(/\s+/).filter(Boolean).length;
+                            if (currentWords <= 100 || text.length < requestText.length) {
+                              setRequestText(text);
+                            }
+                          }}
+                          className="w-full h-full min-w-0 text-2xl font-sans resize-none bg-transparent border-none outline-none"
+                          style={{ paddingRight: '8px' }}
+                        />
+                      </div>
+
+                      <div className="w-[90%] max-w-[90%] min-w-0 flex justify-between items-end mt-[4vh] mb-4 font-jersey box-border">
+                        {/* Left Cancel Button */}
+                        <div className="flex flex-col items-center cursor-pointer" onClick={() => setIsRequestMode(false)}>
+                          <div style={{ backgroundColor: 'white', border: '5px solid #FFCA82', borderRadius: '16px', padding: '10px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'transform 0.1s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
+                            <span style={{ fontSize: '32px', fontWeight: 'bold', lineHeight: 1 }}>{'<'}</span>
+                          </div>
+                          <span style={{ fontSize: '28px', fontWeight: 'bold', marginTop: '8px', color: 'black', lineHeight: 1 }}>ANNULER</span>
+                        </div>
+
+                        {/* Center Info */}
+                        <div className="flex flex-col items-center">
+                          <span style={{ fontSize: '28px', color: wordCountColor, marginBottom: '8px', fontWeight: 'bold' }}>
+                            {`(${words}/100 mots)`}
+                          </span>
+                          <span style={{ fontSize: '32px', color: 'white', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            + 10 XP
+                          </span>
+                        </div>
+
+                        {/* Right Send Button */}
+                        <div 
+                          className="flex flex-col items-center" 
+                          style={{ cursor: canSend ? 'pointer' : 'not-allowed', opacity: canSend ? 1 : 0.5 }}
+                          onClick={() => {
+                            if (canSend) {
+                              addSentRequest(wheelIndex);
+                              setIsRequestMode(false);
+                            }
+                          }}
+                        >
+                          <div style={{ backgroundColor: 'white', border: '5px solid #FFCA82', borderRadius: '16px', padding: '10px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'transform 0.1s' }} onMouseOver={e => { if(canSend) e.currentTarget.style.transform = 'scale(1.05)' }} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
+                            <span style={{ fontSize: '32px', fontWeight: 'bold', lineHeight: 1 }}>{'>'}</span>
+                          </div>
+                          <span style={{ fontSize: '28px', fontWeight: 'bold', marginTop: '8px', color: 'black', lineHeight: 1 }}>ENVOYÉ</span>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            ) : (
+              <div className="flex-1 overflow-auto flex flex-col font-jersey relative" style={{ padding: 'clamp(16px, 3vh, 40px) clamp(20px, 4vw, 60px)' }}>
               {/* Header */}
               <div className="relative flex justify-center items-center flex-col mt-4 mb-[clamp(8px,2vh,32px)] z-10">
                 <h1 className="text-black tracking-widest m-0 leading-none text-center font-bold" style={{ fontSize: '80px', fontFamily: "'Jersey 15', sans-serif" }}>
@@ -822,17 +969,17 @@ export function QuestModal({
                 <div className="flex-1 flex w-full max-w-3xl mx-auto h-full overflow-hidden mt-2 pb-2 px-4" style={{ gap: '2vw' }}>
                   {/* Infinite vertical scroll wheel centered */}
                   <div className={`flex flex-col relative h-full w-full`}>
-                    <div className="bg-[#D9D9D9] border-[5px] border-black rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
+                    <div className="bg-[#E2E2E2] border-[6px] border-white rounded-[24px] relative flex-1 overflow-hidden flex flex-col">
                         <h3 
-                          className="text-center text-[clamp(28px,4vw,50px)] text-black uppercase tracking-widest drop-shadow-sm flex-shrink-0 m-0 pt-6 pb-2 leading-none"
+                          className="text-center text-[clamp(28px,4vw,50px)] text-black tracking-widest drop-shadow-sm flex-shrink-0 m-0 pt-6 pb-2 leading-none"
                           style={{ fontFamily: "'Jersey 15', sans-serif" }}
                         >
-                          LISTE DES QUÊTES
+                          Liste des quêtes
                         </h3>
 
                       {/* Top slot indicator / dummy element (like in image) */}
-                      <div className="flex justify-center my-4 opacity-50 z-20">
-                        <div style={{ width: '60%', height: '40px', backgroundColor: '#e0e0e0', borderRadius: '12px', border: '3px solid rgba(0,0,0,0.2)' }}></div>
+                      <div className="flex justify-center my-4 opacity-0 pointer-events-none z-20">
+                        <div style={{ width: '60%', height: '20px' }}></div>
                       </div>
 
                       {/* Wheel area */}
@@ -858,24 +1005,26 @@ export function QuestModal({
                           const tagLabel = questionLabels?.[currentTag] || currentTag
                           
                           return (
-                            <div className="absolute top-1/2 left-[8%] right-[8%] h-[80px] border-[5px] border-[#7A7A7A] bg-white rounded-[16px] z-0" style={{ transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                            <div className="absolute top-1/2 left-[6%] right-[6%] h-[80px] border-[5px] border-[#7A7A7A] rounded-[16px] z-0" style={{ transform: 'translateY(-50%)', pointerEvents: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', backgroundColor: hasSentRequest ? '#D387FF' : 'white' }}>
                               {/* Three-column balanced layout */}
-                              <div className="flex items-center w-full h-full px-8" style={{ gap: '32px', justifyContent: 'space-between' }}>
+                              <div className="flex items-center w-full h-full px-4 sm:px-6" style={{ justifyContent: 'space-between' }}>
                                 {/* LEFT: Dynamic category label */}
-                                <div style={{ width: '120px', textAlign: 'center', flexShrink: 0 }}>
-                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '28px', color: categoryColor, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.08em', display: 'block', lineHeight: 1.1 }}>
+                                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(20px, 2.5vw, 26px)', color: hasSentRequest ? 'white' : categoryColor, fontWeight: 'bold', letterSpacing: '0.05em', lineHeight: 1.1, textAlign: 'center' }}>
                                     {categoryLabel}
                                   </span>
                                 </div>
                                 
-                                {/* CENTER: Fixed "FAIT UNE REQUÊTE" */}
-                                <span className="text-black uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '42px', flex: 1, textAlign: 'center', lineHeight: 1.1 }}>
-                                  FAIT UNE REQUÊTE
-                                </span>
+                                {/* CENTER: Fixed text */}
+                                <div style={{ flexShrink: 0, padding: '0 12px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                  <span className="uppercase tracking-widest drop-shadow-sm font-bold" style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(24px, 3.5vw, 36px)', lineHeight: 1.1, color: hasSentRequest ? 'white' : 'black' }}>
+                                    {hasSentRequest ? 'REQUÊTE ENVOYÉ' : 'FAIT UNE REQUÊTE'}
+                                  </span>
+                                </div>
                                 
                                 {/* RIGHT: Dynamic tag label */}
-                                <div style={{ width: '120px', textAlign: 'center', flexShrink: 0 }}>
-                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: '28px', color: tagColor, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.08em', display: 'block', lineHeight: 1.1 }}>
+                                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                                  <span style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 'clamp(20px, 2.5vw, 26px)', color: hasSentRequest ? 'white' : tagColor, fontWeight: 'bold', letterSpacing: '0.05em', lineHeight: 1.1, textAlign: 'center' }}>
                                     {tagLabel}
                                   </span>
                                 </div>
@@ -886,16 +1035,16 @@ export function QuestModal({
 
                         {/* Items — absolutely positioned */}
                         {(() => {
-                          const ITEM_H = winHeight < 800 ? 50 : 65
-                          const GAP = winHeight < 800 ? 12 : 20
-                          const slots = [-2, -1, 0, 1, 2]
+                          const ITEM_H = winHeight < 800 ? 55 : 70
+                          const GAP = winHeight < 800 ? 16 : 24
+                          const slots = [-3, -2, -1, 0, 1, 2, 3]
 
                           return slots.map((offset) => {
                             const isCenter = offset === 0
                             const dist = Math.abs(offset)
                             const topPct = 50
                             const topPx = offset * (ITEM_H + GAP)
-                            const inset = isCenter ? '8%' : dist === 1 ? '16%' : '26%'
+                            const inset = isCenter ? '6%' : dist === 1 ? '12%' : dist === 2 ? '20%' : '30%'
 
                             const realIdx = (((wheelIndex + offset) % 100) + 100) % 100
                             const q = wheelQuests[realIdx]
@@ -905,8 +1054,8 @@ export function QuestModal({
                             const cursor = offset !== 0 ? 'pointer' : 'default'
 
                             // Default empty styling
-                            let bgColor = '#E2E2E2'
-                            let borderColor = '#B0B0B0'
+                            let bgColor = '#D4D4D4'
+                            let borderColor = '#C0C0C0'
                             let borderSize = '4px'
                             
                             if (q) {
@@ -922,7 +1071,7 @@ export function QuestModal({
                                   bgColor = '#f5f5f5'
                                 }
                               } else {
-                                borderColor = tagColor || catColor || 'black'
+                                borderColor = tagColor || catColor || '#C0C0C0'
                                 bgColor = q.completed ? (tagColor || catColor || '#888') : '#f5f5f5'
                               }
                             }
@@ -931,7 +1080,7 @@ export function QuestModal({
 
                             return (
                               <div
-                                key={offset}
+                                key={realIdx}
                                 onClick={() => {
                                   if (offset !== 0)
                                     setWheelIndex((((wheelIndex + offset) % 100) + 100) % 100)
@@ -940,16 +1089,17 @@ export function QuestModal({
                                   position: 'absolute',
                                   left: inset,
                                   right: inset,
-                                  height: `${isCenter ? 80 : 50}px`,
-                                  top: `calc(${topPct}% + ${topPx}px - ${isCenter ? 40 : 25}px)`,
+                                  height: `${isCenter ? 80 : ITEM_H}px`,
+                                  top: `calc(${topPct}% + ${topPx}px - ${isCenter ? 40 : (ITEM_H/2)}px)`,
                                   borderRadius: '16px',
-                                  display: isCenter ? 'none' : 'flex',
+                                  display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: q ? 'center' : 'flex-start',
                                   paddingLeft: q ? '0' : '24px',
                                   cursor,
-                                  transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
-                                  opacity: isCenter ? 0 : dist === 1 ? 0.6 : 0.4,
+                                  transition: 'all 0.35s cubic-bezier(0.34, 1.35, 0.64, 1)',
+                                  opacity: isCenter ? 0 : dist === 1 ? 0.9 : dist === 2 ? 0.6 : 0,
+                                  pointerEvents: isCenter || dist > 2 ? 'none' : 'auto',
                                   backgroundColor: bgColor,
                                   border: boxBorder,
                                   zIndex: isCenter ? 5 : 3,
@@ -1007,7 +1157,7 @@ export function QuestModal({
                       {/* Action buttons (REQUÊTE) */}
                       <div className="flex flex-shrink-0 justify-center items-center pt-2" style={{ zIndex: 20, paddingBottom: '32px' }}>
                           <button
-                            onClick={() => { console.log('Requête clicked') }}
+                            onClick={() => setIsRequestMode(true)}
                             style={{
                               display: 'flex',
                               flexDirection: 'column',
@@ -1022,16 +1172,16 @@ export function QuestModal({
                             <div style={{
                                 width: '64px',
                                 height: '50px',
-                                backgroundColor: '#D387FF',
-                                border: '4px solid #B2B2B2',
+                                backgroundColor: hasSentRequest ? '#B2B2B2' : '#D387FF',
+                                border: '4px solid #7A7A7A',
                                 borderRadius: '12px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 transition: 'transform 0.1s'
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)' }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
                             >
                                 <Mail size={28} color="black" />
                             </div>
@@ -1052,10 +1202,12 @@ export function QuestModal({
 
                 </div>
               )}
-            </div>
-          </motion.div>
-        </ReactModal>
+              </div>
+            )}
+            </motion.div>
+          </ReactModal>
       )}
     </AnimatePresence>
   )
 }
+

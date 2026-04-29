@@ -349,47 +349,31 @@ function App() {
         isPhantom={isPhantomMode}
       />
 
-      {/* Edge Fade Gradients (Top, Bottom, Left, Right) */}
-      {/* Top Edge */}
-      <div 
-        className="fixed top-0 left-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
-        style={{ 
-          height: '25vh', 
-          background: isDarkMode 
-            ? 'linear-gradient(to bottom, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
-            : 'linear-gradient(to bottom, #FF7878 5%, #FF787899 20%, transparent 100%)' 
-        }}
-      />
-      {/* Bottom Edge */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
-        style={{ 
-          height: '25vh', 
-          background: isDarkMode 
-            ? 'linear-gradient(to top, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
-            : 'linear-gradient(to top, #FF7878 5%, #FF787899 20%, transparent 100%)' 
-        }}
-      />
-      {/* Left Edge */}
-      <div 
-        className="fixed top-0 bottom-0 left-0 z-[60] pointer-events-none transition-colors duration-300"
-        style={{ 
-          width: '15vw', 
-          background: isDarkMode 
-            ? 'linear-gradient(to right, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
-            : 'linear-gradient(to right, #FF7878 5%, #FF787899 20%, transparent 100%)' 
-        }}
-      />
-      {/* Right Edge */}
-      <div 
-        className="fixed top-0 bottom-0 right-0 z-[60] pointer-events-none transition-colors duration-300"
-        style={{ 
-          width: '15vw', 
-          background: isDarkMode 
-            ? 'linear-gradient(to left, #0D0D0F 5%, #0D0D0F99 20%, transparent 100%)' 
-            : 'linear-gradient(to left, #FF7878 5%, #FF787899 20%, transparent 100%)' 
-        }}
-      />
+      {/* Edge Fade Gradients (Top and Bottom only) - Handled internally in Rubix View for proper layering */}
+      {!isRubixView && (
+        <>
+          {/* Top Edge */}
+          <div 
+            className="fixed top-0 left-0 right-0 z-[20] pointer-events-none transition-colors duration-300"
+            style={{ 
+              height: '35vh', 
+              background: isDarkMode 
+                ? 'linear-gradient(to bottom, #0D0D0F 0%, transparent 100%)' 
+                : 'linear-gradient(to bottom, #FF7878 0%, transparent 100%)' 
+            }}
+          />
+          {/* Bottom Edge */}
+          <div 
+            className="fixed bottom-0 left-0 right-0 z-[20] pointer-events-none transition-colors duration-300"
+            style={{ 
+              height: '35vh', 
+              background: isDarkMode 
+                ? 'linear-gradient(to top, #0D0D0F 0%, transparent 100%)' 
+                : 'linear-gradient(to top, #FF7878 0%, transparent 100%)' 
+            }}
+          />
+        </>
+      )}
 
       {/* --------------------------------------------------------------------------
           Corner Icons
@@ -520,10 +504,11 @@ function App() {
       <QuestModal
         isOpen={modals.isQuestOpen}
         onClose={modals.closeQuest}
+        initialWheelIndex={modals.questInitialIndex}
         personalQuests={personalQuests}
         acceptedQuestId={acceptedQuestId}
-        questionLabels={questionLabels}
-        categoryLabels={categoryLabels}
+        questionLabels={activeQuestionLabels}
+        categoryLabels={activeCategoryLabels}
         categories={CATEGORIES as unknown as string[]}
         seasonPhase={seasonPhase}
         pixels={pixels}
